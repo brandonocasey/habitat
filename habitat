@@ -1,0 +1,100 @@
+#! /usr/bin/env sh
+
+# internal functions
+# Grab Args
+
+# Step 1: Setup
+function setup() {
+   # Base Folders
+   habitat_base="$HOME/.habitat"
+   habitat_cli="$habitat_base/habitat"
+   habitat_deps="$habitat_base/deps"
+   habitat_storage="$habitat_base/storage"
+   habitat_lib="$habitat_base/lib"
+
+   # Specific Folders
+   habitat_temp="$habitat_storage/temp"
+   habitat_backup="$habitat_storage/backup"
+   habitat_extensions="$habitat_deps/extensions"
+   habitat_extensions_storage="$habitat_storage/extensions"
+   habitat_settings="$habitat_deps/settings"
+
+   # Specific Files
+   habitat_config="$habitat_storage/habitat.cfg"
+   habitat_config_deps="$habitat_storage/extensions.cfg"
+   habitat_log="$habitat_temp/habitat.log"
+
+   # User Config
+   habitat_settings_config="$habitat_settings/habitat.cfg"
+   habitat_settings_config_deps="$habitat_settings/extensions.cfg"
+   habitat_settings_bin="$habitat_settings/bin"
+
+
+   # for those comming functions
+   custom_log_file="$habitat_log"
+
+   # The date
+   habitat_start_seconds="$(date +%s)"
+   habitat_start_date="$(date)"
+
+   # Assure that we have a good environment
+   unalias -a
+   rm -rf "$habitat_temp/*"
+   alias habitat="source $habitat_cli"
+
+   for function_file in $(find "$habitat_lib/" -type -f ); do
+      source "$function_file"
+   done
+   log_header "Setup"
+   log "Started at $habitat_start_date"
+
+   # Add to path with said helpful functions
+   pathadd "$habitat_lib"
+   pathadd "$habitat_settings_bin"
+
+   os="UNKNOWN"
+   if is_installed "sw_vers" >/dev/null; then
+      os="OSX $(sw_vers -productVersion)"
+   elif is_installed 'lsb_release' >/dev/null; then
+      os="$(lsb_release -a | grep 'Description' | sed -e 's/Description:\t//')"
+   elif [ -f "/etc/*release*" ]; then
+      os=$(cat /etc/*release*)
+   elif [ -f "/etc/issue" ]; then
+      os=$(cat /etc/issue)
+   fi
+   log "Found that operating system is $os"
+   export OPERATING_SYSTEM="$os"
+}
+setup
+unset -f setup
+
+# Step 2: Dependancy Management
+function dependancy_management() {
+   local config="$1"
+   for key in $(get_all_config "$config"); do
+      local value="$(get_config "$key" "$config")"
+      update_dependancy "$value"
+   done
+}
+
+function update_dependancy() {
+   local dir="$1"
+   if [ -d "$dir/.svn" ]; then
+      log "Async update for SVN"
+      async_command "svn up $dir" "$habitat_log"
+   fi
+   if [ -d "$dir/.git" ]; then
+      log "Async update for GIT"
+      async_command "(cd $dir && git pull)" "$habitat_log"
+   fi
+}
+
+dependancy_management
+unset -f update_dependancy
+unset -f dependancy_management
+
+# Step 3: Configuration
+
+# Step 4: Deployment
+
+# Step 5: Cleanup
