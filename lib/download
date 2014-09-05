@@ -1,9 +1,9 @@
 #! /bin/sh
 
 function download() {
-	if [ -z "$1" ] || [ -z "$2" ]; then
-		return 2
-	fi
+    if [ -z "$1" ] || [ -z "$2" ]; then
+            return 2
+    fi
     url="$1"; shift;
     save_location="$1"; shift;
     if command -v 'wget' > /dev/null;then
