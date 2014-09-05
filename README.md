@@ -45,6 +45,12 @@ Habitat uses a cli interface called habitat to follow a five step proccess in se
 
 # Options:
 
+# Extensions
+* Vim
+	* Vim Plugins
+* Binaries
+* Bash Completion
+
 # Extending:
 /storage/extensions/<name>
 
