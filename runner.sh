@@ -12,14 +12,14 @@ assert_script="$t_dir/assert.sh"
 stub_script="$t_dir/stub.sh"
 
 
-source "$script_dir/download"
+source "$script_dir/lib/download"
 if [ ! -f "$assert_script" ]; then
-    download "$assert_script" "https://raw.githubusercontent.com/lehmannro/assert.sh/master/assert.sh"
+    download "https://raw.githubusercontent.com/lehmannro/assert.sh/master/assert.sh" "$assert_script"
 fi
 
 if [ ! -f "$stub_script" ]; then
     # https://raw.githubusercontent.com/jimeh/stub.sh/master/stub.sh
-    download "$stub_script" "https://raw.githubusercontent.com/BrandonOCasey/stub.sh/master/stub.sh"
+    download  "https://raw.githubusercontent.com/BrandonOCasey/stub.sh/master/stub.sh" "$stub_script"
 fi
 
 unset -f download
