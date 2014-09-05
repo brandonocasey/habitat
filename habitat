@@ -1,100 +1,187 @@
 #! /usr/bin/env sh
 
-# internal functions
+function habitat_setup() {
+    # Base Folders
+    habitat_base="$HOME/.habitat"
+    habitat_cli="$habitat_base/habitat"
+    habitat_deps="$habitat_base/deps"
+    habitat_storage="$habitat_base/storage"
+    habitat_lib="$habitat_base/lib"
+
+    # Specific Folders
+    habitat_tmp="$habitat_storage/tmp"
+    habitat_backup="$habitat_storage/backup"
+    habitat_extensions="$habitat_deps/extensions"
+    habitat_extensions_storage="$habitat_storage/extensions"
+    habitat_settings="$habitat_deps/settings"
+
+    # Specific Files
+    habitat_config="$habitat_storage/habitat.cfg"
+    habitat_config_deps="$habitat_storage/extensions.cfg"
+    habitat_log="$habitat_tmp/habitat.log"
+
+    # User Config
+    habitat_settings_config="$habitat_settings/habitat.cfg"
+    habitat_settings_config_deps="$habitat_settings/extensions.cfg"
+    habitat_settings_bin="$habitat_settings/bin"
+
+    # Searching
+    habitat_source_search=("$habitat_settings")
+    habitat_symlink_search=("$habitat_settings")
+
+
+    # for those comming functions
+    custom_log_file="$habitat_log"
+
+    # The date
+    habitat_start_seconds="$(date +%s)"
+    habitat_start_date="$(date)"
+
+    # Assure that we have a good environment
+    unalias -a
+    rm -rf "$habitat_tmp/*"
+
+    for function_file in $(find "$habitat_lib/" -type -f ); do
+        source "$function_file"
+    done
+    log_header "Setup"
+    log "Started at $habitat_start_date"
+
+    # Insure that we can run habitat again
+    alias habitat="source $habitat_cli"
+    link_files "$habitat_cli" "$HOME/.bash_profile"
+
+    # Add to path with said helpful functions
+    pathadd "$habitat_lib"
+    pathadd "$habitat_settings_bin"
+
+    os="UNKNOWN"
+    if is_installed "sw_vers" >/dev/null; then
+        os="OSX $(sw_vers -productVersion)"
+    elif is_installed 'lsb_release' >/dev/null; then
+        os="$(lsb_release -a | grep 'Description' | sed -e 's/Description:\t//')"
+    elif [ -f "/etc/*release*" ]; then
+        os=$(cat /etc/*release*)
+    elif [ -f "/etc/issue" ]; then
+        os=$(cat /etc/issue)
+    fi
+    log "Found that operating system is $os"
+    export OPERATING_SYSTEM="$os"
+}
+
+function habitat_dependancy_management() {
+    local config="$1"
+    for key in $(get_all_config "$config"); do
+        local value="$(get_config "$key" "$config")"
+        habitat_update_dependancy "$value"
+    done
+}
+
+function habitat_update_dependancy() {
+    local dir="$1"
+    if [ -d "$dir/.svn" ]; then
+        log "Async update for SVN"
+        async_command "svn up $dir" "$habitat_log"
+    fi
+    if [ -d "$dir/.git" ]; then
+        log "Async update for GIT"
+        async_command "(cd $dir && git pull)" "$habitat_log"
+    fi
+}
+
+
+function habitat_configuration() {
+    # going to have to loop through all 4+ configs here
+    if [ "$(get_config "settings_repo" "$config")" = "ask" ]; then
+        info "Where is your settings repo? (hit enter to use default)"
+    fi
+
+    if [ "$(get_config "bash_theme" "$config")" = "ask" ]; then
+        info "Which bash theme do you want? (hit enter for default)"
+    fi
+
+    if [ "$(get_config "extensions" "$config")" = "ask" ]; then
+        info "Do you want to use extensions? (hit enter for default)"
+    fi
+
+    if [ "$(get_config "update" "$config")" = "ask" ]; then
+        info "How do you want to update: auto, ask, or never? (enter for auto)"
+    fi
+
+    # extension setup
+    # extension config
+
+}
+
+function habitat_deployment() {
+
+    for search_dir in "${habitat_source_search[@]}"; do
+        for file_to_link in `find_this '*.syml' "$search_dir"`; do
+            local dest="$HOME"/."$(basename "${file_to_link%.*}")"
+            log "linking $file_to_link to $dest"
+            link_files "$file_to_link" "$dest"
+        done
+    done
+
+
+    # Source global definitions
+    if [ -f /etc/bashrc ]; then
+        log "Sourced global definitions"
+        source /etc/bashrc
+    fi
+
+    # Source local definitions
+    if [ -f ~/.localrc ]; then
+        log "Sourced local definitions"
+        source ~/.localrc
+    fi
+
+    if [ -f "$bash_completion" ]; then
+        source "$bash_completion"
+        log "Sourced $bash_completion"
+    fi
+    # Source all .bash files into shell
+    log "Sourcing User Settings:"
+    for search_dir in "${habitat_symlink_search[@]}"; do
+        for file_to_source in `find_this '*.sour' "$search_dir"`; do
+            log "$file_to_source"
+            source "$file_to_source"
+        done
+    done
+
+    # extension deployment
+
+}
+function habitat_cleanup() {
+    habitat_end_date="$(date)"
+    habitat_end_seconds="$(date +%s)"
+    log "Habitat all done at $habitat_end_date"
+    log "All done after $(($habitat_end_seconds-$habitat_start_seconds))"
+
+    # extension cleanup
+}
+
 # Grab Args
 
 # Step 1: Setup
-function setup() {
-   # Base Folders
-   habitat_base="$HOME/.habitat"
-   habitat_cli="$habitat_base/habitat"
-   habitat_deps="$habitat_base/deps"
-   habitat_storage="$habitat_base/storage"
-   habitat_lib="$habitat_base/lib"
-
-   # Specific Folders
-   habitat_tmp="$habitat_storage/tmp"
-   habitat_backup="$habitat_storage/backup"
-   habitat_extensions="$habitat_deps/extensions"
-   habitat_extensions_storage="$habitat_storage/extensions"
-   habitat_settings="$habitat_deps/settings"
-
-   # Specific Files
-   habitat_config="$habitat_storage/habitat.cfg"
-   habitat_config_deps="$habitat_storage/extensions.cfg"
-   habitat_log="$habitat_tmp/habitat.log"
-
-   # User Config
-   habitat_settings_config="$habitat_settings/habitat.cfg"
-   habitat_settings_config_deps="$habitat_settings/extensions.cfg"
-   habitat_settings_bin="$habitat_settings/bin"
-
-
-   # for those comming functions
-   custom_log_file="$habitat_log"
-
-   # The date
-   habitat_start_seconds="$(date +%s)"
-   habitat_start_date="$(date)"
-
-   # Assure that we have a good environment
-   unalias -a
-   rm -rf "$habitat_tmp/*"
-   alias habitat="source $habitat_cli"
-
-   for function_file in $(find "$habitat_lib/" -type -f ); do
-      source "$function_file"
-   done
-   log_header "Setup"
-   log "Started at $habitat_start_date"
-
-   # Add to path with said helpful functions
-   pathadd "$habitat_lib"
-   pathadd "$habitat_settings_bin"
-
-   os="UNKNOWN"
-   if is_installed "sw_vers" >/dev/null; then
-      os="OSX $(sw_vers -productVersion)"
-   elif is_installed 'lsb_release' >/dev/null; then
-      os="$(lsb_release -a | grep 'Description' | sed -e 's/Description:\t//')"
-   elif [ -f "/etc/*release*" ]; then
-      os=$(cat /etc/*release*)
-   elif [ -f "/etc/issue" ]; then
-      os=$(cat /etc/issue)
-   fi
-   log "Found that operating system is $os"
-   export OPERATING_SYSTEM="$os"
-}
-setup
-unset -f setup
+habitat_setup
 
 # Step 2: Dependancy Management
-function dependancy_management() {
-   local config="$1"
-   for key in $(get_all_config "$config"); do
-      local value="$(get_config "$key" "$config")"
-      update_dependancy "$value"
-   done
-}
-
-function update_dependancy() {
-   local dir="$1"
-   if [ -d "$dir/.svn" ]; then
-      log "Async update for SVN"
-      async_command "svn up $dir" "$habitat_log"
-   fi
-   if [ -d "$dir/.git" ]; then
-      log "Async update for GIT"
-      async_command "(cd $dir && git pull)" "$habitat_log"
-   fi
-}
-
-dependancy_management
-unset -f update_dependancy
-unset -f dependancy_management
+habitat_dependancy_management
 
 # Step 3: Configuration
+habitat_configuration
 
 # Step 4: Deployment
+habitat_deployment
 
 # Step 5: Cleanup
+habitat_cleanup
+
+for habitat_function in $(typeset -F | grep habitat_ | sed -e 's~declare -f ~~'); do
+    unset -f "$habitat_function"
+done
+
+
+
+
