@@ -1,0 +1,14 @@
+/storage/backup/*
+!/storage/backup/.gitkeep
+
+/storage/tmp/*
+!/storage/tmp/.gitkeep
+
+/storage/extensions/*
+!/storage/extensions/.gitkeep
+
+/deps/settings/*
+!/deps/settings/.gitkeep
+
+/deps/extensions/*
+!/deps/extensions/.gitkeep
