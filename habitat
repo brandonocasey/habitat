@@ -13,7 +13,7 @@ function setup() {
    habitat_lib="$habitat_base/lib"
 
    # Specific Folders
-   habitat_temp="$habitat_storage/temp"
+   habitat_tmp="$habitat_storage/tmp"
    habitat_backup="$habitat_storage/backup"
    habitat_extensions="$habitat_deps/extensions"
    habitat_extensions_storage="$habitat_storage/extensions"
@@ -22,7 +22,7 @@ function setup() {
    # Specific Files
    habitat_config="$habitat_storage/habitat.cfg"
    habitat_config_deps="$habitat_storage/extensions.cfg"
-   habitat_log="$habitat_temp/habitat.log"
+   habitat_log="$habitat_tmp/habitat.log"
 
    # User Config
    habitat_settings_config="$habitat_settings/habitat.cfg"
@@ -39,7 +39,7 @@ function setup() {
 
    # Assure that we have a good environment
    unalias -a
-   rm -rf "$habitat_temp/*"
+   rm -rf "$habitat_tmp/*"
    alias habitat="source $habitat_cli"
 
    for function_file in $(find "$habitat_lib/" -type -f ); do
