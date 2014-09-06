@@ -15,12 +15,13 @@ function habitat_setup() {
     habitat_extensions_storage="$habitat_storage/extensions"
     habitat_settings="$habitat_deps/settings"
     habitat_lib_functions="$habitat_lib/functions"
-    habitat_lib_themes="$habitat_lib/functions"
+    habitat_lib_themes="$habitat_lib/themes"
 
     # Specific Files
     habitat_config="$habitat_storage/habitat.cfg"
     habitat_config_deps="$habitat_storage/extensions.cfg"
     habitat_log="$habitat_tmp/habitat.log"
+    habitat_lib_base_theme="$habitat_lib_themes/base.sh"
 
     # User Config
     habitat_settings_config="$habitat_settings/habitat.cfg"
@@ -43,9 +44,11 @@ function habitat_setup() {
     rm -rf "$habitat_tmp/*"
 
     # Source all the portable functions
+    local function_file
     for function_file in $(find "$habitat_lib_functions" -type f ); do
         source "$function_file"
     done
+    source "$habitat_lib_base_theme"
 
     log_header "Setup"
     log "Started at $habitat_start_date"
@@ -58,7 +61,7 @@ function habitat_setup() {
     pathadd "$habitat_lib"
     pathadd "$habitat_settings_bin"
 
-    os="UNKNOWN"
+    local os="UNKNOWN"
     if is_installed "sw_vers" >/dev/null; then
         os="OSX $(sw_vers -productVersion)"
     elif is_installed 'lsb_release' >/dev/null; then
@@ -74,6 +77,7 @@ function habitat_setup() {
 
 function habitat_dependancy_management() {
     local config="$1"
+    local key
     for key in $(get_all_config "$config"); do
         local value="$(get_config "$key" "$config")"
         habitat_update_dependancy "$value"
@@ -102,6 +106,7 @@ function habitat_configuration() {
     if [ "$(get_config "bash_theme" "$config")" = "ask" ]; then
         info "Which bash theme do you want? (hit enter for default)"
     fi
+    source "$habitat_lib_themes/default.sh"
 
     if [ "$(get_config "extensions" "$config")" = "ask" ]; then
         info "Do you want to use extensions? (hit enter for default)"
@@ -117,7 +122,9 @@ function habitat_configuration() {
 }
 
 function habitat_deployment() {
-
+    local search_dir
+    local file_to_link
+    local file_to_source
     for search_dir in "${habitat_symlink_search[@]}"; do
         for file_to_link in `find_this '*.syml' "$search_dir"`; do
             local dest="$HOME"/."$(basename "${file_to_link%.*}")"
@@ -162,6 +169,15 @@ function habitat_cleanup() {
     log "All done after $(($habitat_end_seconds-$habitat_start_seconds))"
 
     # extension cleanup
+    local habitat_var
+    for habitat_var in $( ( set -o posix ; set ) | grep "habitat_" | sed -e "s~=.*$~~" ); do
+        unset "$habitat_var"
+    done
+
+    local habitat_function
+    for habitat_function in $(typeset -F | grep habitat_ | sed -e 's~declare -f ~~'); do
+        unset -f "$habitat_function"
+    done
 }
 
 # Grab Args
@@ -180,11 +196,4 @@ habitat_deployment
 
 # Step 5: Cleanup
 habitat_cleanup
-
-for habitat_function in $(typeset -F | grep habitat_ | sed -e 's~declare -f ~~'); do
-    unset -f "$habitat_function"
-done
-
-
-
 
