@@ -57,3 +57,7 @@ Habitat uses a cli interface called habitat to follow a five step proccess in se
 # TODO
 * is it worth it to have some sort of daemon checking for setting updates, and auto running aura?
 * Give all functions args
+* Give all functions help
+* Should themes be .sour?
+* Should functions be .sour?
+* check command return codes
