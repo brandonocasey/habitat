@@ -14,6 +14,8 @@ function habitat_setup() {
     habitat_extensions="$habitat_deps/extensions"
     habitat_extensions_storage="$habitat_storage/extensions"
     habitat_settings="$habitat_deps/settings"
+    habitat_lib_functions="$habitat_lib/functions"
+    habitat_lib_themes="$habitat_lib/functions"
 
     # Specific Files
     habitat_config="$habitat_storage/habitat.cfg"
@@ -29,7 +31,6 @@ function habitat_setup() {
     habitat_source_search=("$habitat_settings")
     habitat_symlink_search=("$habitat_settings")
 
-
     # for those comming functions
     custom_log_file="$habitat_log"
 
@@ -41,15 +42,17 @@ function habitat_setup() {
     unalias -a
     rm -rf "$habitat_tmp/*"
 
-    for function_file in $(find "$habitat_lib/" -type -f ); do
+    # Source all the portable functions
+    for function_file in $(find "$habitat_lib_functions" -type f ); do
         source "$function_file"
     done
+
     log_header "Setup"
     log "Started at $habitat_start_date"
 
     # Insure that we can run habitat again
     alias habitat="source $habitat_cli"
-    link_files "$habitat_cli" "$HOME/.bash_profile"
+    link_files "$habitat_backup" "$habitat_cli" "$HOME/.bash_profile"
 
     # Add to path with said helpful functions
     pathadd "$habitat_lib"
@@ -115,11 +118,11 @@ function habitat_configuration() {
 
 function habitat_deployment() {
 
-    for search_dir in "${habitat_source_search[@]}"; do
+    for search_dir in "${habitat_symlink_search[@]}"; do
         for file_to_link in `find_this '*.syml' "$search_dir"`; do
             local dest="$HOME"/."$(basename "${file_to_link%.*}")"
             log "linking $file_to_link to $dest"
-            link_files "$file_to_link" "$dest"
+            link_files "$habitat_backup" "$file_to_link" "$dest"
         done
     done
 
@@ -142,7 +145,7 @@ function habitat_deployment() {
     fi
     # Source all .bash files into shell
     log "Sourcing User Settings:"
-    for search_dir in "${habitat_symlink_search[@]}"; do
+    for search_dir in "${habitat_source_search[@]}"; do
         for file_to_source in `find_this '*.sour' "$search_dir"`; do
             log "$file_to_source"
             source "$file_to_source"

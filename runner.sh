@@ -12,12 +12,9 @@ assert_script="/tmp/assert.sh"
 stub_script="/tmp/stub.sh"
 
 
-source "$script_dir/lib/download"
-if [ ! -f "$assert_script" ]; then
+if [ ! -f "$assert_script" ] || [ ! -f "$stub_script" ]; then
+    source "$script_dir/lib/functions/download.sh"
     download "https://raw.githubusercontent.com/lehmannro/assert.sh/master/assert.sh" "$assert_script"
-fi
-
-if [ ! -f "$stub_script" ]; then
     # https://raw.githubusercontent.com/jimeh/stub.sh/master/stub.sh
     download  "https://raw.githubusercontent.com/BrandonOCasey/stub.sh/master/stub.sh" "$stub_script"
 fi
@@ -51,7 +48,7 @@ for FILE in "${subset[@]}"; do
     rm -rf "$tmp_dir"/*
     file_path="$( echo "$(dirname "$FILE")" | sed -e "s~$test_dir/~~" )"
     file="$(basename "${FILE%.*}")"
-    script_file="$( echo "$script_dir/$file_path/$file"* )"
+    script_file="$( echo "$script_dir/$file_path/$file."* )"
     if [ -f "$script_file" ]; then
         echo "*** Running Test $file_path/$file ***"
         (source "$script_file"; source "$FILE"; assert_end "$file_path/$file";)
