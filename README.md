@@ -12,11 +12,14 @@ Habitat uses a cli interface called habitat to follow a five step proccess in se
 * Start a record of how long habitat takes to run
 * export usefull variables into the users environment, like $OPERATING_SYSTEM
 * alias habitat to source the habitat script for easy setting refresh
+* Extension Setup
+* Settings Setup
 
 ## Step 2: Dependancy Management
 * Update Habitat if the user wants us to
 * Update Extensions if the user wants us to
 * Update User Settings if the user wants us to
+* Extension Dependancy Management
 
 ## Step 3: Configuration
 * Ask the user a few first time questions, and store things in /storage/habitat.cfg
@@ -36,6 +39,10 @@ Habitat uses a cli interface called habitat to follow a five step proccess in se
 * Remove internal variables
 * remove internal functions
 * record how long habitat took to run
+
+# How do extensions work?
+Extensions are a big part of every step in the life cycle of a program
+
 
 # Functions:
 
