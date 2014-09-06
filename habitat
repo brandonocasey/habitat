@@ -1,6 +1,6 @@
 #! /usr/bin/env sh
 
-function habitat_setup() {
+function habitat_declare_vars() {
     # Base Folders
     habitat_base="$HOME/.habitat"
     habitat_cli="$habitat_base/habitat"
@@ -40,27 +40,38 @@ function habitat_setup() {
     habitat_start_seconds="$(date +%s)"
     habitat_start_date="$(date)"
 
-    # Assure that we have a good environment
-    unalias -a
-    rm -rf "$habitat_tmp"/*
+}
+function habitat_setup() {
+    habitat_declare_vars
+
 
     # Source all the portable functions
     local function_file
     for function_file in $(find "$habitat_lib_functions" -type f ); do
         source "$function_file"
+        if [ "$?" -ne "0" ]; then
+            echo "We appear to have failed in sourcing $function_file"
+        fi
     done
-    source "$habitat_lib_base_theme"
 
+    rm -rf "$habitat_tmp"/*
     log_header "Setup"
     log "Started at $habitat_start_date"
 
+    # Assure that we have a good environment
+    log_result unalias -a
+
+    # Source the base theme for color definitions
+    log_result source "$habitat_lib_base_theme"
+
+
     # Insure that we can run habitat again
     alias habitat="source $habitat_cli"
-    link_files "$habitat_cli" "$HOME/.bash_profile"
+    log_result link_files "$habitat_cli" "$HOME/.bash_profile"
 
     # Add to path with said helpful functions
-    pathadd "$habitat_lib"
-    pathadd "$habitat_settings_bin"
+    log_result pathadd "$habitat_lib"
+    log_result pathadd "$habitat_settings_bin"
 
     local os="UNKNOWN"
     if is_installed "sw_vers" >/dev/null; then
@@ -204,3 +215,4 @@ habitat_deployment
 # Step 5: Cleanup
 habitat_cleanup
 
+return 0

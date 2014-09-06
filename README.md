@@ -61,3 +61,4 @@ Habitat uses a cli interface called habitat to follow a five step proccess in se
 * Should themes be .sour?
 * Should functions be .sour?
 * check command return codes
+* export colors

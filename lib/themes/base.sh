@@ -62,3 +62,5 @@ if command -v 'tput' > /dev/null; then
     RESET="$(tput sgr0)"
     DIM="$(tput dim)"
 fi
+
+return 0
