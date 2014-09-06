@@ -1,14 +1,21 @@
 #! /bin/sh
 
 function link_files () {
-    if [ "$#" -ne "3" ] || [ -z "$1" ] ||  [ -z "$2" ] ||  [ -z "$3" ]; then
-        echo "Must pass args <backup_dir> <source> <dest>"
+    if [ "$#" -lt "2" ] || [ -z "$1" ] ||  [ -z "$2" ] || [ "$#" -gt "3" ]; then
+        echo "Must pass args <source> <dest> <backup>"
         return 2
     fi
-    local backup_dir="$1"; shift
     local source="$1"; shift
     local dest="$1"; shift
-
+    local backup_dir
+    if [ -n "$1" ]; then
+        backup_dir="$1"; shift
+    elif [ -n "$custom_backup_dir" ]; then
+        backup_dir="$custom_backup_dir"
+    else
+         echo "Must pass args <source> <dest> <backup>"
+        return 2
+    fi
     exec 3>&1
     if [ ! -d "$backup_dir" ]; then
         mkdir -p "$backup_dir"
@@ -21,7 +28,6 @@ function link_files () {
             mv "$dest" "$backup_dir"
         fi
     fi
-        # Close our file descriptor
     exec 3>&-
     ln -s "$source" "$dest"
 }
