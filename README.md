@@ -46,6 +46,7 @@ Extensions are a big part of every step in the life cycle of a program
 
 # Functions:
 
+
 # Binaries:
 
 # Variables:
@@ -69,3 +70,6 @@ Extensions are a big part of every step in the life cycle of a program
 * Should functions be .sour?
 * check command return codes
 * export colors
+* mimic Perl functions
+* change functions to binaries
+* add_to_string replace pathadd
