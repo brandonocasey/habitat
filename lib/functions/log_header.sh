@@ -1,9 +1,8 @@
 #! /bin/sh
 
-function log_header() {
     if [ "$#" -ne "1" ] || [ -z "$1" ]; then
         echo "Must pass a non-blank variable to log_header"
-        return 2
+        exit 2
     fi
     if [ -n "$custom_log_file" ]; then
         if [ ! -f "$custom_log_file" ]; then
@@ -14,5 +13,4 @@ function log_header() {
         printf "\n* ----------$1---------- *\n"
     fi
 
-    return 0
-}
+    exit 0

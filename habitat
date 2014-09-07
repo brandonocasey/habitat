@@ -1,20 +1,22 @@
 #! /usr/bin/env sh
 
-function habitat_declare_vars() {
+function habitat_pre_setup() {
     # Base Folders
     habitat_base="$HOME/.habitat"
     habitat_cli="$habitat_base/habitat"
     habitat_deps="$habitat_base/deps"
     habitat_storage="$habitat_base/storage"
     habitat_lib="$habitat_base/lib"
+    habitat_test="$habitat_base/t"
 
     # Specific Folders
+    habitat_test_tmp="$habitat_storage/test"
     habitat_tmp="$habitat_storage/tmp"
     habitat_backup="$habitat_storage/backup"
     habitat_extensions="$habitat_deps/extensions"
     habitat_extensions_storage="$habitat_storage/extensions"
     habitat_settings="$habitat_deps/settings"
-    habitat_lib_functions="$habitat_lib/functions"
+    habitat_lib_bin="$habitat_lib/bin"
     habitat_lib_themes="$habitat_lib/themes"
 
     # Specific Files
@@ -34,7 +36,6 @@ function habitat_declare_vars() {
 
     # for those comming functions
     custom_log_file="$habitat_log"
-    custom_backup_dir="$habitat_backup"
 
     # The date
     habitat_start_seconds="$(date +%s)"
@@ -42,17 +43,6 @@ function habitat_declare_vars() {
 
 }
 function habitat_setup() {
-    habitat_declare_vars
-
-
-    # Source all the portable functions
-    local function_file
-    for function_file in $(find "$habitat_lib_functions" -type f ); do
-        source "$function_file"
-        if [ "$?" -ne "0" ]; then
-            echo "We appear to have failed in sourcing $function_file"
-        fi
-    done
 
     rm -rf "$habitat_tmp"/*
     log_header "Setup"
@@ -67,7 +57,7 @@ function habitat_setup() {
 
     # Insure that we can run habitat again
     alias habitat="source $habitat_cli"
-    log_result link_files "$habitat_cli" "$HOME/.bash_profile"
+    log_result link_files "$habitat_cli" "$HOME/.bash_profile" "$habitat_backup"
 
     # Add to path with said helpful functions
     log_result pathadd "$habitat_lib"
@@ -144,7 +134,7 @@ function habitat_deployment() {
         for file_to_link in `find_this '*.syml' "$search_dir"`; do
             local dest="$HOME"/."$(basename "${file_to_link%.*}")"
             log "linking $file_to_link to $dest"
-            link_files "$file_to_link" "$dest"
+            link_files "$file_to_link" "$dest" "$habitat_backup"
         done
     done
 
@@ -198,7 +188,39 @@ function habitat_cleanup() {
     done
 }
 
+function habitat_usage() {
+    echo
+    echo "    habitat <options>"
+    echo
+    echo "    h|help     show this help"
+    echo "    i|install  install a dependancy to your environment"
+    echo "    s|save     save/install a dependancy to your environment list"
+    echo "    u|update   update your environment based your dependancies"
+    echo "    d|debug    show debug output"
+    echo
+}
+
+# Pre-Setup: #define section :)
+habitat_pre_setup
+
 # Grab Args
+while [ "$#" -gt "0" ]; do
+    arg="$1"; shift
+    if regex_match "$arg" "^\-\-?(h|help)$"; then
+        habitat_usage
+        return 0
+    elif regex_match "$arg" "^\-\-?(i|install)$"; then
+        habitat_unit_test
+    elif regex_match "$arg" "^\-\-?(s|save)$"; then
+        habitat_unit_test
+    elif regex_match "$arg" "^\-\-?(u|update)$"; then
+        habitat_unit_test
+    elif regex_match "$arg" "^\-\-?(d|debug)$"; then
+        habitat_unit_test
+    else
+        echo "Invalid arg $arg"
+    fi
+done
 
 # Step 1: Setup
 habitat_setup
