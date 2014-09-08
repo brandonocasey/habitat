@@ -4,11 +4,11 @@
 /storage/tmp/*
 !/storage/tmp/.gitkeep
 
-/storage/extensions/*
-!/storage/extensions/.gitkeep
+/storage/logs/*
+!/storage/logs/.gitkeep
 
-/deps/settings/*
-!/deps/settings/.gitkeep
+/settings/*
+!/settings/.gitkeep
 
-/deps/extensions/*
-!/deps/extensions/.gitkeep
+/extensions/*
+!/extensions/.gitkeep

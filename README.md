@@ -7,15 +7,18 @@ Habitat is an attempt to unify a users settings across 1 or n number of boxes so
 It does this by providing a framework for setting up your shell by using a settings repos, as well as habitat dependancies.
 
 # Overview
-The habitat cli interface follows a three step proccess in setting up your environment.
+The habitat cli interface follows a four step proccess in setting up your environment.
 
-## Step 1: Prep/Dependancy management
+## Step 1: Prep/Grab Args
 * add /lib/bin to the path
 * setup habitat file structure variables
 * unalias everything so alias renames are forgotten every run, meaning we don't have to worry about old ones lingering
-* setup helpful variables like operating system
 * Start a record of how long habitat takes to run
+* Grab the args from the user
+* setup helpful variables like operating system
 * alias habitat to source the habitat script for easy setting refresh
+
+## Step 2: Dependancy management
 * Ask questions about installs (first time)
     1. Setting repo link, or example, or new
     2. Do you want updates, y or n
@@ -25,7 +28,7 @@ The habitat cli interface follows a three step proccess in setting up your envir
 * Update/Install User Settings Repo if the user wants us to
 
 
-## Step 2: Extensions
+## Step 3: Extensions
 ### A: Setup
 * Run extension setup
 * Should setup variables that the extension will need
@@ -38,7 +41,7 @@ The habitat cli interface follows a three step proccess in setting up your envir
 ### C: Cleanup (optional)
 * Run extension cleanup function, to cleanup non standard variables/functions and files that were created
 
-## Step 3: Cleanup
+## Step 4: Cleanup
 * Tell the user about backups that exist
 * Remove internal variables
 * remove internal functions
@@ -53,12 +56,15 @@ Extensions are a big part of every step in the life cycle of a program
 # Variables:
 
 # Options:
-* --install   - Install an additional extension via a github user/repo pair
-* --add       - alias for install
-* --save      - Used in conjunction with --install to save that extension to your environment
-* --remove    - remove an extension, deleting its folder, entries in the user extension.cfg, and ask the user if they wish to keep config files
-* --uninstall - alias for remove
-* --help      - view help on using the cli
+* if not options are passed then habitat will configure the environment
+* source ./habitat <options>
+* --example-settings - Use the example settings repo as a base
+* --new-settings     - Create a new local settings repo
+* --settings         - Install setting from an existing repo
+* --install          - Install an additional extension via a github user/repo pair
+* --remove           - remove an extension, deleting its folder, entries in the user extension.cfg, and ask the user if they wish to keep config files
+* --uninstall        - alias for remove
+* --help             - view help on using the cli
 
 # Planned Extensions
 * Vim
@@ -84,7 +90,7 @@ see Extending.md
 ### Milestone 1 - Documentation/Base
 * ~~Create the Documentation for extending and the readme~~
 * ~~Add several portable binaries~~
-* Add a habitat cli
+* Add a stubbed habitat cli
 * determine what variables would be usefull to the user
 
 ### Milestone 2 - User Settings
