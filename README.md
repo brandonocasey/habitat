@@ -1,7 +1,7 @@
 # What is Habitat?
 Habitat is an attempt to unify a users settings across 1 or n number of boxes so that they feel right at home on whatever box they work on. It also seeks to make moving between, and porting you specific settings to, different operating sysems easy.
 
-It does this by providing a framework for seting up your shell through habitat extensions, and by managing those extensions.
+It does this by providing a framework for setting up your shell by using a settings repos, as well as habitat dependancies.
 
 # Overview
 Habitat uses a cli interface called habitat to follow a five step proccess in setting up your environment.
