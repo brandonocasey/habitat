@@ -80,13 +80,14 @@ see Extending.md
 * export colors
 * mimic Perl functions, or use perl?
 
-## Milestone 1 - Documentation/Base
+## Alpha -> Beta
+### Milestone 1 - Documentation/Base
 * ~~Create the Documentation for extending and the readme~~
 * ~~Add several portable binaries~~
 * Add a habitat cli
 * determine what variables would be usefull to the user
 
-## Milestone 2 - User Settings
+### Milestone 2 - User Settings
 * Have the ability to manage users settings from a repo (svn, git, etc)
     * update
     * install
@@ -96,13 +97,24 @@ see Extending.md
 * Solidify the extension API
 * make sure nothing uninteded goes to the users environment
 
-## Milestone 3 - Extensions
+### Milestone 3 - Extensions
 * Habitat should be able to manage an extension (same steps as user repo)
 * Extensions should be cleaned up automatically
 * Extensions should be run successfully
 * determine if anything else would be helpful for the user to have
 * create an extension to test with
 
-## Milestone 4 - Unit test
+
+## Beta -> Release
+### Milestone 1 - Unit test
 * Unit test habitat and the portable binaries
 * Use those unit tests on multiple enviornments/shells to make everything more robust
+
+### Milestone 2 - Comments
+* Comment everything using a standard
+* create a website using that comment standard
+
+### Milestone 3 - Website
+* Develop a website to register extensions with
+* implement cli searching for extensions
+* switch extensions over from repository urls only to repository urls or project names from the website
