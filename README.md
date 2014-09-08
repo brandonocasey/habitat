@@ -1,37 +1,34 @@
 # What is Habitat?
-Habitat is an attempt to unify a users settings across 1 or n number of boxes so that they feel right at home on whatever box they work on. It also seeks to make moving between, and porting you specific settings to, differnt operating sysems easy.
+Habitat is an attempt to unify a users settings across 1 or n number of boxes so that they feel right at home on whatever box they work on. It also seeks to make moving between, and porting you specific settings to, different operating sysems easy.
+
+It does this by providing a framework for seting up your shell through habitat extensions, and by managing those extensions.
 
 # Overview
 Habitat uses a cli interface called habitat to follow a five step proccess in setting up your environment.
 
-## Step 1: Setup
-* Source all file in the /lib folder to get a bunch of portable functions
-* Add a directory to the path if it doesn't exist /deps/settings/bin
-* unalias everything so that if you change your alias, the old one will be gone when you reset your settings
-* remove everything in the /tmp directory
-* Start a record of how long habitat takes to run
-* export usefull variables into the users environment, like $OPERATING_SYSTEM
-* alias habitat to source the habitat script for easy setting refresh
-* Extension Setup
-* Settings Setup
+## Step 1: Setup/Dependancy management
+* add /lib/bin to the path
+* setup habitat file structure variables
+* Ask questions about installs (first time) 
+    1. Setting repo link, or example, or new
+    2. Do you want updates, y or n
+    3. if yes to above how? auto, ask, auto silent
+* Update/Install Habitat if the user wants us to
+* Update/Install Extensions if the user wants us to
+* Update/Install User Settings Repo if the user wants us to
 
-## Step 2: Dependancy Management
-* Update Habitat if the user wants us to
-* Update Extensions if the user wants us to
-* Update User Settings if the user wants us to
-* Extension Dependancy Management
+
+## Step 2: Prep
+* setup helpful variables like operating system
+* unalias  everything so alias renames are forgotten every run, meaning we don't have to worry about old ones lingering
+* Start a record of how long habitat takes to run
+* alias habitat to source the habitat script for easy setting refresh
+* Run Extension Prep
 
 ## Step 3: Configuration
-* Ask the user a few first time questions, and store things in /storage/habitat.cfg
-	1. Where is you setting repo? (hit enter for default) (we will read user config for next answers if possible)
-	2. Which Bash theme do you want?
-	3. Do you want to install additional extensions? (can be in user setting repo, or done later)
-	4. How do you want to update? (automatic, always_ask, never)
 * Run extension setup/configuration
 
 ## Step 4: Deployment
-* Source all settings files with a .sour extension into your environment
-* Symlink all files with a .syml extension to your home directory
 * Run extension deploy steps
 
 ## Step 5: Cleanup
@@ -39,6 +36,7 @@ Habitat uses a cli interface called habitat to follow a five step proccess in se
 * Remove internal variables
 * remove internal functions
 * record how long habitat took to run
+* remove everything in the /storage/tmp directory
 
 # How do extensions work?
 Extensions are a big part of every step in the life cycle of a program
