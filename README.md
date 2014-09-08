@@ -73,8 +73,36 @@ Extensions are a big part of every step in the life cycle of a program
 see Extending.md
 
 # TODO
+## General
 * Give all binaires argument parsing
 * Give all binaries a help
 * check command return codes
 * export colors
 * mimic Perl functions, or use perl?
+
+## Milestone 1 - Documentation/Base
+* ~~Create the Documentation for extending and the readme~~
+* ~~Add several portable binaries~~
+* Add a habitat cli
+* determine what variables would be usefull to the user
+
+## Milestone 2 - User Settings
+* Have the ability to manage users settings from a repo (svn, git, etc)
+    * update
+    * install
+    * change
+    * new
+    * example
+* Solidify the extension API
+* make sure nothing uninteded goes to the users environment
+
+## Milestone 3 - Extensions
+* Habitat should be able to manage an extension (same steps as user repo)
+* Extensions should be cleaned up automatically
+* Extensions should be run successfully
+* determine if anything else would be helpful for the user to have
+* create an extension to test with
+
+## Milestone 4 - Unit test
+* Unit test habitat and the portable binaries
+* Use those unit tests on multiple enviornments/shells to make everything more robust
