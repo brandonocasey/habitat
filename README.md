@@ -9,7 +9,7 @@ Habitat uses a cli interface called habitat to follow a five step proccess in se
 ## Step 1: Setup/Dependancy management
 * add /lib/bin to the path
 * setup habitat file structure variables
-* Ask questions about installs (first time) 
+* Ask questions about installs (first time)
     1. Setting repo link, or example, or new
     2. Do you want updates, y or n
     3. if yes to above how? auto, ask, auto silent
@@ -53,9 +53,11 @@ Extensions are a big part of every step in the life cycle of a program
 
 # Extensions
 * Vim
-	* Vim Plugins
+    * Vim Plugins
 * Binaries
 * Bash Completion
+* .sour
+* .syml
 
 # Extending:
 /storage/extensions/<name>
