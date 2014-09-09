@@ -1,6 +1,6 @@
 #! /bin/sh
 
-if [ "$#" -ne "2" ] || [ -z "$2" ] || [ -z "$3" ]; then
+if [ "$#" -ne "3" ] || [ -z "$2" ] || [ -z "$3" ]; then
 	echo 'Usage:'
 	echo "  add_to_string <string> <thing> <deliminator>"
 	echo
@@ -12,11 +12,14 @@ fi
 string="$1"; shift
 add="$1"; shift
 deliminator="$1"; shift
+code=1
 
-if [ -n "$( echo "$string" | grep -E "(^|$deliminator)$add($deliminator|$)")" ]; then
+if [ -z "$( echo "$string" | grep -E "(^|$deliminator)$add($deliminator|$)")" ]; then
 	if [ -n "$string" ]; then
-		add=":$add"
+		add="$deliminator$add"
 	fi
 	string+="$add"
+	code=0
 fi
 echo "$string"
+exit "$code"

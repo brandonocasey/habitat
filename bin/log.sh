@@ -8,6 +8,7 @@ if [ -z "${1:-}" ]; then
 fi
 for var in "$@"; do
     var="$(echo "$var" | sed -e "s#$HOME#~#g")"
+    var="[$(date)] $var"
     # newline is seprate so that trailing newlines don't escape it
     if [ -n "$custom_log_file" ]; then
         if [ ! -f "$custom_log_file" ]; then
