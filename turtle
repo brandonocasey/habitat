@@ -66,66 +66,59 @@
 
 function habitat_pre_setup() {
     # Base Folders
-    habitat_base="$HOME/.habitat"
-    habitat_cli="$habitat_base/habitat"
-    habitat_storage="$habitat_base/storage"
-    habitat_test="$habitat_base/t"
-    habitat_bin="$habitat_base/bin"
-    habitat_extensions="$habitat_base/extensions"
-    habitat_settings="$habitat_base/settings"
+    export habitat_base="$HOME/.habitat"
+    export habitat_cli="$habitat_base/habitat"
+    export habitat_storage="$habitat_base/storage"
+    export habitat_test="$habitat_base/t"
+    export habitat_bin="$habitat_base/bin"
+    export habitat_extensions="$habitat_base/extensions"
+    export habitat_settings="$habitat_base/settings"
 
     # Specific Folders
-    habitat_tmp="$habitat_storage/tmp"
-    habitat_backup="$habitat_storage/backup"
-    habitat_logs="$habitat_base/logs"
-    habitat_configs="$habitat_settings/configs"
+    export habitat_tmp="$habitat_storage/tmp"
+    export habitat_backup="$habitat_storage/backup"
+    export habitat_logs="$habitat_storage/logs"
+    export habitat_configs="$habitat_settings/configs"
 
     # Specific Files
-    habitat_log_file="$habitat_logs/habitat.log"
-    habitat_config_file="$habitat_settings/habitat.cfg"
-    habitat_settings_bin="$habitat_settings/bin"
+    export turtle_log_file="$habitat_logs/turtle.log"
+    export habitat_config_file="$habitat_settings/habitat.cfg"
+    export habitat_settings_bin="$habitat_settings/bin"
 
     # For things to log to
-    custom_log_file="$habitat_log"
+    export custom_log_file="$turtle_log_file"
 
     # The date
-    habitat_start_seconds="$(date +%s)"
-    habitat_start_date="$(date)"
+    export habitat_start_seconds="$(date +%s)"
 
-}
-function habitat_setup() {
+    : > "$turtle_log_file"
+    # Assure that we have a good environment
+    "$habitat_bin"/log_header.sh "Prep"
+    "$habitat_bin"/log_result.sh unalias -a
+
+    alias habitat="source $habitat_cli"
+    alias turtle="source $habitat_cli"
+    "$habitat_bin"/log.sh "Added turtle and habitat alias"
 
     rm -rf "$habitat_tmp"/*
-    log_header "Setup"
-    log "Started at $habitat_start_date"
+    "$habitat_bin"/log.sh "Cleaned $habitat_tmp"
 
-    # Assure that we have a good environment
-    log_result unalias -a
-
-    # Source the base theme for color definitions
-    log_result source "$habitat_lib_base_theme"
-
-
-    # Insure that we can run habitat again
-    alias habitat="source $habitat_cli"
-    log_result link_files "$habitat_cli" "$HOME/.bash_profile" "$habitat_backup"
-
-    # Add to path with said helpful functions
-    log_result pathadd "$habitat_lib"
-    log_result pathadd "$habitat_settings_bin"
-
+    "$habitat_bin"/log_result.sh "$habitat_bin"/add_to_string.sh "$PATH" "$habitat_bin" ":"
+    log_result.sh link_files.sh "$habitat_cli" "$HOME/.bash_profile" "$habitat_backup"
     local os="UNKNOWN"
-    if is_installed "sw_vers" >/dev/null; then
+    if is_installed.sh "sw_vers" >/dev/null; then
         os="OSX $(sw_vers -productVersion)"
-    elif is_installed 'lsb_release' >/dev/null; then
+    elif is_installed.sh 'lsb_release' >/dev/null; then
         os="$(lsb_release -a | grep 'Description' | sed -e 's/Description:\t//')"
     elif [ -f "/etc/*release*" ]; then
         os=$(cat /etc/*release*)
     elif [ -f "/etc/issue" ]; then
         os=$(cat /etc/issue)
     fi
-    log "Found that operating system is $os"
+    log.sh "Found that operating system is $os"
     export OPERATING_SYSTEM="$os"
+
+
 }
 
 function habitat_dependancy_management() {
@@ -279,18 +272,18 @@ while [ "$#" -gt "0" ]; do
 done
 
 # Step 1: Setup
-habitat_setup
+#habitat_setup
 
 # Step 2: Dependancy Management
-habitat_dependancy_management
+#habitat_dependancy_management
 
 # Step 3: Configuration
-habitat_configuration
+#habitat_configuration
 
 # Step 4: Deployment
-habitat_deployment
+#habitat_deployment
 
 # Step 5: Cleanup
-habitat_cleanup
+#habitat_cleanup
 
 return 0
