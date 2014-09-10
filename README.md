@@ -70,7 +70,7 @@ source ./habitat <options>
 | save             | pass this with remove/install to remove/add to the user extension config |
 | uninstall        | alias for remove                                                         |
 | add              | alias for install                                                        |
-| help             |                                                                          |
+| help             | show this help                                                           |
 
 # Planned Extensions
 * Vim
