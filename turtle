@@ -121,10 +121,13 @@ function habitat_prep() {
 
 }
 
-function habitat_dependancy_management() {
-    log_header.sh "Dependancy Management"
+function habitat_first_time_setup() {
+    local settings=""
+    if [ -n "$1" ]; then
+        settings="$1"
+    fi
     if [ ! -f "$habitat_config_file" ]; then
-        local answer="$(user_choice "Where is your settings repo?" 'example' 'new' '\w+/\w+' '(git|http)://')"
+        local answer="$(user_choice.sh "Where is your settings repo?" 'example' 'new' '\w+/\w+' '(git|http)://')"
         if regex_match.sh "$answer" "^example$" "0"; then
             answer="brandonocasey/habitat-settings-example"
         fi
@@ -133,28 +136,36 @@ function habitat_dependancy_management() {
         else
             local settings="$answer"
         fi
-        answer="$(user_choice "Do you want updates?" 'y|yes' 'n|no')"
+        answer="$(user_choice.sh "Do you want updates?" 'y|yes' 'n|no')"
         local final_answer
         if regex_match.sh "$answer" "^y|yes$" "0"; then
-            final_answer="$(user_choice "How do you want updates?" 'auto' 'ask' 'inform' 'manual')"
+            final_answer="$(user_choice.sh "How do you want updates?" 'auto' 'ask' 'inform' 'manual')"
         else
             final_answer="manual"
         fi
-        change_config "_habitat_update_type" "$final_answer"
-    else
-        # key = name, minus habitat on the front
-        # value = repo url/repo name and version
-        for key in $(get_all_config "$config"); do
-            if ! regex_match.sh "$key" "^_habitat"; then
-                local value="$(get_config "$key" "$config")"
-                if [ ! -d "$habitat_extensions/$key" ]; then
-                    async_command.sh grab_repo.sh "$answer"
-                else
-                    async_command.sh update_repo.sh "$habitat_extensions/$key"
-                fi
-            fi
-        done
+        set_config.sh "_habitat_update_type" "$final_answer" "$habitat_config_file"
     fi
+}
+
+function habitat_dependancy_management() {
+    log_header.sh "Dependancy Management"
+    # key = name, minus habitat on the front
+    # value = repo url/repo name and version
+
+    # update old
+    async_command.sh update_repo.sh "$habitat_settings"
+
+    # install new
+    for key in $(get_all_config.sh "$habitat_config_file"); do
+        if ! regex_match.sh "$key" "^_habitat"; then
+            local value="$(get_config.sh "$key" "$config")"
+            if [ ! -d "$habitat_extensions/$key" ]; then
+                async_command.sh grab_repo.sh "$answer"
+            else
+                async_command.sh update_repo.sh "$habitat_extensions/$key"
+            fi
+        fi
+    done
 }
 
 
@@ -264,6 +275,7 @@ while [ "$#" -gt "0" ]; do
 done
 
 # Step 2: Dependancy Management
+#habitat_first_time_setup
 habitat_dependancy_management
 
 # Step 3: Configuration
