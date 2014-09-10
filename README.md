@@ -89,6 +89,7 @@ see Extending.md
 * check command return codes
 * export colors
 * mimic Perl functions, or use perl?
+* async output all lines to log
 
 ## Alpha -> Beta
 ### Milestone 1 - Documentation/Base
