@@ -186,7 +186,7 @@ function habitat_dependancy_management() {
             local repo_location="$habitat_extensions/$key"
             if [ ! -d "$repo_location" ]; then
                 log.sh "Grabbing a new called $key with location $value"
-                async_command.sh grab_repo.sh "$value" "$habitat_extensions"
+                log_result.sh grab_repo.sh "$value" "$habitat_extensions"
             fi
         fi
     done
