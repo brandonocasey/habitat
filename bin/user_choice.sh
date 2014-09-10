@@ -5,16 +5,12 @@ if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
     exit 2
 fi
 answer="not_set"
-question="$1"; shift
-question+=" [$@]"
-
-# Open a new file descriptor that redirects to stdout
-# Allowing us to print to stdout in a function
-exec 3>&1
+question="$1 "; shift
+question+="$(echo "$@" | sed -e 's~ ~, ~g')"
 
 found=1
 while [ "$found" -ne "0" ]; do
-    echo "$question" 1>&3
+    echo "$question" 1>&2
     read -e answer
     for i in "$@"; do
         if [ -n "$(echo "$answer" | grep -E -i "$i")" ]; then
@@ -22,8 +18,5 @@ while [ "$found" -ne "0" ]; do
         fi
     done
 done
-
-# Close our file descriptor
-exec 3>&-
 
 echo "$answer"
