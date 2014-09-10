@@ -8,7 +8,6 @@
 !/storage/logs/.gitkeep
 
 /settings/*
-!/settings/.gitkeep
 
 /extensions/*
 !/extensions/.gitkeep
