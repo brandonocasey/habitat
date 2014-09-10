@@ -90,6 +90,7 @@ see Extending.md
 * export colors
 * mimic Perl functions, or use perl?
 * async output all lines to log
+* Multiple settings repos?
 
 ## Alpha -> Beta
 ### Milestone 1 - Documentation/Base
