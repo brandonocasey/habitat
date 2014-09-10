@@ -192,60 +192,72 @@ function habitat_dependancy_management() {
     done
 }
 
-
-function habitat_extension_action() {
-    local action="$1"
+# Extensions step
+habitat_get_current_extensions() {
     local dir
     for dir in "$habitat_extensions"/* ; do
         if [ -d "$dir" ]; then
-            export custom_log_file="$habitat_logs/${dir}.log"
-            "$dir_$action"
-            export custom_log_file="$habitat_log_file"
+            dir="$(regex_replace "$dir" "s~$habitat_extensions/habitat\-~~g")"
+            dir="$(regex_replace "$dir" "s~-~_~g")"
+            echo "$dir"
+        fi
+    done
+}
+
+habitat_get_current_extension_dirs() {
+    local dir
+    for dir in "$habitat_extensions"/* ; do
+        if [ -d "$dir" ]; then
+            echo "$dir"
         fi
     done
 }
 
 
-
-function habitat_cleanup() {
-    log_header "Cleanup"
-
-    unset "custom_log_file"
-    unset "custom_backup_dir"
-
-    log.sh "Cleaning up _habitat variables and functions"
-    local functions_to_unset=("$(typeset -F | grep "habitat_" | sed -e 's~declare -f ~~')")
-    local vars_to_unset=("$( ( set -o posix ; set ) | grep "habitat_" | sed -e "s~=.*$~~" )")
-
-
-
+habitat_extensions() {
+    log_header.sh "Extensions"
     local dir
-    for dir in "$habitat_extensions"/* ; do
-        if [ -d "$dir" ]; then
-            dir="$(regex_replace "$dir" "s~^habitat-~~g")"
-            dir="$(regex_replace "$dir" "s~-~_~g")"
-            log.sh "Cleaning up $dir variables and functions"
-            functions_to_unset+=("$(typeset -F | grep "$dir" | sed -e 's~declare -f ~~')")
-            vars_to_unset+=("$( ( set -o posix ; set ) | grep "$dir" | sed -e "s~=.*$~~" )")
+    for dir in $(habitat_get_current_extension_dirs) ; do
+        log.sh "Sourcing $dir/extension.habit"
+        source "$dir/extension.habit"
+    done
+
+    return
+
+    log_header.sh "Setup"
+    habitat_extension_action "setup"
+
+    log_header.sh "Deploy"
+    habitat_extension_action "deploy"
+
+    log_header.sh "Cleanup"
+    habitat_extension_action "cleanup"
+
+}
+ habitat_extension_action() {
+     local action="$1"; shift
+     local extension
+     for extension in $(habitat_get_current_extensions); do
+        if is_installed.sh "${extension}_$action"; then
+            log_header.sh "${extension}_$action"
+        else
+            log.sh "${extension}_$action was skipped as it does not exist"
         fi
-    done
+     done
+}
 
-    habitat_end_date="$(date)"
-    habitat_end_seconds="$(date +%s)"
+habitat_get_functions() {
+    local search="$1"; shift
+    local all_functions="$(declare -F | sed -e 's~declare -f ~~g')"
+    echo "$(echo "$all_functions" | grep -E "$search")"
+}
 
-    log "Habitat all done at $habitat_end_date"
-    log "All done after $(($habitat_end_seconds-$habitat_start_seconds))"
-
-
-    local var_to_unset
-    for var_to_unset in "$vars_to_unset[@]"; do
-        unset "$var_to_unset"
-    done
-
-    local function_to_unset
-    for function_to_unset in "$functions_to_unset[@]"; do
-        unset -f "$function_to_unset"
-    done
+habitat_get_vars() {
+    local search="$1"; shift
+    local everything=$( set -o posix ; set )
+    echo "$everything"
+    local all_variables="$( echo "$everything" | sed -e 's~=.*~~' | grep -E '^habitat')"
+    echo "$(echo "$all_variables" | grep -E "$search")"
 
 }
 
@@ -260,6 +272,47 @@ function habitat_usage() {
     echo "    d|debug    show debug output"
     echo
 }
+
+function habitat_cleanup() {
+    log_header.sh "Cleanup"
+
+    log.sh "Cleaning up habitat_ variables and functions"
+
+
+    local func
+    while read -r func; do
+        log.sh "Unsetting $func"
+        unset -f "$func"
+    done <<< "`habitat_get_functions "^habitat"`"
+    local dir
+    for dir in $(habitat_get_current_extensions); do
+        log.sh "Cleaning up ${dir}_ variables and functions"
+        while read -r extension_function; do
+            log.sh "Unsetting $extension_function"
+            unset -f "$extension_function"
+        done <<< "`habitat_get_functions "^${dir}_"`"
+    done
+
+    log.sh "Going to attempt cleanup of vars $vars_to_unset"
+    log.sh "Going to attempt cleanup of functions $functions_to_unset"
+
+    habitat_end_date="$(date)"
+    habitat_end_seconds="$(date +%s)"
+
+    log.sh "Habitat all done at $habitat_end_date"
+    log.sh "All done after $(($habitat_end_seconds-$habitat_start_seconds))"
+
+
+
+    local function_to_unset
+    while read -r function_to_unset; do
+        unset -f "$function_to_unset"
+    done <<< "$functions_to_unset"
+
+
+    unset "custom_log_file"
+}
+
 
 # Step #1: Prep/Grab Args
 
@@ -294,15 +347,7 @@ done
 habitat_dependancy_management
 
 # Step 3: Extensions
-## A Setup
-habitat_extension_action "setup"
-
-## B Deploy
-habitat_extension_action "deploy"
-
-## C Cleanup
-habitat_extension_action "cleanup"
-
+habitat_extensions
 
 # Step 4: Cleanup
 habitat_cleanup
