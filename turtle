@@ -147,31 +147,37 @@ function habitat_first_time_setup() {
     fi
 }
 
-function habitat_settings_update() {
-echo "add"
-}
-
-function habitat_dependancies_update() {
-echo "add"
-}
-
 function habitat_dependancy_management() {
     log_header.sh "Dependancy Management"
     # key = name, minus habitat on the front
     # value = repo url/repo name and version
 
-    # update old
-    async_command.sh update_repo.sh "$habitat_settings"
+    # update existing
+    local repo_update_list=("$habitat_settings")
+    local extension
+    for extension in "$habitat_extensions"/*; do
+        if [ -d "$extension" ]; then
+            repo_update_list+=("$extension")
+        fi
+    done
+
+
+    local update_dir
+    for update_dir in "${repo_update_list[@]}"; do
+        log.sh "Doing an async update for $update_dir"
+        async_command.sh update_repo.sh "$update_dir"
+    done
+
 
     # install new
     local key
     for key in $(get_all_config.sh "$habitat_config_file"); do
         if ! regex_match.sh "$key" "^_habitat"; then
-            local value="$(get_config.sh "$key" "$config")"
-            if [ ! -d "$habitat_extensions/$key" ]; then
-                async_command.sh grab_repo.sh "$answer"
-            else
-                async_command.sh update_repo.sh "$habitat_extensions/$key"
+            local value="$(get_config.sh "$key" "$habitat_config_file")"
+            local repo_location="$habitat_extensions/$key"
+            if [ ! -d "$repo_location" ]; then
+                log.sh "Grabbing a new called $key with location $value"
+                async_command.sh grab_repo.sh "$value" "$habitat_extensions"
             fi
         fi
     done
