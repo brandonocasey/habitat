@@ -22,7 +22,7 @@ The habitat cli is called turtle and it follows a four step proccess in setting 
 * Ask questions about installs (first time)
     1. Setting repo link, or example, or new
     2. Do you want updates, y or n
-    3. if yes to above how? auto, ask, auto silent
+    3. if yes to above how? auto, ask, inform, nevermind
 * Update/Install Habitat Framework if the user wants us to
 * Update/Install Extensions if the user wants us to
 * Update/Install User Settings Repo if the user wants us to

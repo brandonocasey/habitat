@@ -64,7 +64,7 @@
 #fi
 
 
-function habitat_pre_setup() {
+function habitat_prep() {
     # Base Folders
     export habitat_base="$HOME/.habitat"
     export habitat_cli="$habitat_base/habitat"
@@ -81,17 +81,17 @@ function habitat_pre_setup() {
     export habitat_configs="$habitat_settings/configs"
 
     # Specific Files
-    export turtle_log_file="$habitat_logs/turtle.log"
-    export habitat_config_file="$habitat_settings/habitat.cfg"
+    export habitat_log_file="$habitat_logs/turtle.log"
+    export habitat_config_file="$habitat_settings/turtle.cfg"
     export habitat_settings_bin="$habitat_settings/bin"
 
     # For things to log to
-    export custom_log_file="$turtle_log_file"
+    export custom_log_file="$habitat_log_file"
 
     # The date
     export habitat_start_seconds="$(date +%s)"
 
-    : > "$turtle_log_file"
+    : > "$habitat_log_file"
     # Assure that we have a good environment
     "$habitat_bin"/log_header.sh "Prep"
     "$habitat_bin"/log_result.sh unalias -a
@@ -122,52 +122,41 @@ function habitat_pre_setup() {
 }
 
 function habitat_dependancy_management() {
-    log_header "Dependancy Management"
-    local config="$1"
-    local key
-    for key in $(get_all_config "$config"); do
-        local value="$(get_config "$key" "$config")"
-        habitat_update_dependancy "$value"
-    done
+    log_header.sh "Dependancy Management"
+    if [ ! -f "$habitat_config_file" ]; then
+        local answer="$(user_choice "Where is your settings repo?" 'example' 'new' '\w+/\w+' '(git|http)://')"
+        if regex_match.sh "$answer" "^example$" "0"; then
+            answer="brandonocasey/habitat-settings-example"
+        fi
+        if [ "$answer" = "new" ]; then
+            : > "$habitat_config_file"
+        else
+            local settings="$answer"
+        fi
+        answer="$(user_choice "Do you want updates?" 'y|yes' 'n|no')"
+        local final_answer
+        if regex_match.sh "$answer" "^y|yes$" "0"; then
+            final_answer="$(user_choice "How do you want updates?" 'auto' 'ask' 'inform' 'manual')"
+        else
+            final_answer="manual"
+        fi
+        change_config "habitat_update_type" "$final_answer"
+    else
+        # key = name, minus habitat on the front
+        # value = repo url/repo name and version
+        for key in $(get_all_config "$config"); do
+            if ! regex_match.sh "$key" "^habitat_"; then
+                local value="$(get_config "$key" "$config")"
+                if [ ! -d "$habitat_extensions/$key" ]; then
+                    async_command.sh grab_repo.sh "$answer"
+                else
+                    async_command.sh update_repo.sh "$habitat_extensions/$key"
+                fi
+            fi
+        done
+    fi
 }
 
-function habitat_update_dependancy() {
-    local dir="$1"
-    if [ -d "$dir/.svn" ]; then
-        log "Async update for SVN"
-        async_command "svn up $dir" "$habitat_log"
-    fi
-    if [ -d "$dir/.git" ]; then
-        log "Async update for GIT"
-        async_command "(cd $dir && git pull)" "$habitat_log"
-    fi
-}
-
-
-function habitat_configuration() {
-    log_header "Configuration"
-    # going to have to loop through all 4+ configs here
-    if [ "$(get_config "settings_repo" "$config")" = "ask" ]; then
-        info "Where is your settings repo? (hit enter to use default)"
-    fi
-
-    if [ "$(get_config "bash_theme" "$config")" = "ask" ]; then
-        info "Which bash theme do you want? (hit enter for default)"
-    fi
-    habitat_source_search+=("$habitat_lib_themes/default.sour")
-
-    if [ "$(get_config "extensions" "$config")" = "ask" ]; then
-        info "Do you want to use extensions? (hit enter for default)"
-    fi
-
-    if [ "$(get_config "update" "$config")" = "ask" ]; then
-        info "How do you want to update: auto, ask, or never? (enter for auto)"
-    fi
-
-    # extension setup
-    # extension config
-
-}
 
 function habitat_deployment() {
     log_header "Deployment"
@@ -211,6 +200,7 @@ function habitat_deployment() {
     # extension deployment
 
 }
+
 function habitat_cleanup() {
     log_header "Cleanup"
     habitat_end_date="$(date)"
@@ -221,8 +211,8 @@ function habitat_cleanup() {
     unset "custom_log_file"
     unset "custom_backup_dir"
     # extension cleanup
-    local habitat_var
-    for habitat_var in $( ( set -o posix ; set ) | grep "habitat_" | sed -e "s~=.*$~~" ); do
+    local var_to_unset
+    for var_to_unset in $( ( set -o posix ; set ) | grep "habitat_" | sed -e "s~=.*$~~" ); do
         unset "$habitat_var"
     done
 
@@ -244,38 +234,37 @@ function habitat_usage() {
     echo
 }
 
-# Pre-Setup: #define section :)
-habitat_pre_setup
+# Step #1: Prep/Grab Args
+
+# Prep
+habitat_prep
 
 # Grab Args
 while [ "$#" -gt "0" ]; do
     arg="$1"; shift
-    if regex_match "$arg" "^\-\-?(help)$"; then
+    if regex_match.sh "$arg" "^\-\-?(help)$"; then
         habitat_show_usage="0"
-    elif regex_match "$arg" "^\-\-?(new-settings)$"; then
+    elif regex_match.sh "$arg" "^\-\-?(new-settings)$"; then
         habitat_new_settings="0"
-    elif regex_match "$arg" "^\-\-?(example-settings)$"; then
+    elif regex_match.sh "$arg" "^\-\-?(example-settings)$"; then
         habitat_example_settings="0"
-    elif regex_match "$arg" "^\-\-?(settings)$"; then
+    elif regex_match.sh "$arg" "^\-\-?(settings)$"; then
         habitat_user_settings="$1"; shift
-    elif regex_match "$arg" "^\-\-?(install|add)$"; then
+    elif regex_match.sh "$arg" "^\-\-?(install|add)$"; then
         habitat_install="$1"; shift
-    elif regex_match "$arg" "^\-\-?(save)$"; then
+    elif regex_match.sh "$arg" "^\-\-?(save)$"; then
         habitat_save_to_config="0"
-    elif regex_match "$arg" "^\-\-?(update)$"; then
+    elif regex_match.sh "$arg" "^\-\-?(update)$"; then
         habitat_update="0"
-    elif regex_match "$arg" "^\-\-?(remove|uninstall)$"; then
+    elif regex_match.sh "$arg" "^\-\-?(remove|uninstall)$"; then
         habitat_remove="$1"; shift
     else
         echo "Invalid arg $arg"
     fi
 done
 
-# Step 1: Setup
-#habitat_setup
-
 # Step 2: Dependancy Management
-#habitat_dependancy_management
+habitat_dependancy_management
 
 # Step 3: Configuration
 #habitat_configuration
