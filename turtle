@@ -148,11 +148,11 @@ function habitat_first_time_setup() {
 }
 
 function habitat_settings_update() {
-
+echo "add"
 }
 
 function habitat_dependancies_update() {
-
+echo "add"
 }
 
 function habitat_dependancy_management() {
@@ -164,6 +164,7 @@ function habitat_dependancy_management() {
     async_command.sh update_repo.sh "$habitat_settings"
 
     # install new
+    local key
     for key in $(get_all_config.sh "$habitat_config_file"); do
         if ! regex_match.sh "$key" "^_habitat"; then
             local value="$(get_config.sh "$key" "$config")"
@@ -181,6 +182,10 @@ function habitat_dependancy_management() {
 
 function habitat_cleanup() {
     log_header "Cleanup"
+
+
+    # extension cleanup
+
     habitat_end_date="$(date)"
     habitat_end_seconds="$(date +%s)"
     log "Habitat all done at $habitat_end_date"
@@ -188,16 +193,34 @@ function habitat_cleanup() {
 
     unset "custom_log_file"
     unset "custom_backup_dir"
-    # extension cleanup
-    local var_to_unset
-    for var_to_unset in $( ( set -o posix ; set ) | grep "habitat_" | sed -e "s~=.*$~~" ); do
-        unset "$habitat_var"
+
+    local functions_to_unset=("$(typeset -F | grep "habitat_" | sed -e 's~declare -f ~~')")
+    local vars_to_unset=("$( ( set -o posix ; set ) | grep "habitat_" | sed -e "s~=.*$~~" )")
+
+
+
+    local key
+    for key in $(get_all_config.sh "$habitat_config_file"); do
+        if ! regex_match "$key" "_habitat"; then
+            key="$(regex_replace "$key" "s~habitat-~~g")"
+            key="$(regex_replace "$key" "s~-~_~g")"
+            functions_to_unset+=("$(typeset -F | grep "$key" | sed -e 's~declare -f ~~')")
+            vars_to_unset+=("$( ( set -o posix ; set ) | grep "$key" | sed -e "s~=.*$~~" )")
+        fi
     done
 
-    local habitat_function
-    for habitat_function in $(typeset -F | grep habitat_ | sed -e 's~declare -f ~~'); do
-        unset -f "$habitat_function"
+
+
+    local var_to_unset
+    for var_to_unset in "$vars_to_unset[@]"; do
+        unset "$var_to_unset"
     done
+
+    local function_to_unset
+    for function_to_unset in "$functions_to_unset[@]"; do
+        unset -f "$function_to_unset"
+    done
+
 }
 
 function habitat_usage() {
