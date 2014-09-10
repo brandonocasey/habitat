@@ -255,7 +255,6 @@ habitat_get_functions() {
 habitat_get_vars() {
     local search="$1"; shift
     local everything=$( set -o posix ; set )
-    echo "$everything"
     local all_variables="$( echo "$everything" | sed -e 's~=.*~~' | grep -E '^habitat')"
     echo "$(echo "$all_variables" | grep -E "$search")"
 
@@ -276,41 +275,53 @@ function habitat_usage() {
 function habitat_cleanup() {
     log_header.sh "Cleanup"
 
+    local start_seconds="$habitat_start_seconds"
+
     log.sh "Cleaning up habitat_ variables and functions"
 
+    local old_ifs="$IFS"
+    IFS=$'\n'
 
-    local func
-    while read -r func; do
-        log.sh "Unsetting $func"
-        unset -f "$func"
-    done <<< "`habitat_get_functions "^habitat"`"
-    local dir
+    # Extension Cleanup
     for dir in $(habitat_get_current_extensions); do
         log.sh "Cleaning up ${dir}_ variables and functions"
-        while read -r extension_function; do
-            log.sh "Unsetting $extension_function"
+        for extension_var in `habitat_get_vars "^${dir}_"`; do
+            log.sh "Unsetting var $extension_var"
+            unset "$extension_var"
+        done
+
+        for extension_function in `habitat_get_functions "^${dir}_"`; do
+            log.sh "Unsetting function $extension_function"
             unset -f "$extension_function"
-        done <<< "`habitat_get_functions "^${dir}_"`"
+        done
+
     done
 
-    log.sh "Going to attempt cleanup of vars $vars_to_unset"
-    log.sh "Going to attempt cleanup of functions $functions_to_unset"
 
-    habitat_end_date="$(date)"
-    habitat_end_seconds="$(date +%s)"
+    for habitat_vars in `habitat_get_functions "^habitat_"`; do
+        log.sh "Unsetting function $habitat_func"
+        if [ "$habitat_func" = "habitat_get_vars" ] || [ "$habitat_func" != "habitat_cleanup" ] || ; then
+            unset -f "$habitat_func"
+        fi
+    done
 
-    log.sh "Habitat all done at $habitat_end_date"
-    log.sh "All done after $(($habitat_end_seconds-$habitat_start_seconds))"
+    for habitat_func in `habitat_get_functions "^habitat_"`; do
+        log.sh "Unsetting function $habitat_func"
+        if [ "$habitat_func" = "habitat_get_vars" ]; then
+            unset -f "$habitat_func"
+        fi
+    done
+
+    IFS="$old_ifs"
 
 
-
-    local function_to_unset
-    while read -r function_to_unset; do
-        unset -f "$function_to_unset"
-    done <<< "$functions_to_unset"
-
+    log.sh "Habitat all done at $(date)"
+    log.sh "All done after $(($(date +%s)-$start_seconds))"
 
     unset "custom_log_file"
+    unset -f "habitat_get_vars"
+    unset -f "habitat_get_functions"
+    unset -f "habitat_cleanup"
 }
 
 
