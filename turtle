@@ -147,6 +147,14 @@ function habitat_first_time_setup() {
     fi
 }
 
+function habitat_settings_update() {
+
+}
+
+function habitat_dependancies_update() {
+
+}
+
 function habitat_dependancy_management() {
     log_header.sh "Dependancy Management"
     # key = name, minus habitat on the front
@@ -169,48 +177,7 @@ function habitat_dependancy_management() {
 }
 
 
-function habitat_deployment() {
-    log_header "Deployment"
-    local search_dir
-    local file_to_link
-    local file_to_source
-    for search_dir in "${habitat_symlink_search[@]}"; do
-        for file_to_link in `find_this '*.syml' "$search_dir"`; do
-            local dest="$HOME"/."$(basename "${file_to_link%.*}")"
-            log "linking $file_to_link to $dest"
-            link_files "$file_to_link" "$dest" "$habitat_backup"
-        done
-    done
 
-
-    # Source global definitions
-    if [ -f /etc/bashrc ]; then
-        log "Sourced global definitions"
-        source /etc/bashrc
-    fi
-
-    # Source local definitions
-    if [ -f ~/.localrc ]; then
-        log "Sourced local definitions"
-        source ~/.localrc
-    fi
-
-    if [ -f "$bash_completion" ]; then
-        source "$bash_completion"
-        log "Sourced $bash_completion"
-    fi
-    # Source all .bash files into shell
-    log "Sourcing User Settings:"
-    for search_dir in "${habitat_source_search[@]}"; do
-        for file_to_source in `find_this '*.sour' "$search_dir"`; do
-            log "$file_to_source"
-            source "$file_to_source"
-        done
-    done
-
-    # extension deployment
-
-}
 
 function habitat_cleanup() {
     log_header "Cleanup"
