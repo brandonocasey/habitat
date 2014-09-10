@@ -14,4 +14,8 @@ elif [ -n "$(echo "$url_or_git_repo" | grep -E '^.*/.*$')" ]; then
 	url="https://github.com/${url}.git"
 fi
 
-(cd "$output_dir" && git clone "$url")
+if [ -z "$1" ]; then
+	(cd "$output_dir"; git clone "$url")
+else
+	(cd "$output_dir"; git clone "$url" "$1")
+fi
