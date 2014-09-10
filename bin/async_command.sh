@@ -11,4 +11,4 @@ if [ -z "$custom_log_file" ]; then
     exit 2
 fi
 
-("$@" 2>&1 && echo "Result code $?" | while read line; do echo "Async '$@' returned : $line" 2>&1 >> "$custom_log_file"; done &)
+("$@" 2>&1 | while read line; do echo "Async '$@' returned : $line" 2>&1 >> "$custom_log_file"; done &)
