@@ -140,12 +140,12 @@ function habitat_dependancy_management() {
         else
             final_answer="manual"
         fi
-        change_config "habitat_update_type" "$final_answer"
+        change_config "_habitat_update_type" "$final_answer"
     else
         # key = name, minus habitat on the front
         # value = repo url/repo name and version
         for key in $(get_all_config "$config"); do
-            if ! regex_match.sh "$key" "^habitat_"; then
+            if ! regex_match.sh "$key" "^_habitat"; then
                 local value="$(get_config "$key" "$config")"
                 if [ ! -d "$habitat_extensions/$key" ]; then
                     async_command.sh grab_repo.sh "$answer"
