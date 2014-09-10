@@ -58,17 +58,19 @@ Extensions are a big part of every step in the life cycle of a program
 # Options:
 if no options are passed then habitat will configure the environment
 source ./habitat <options>
-Option            | Definition
----               | ---
-example-settings. | Use the example settings repo as a base
-new-settings.     | Create a new local settings repo
-settings          | Install setting from an existing repo
-install           | Install an additional extension via a github user/repo pair
-remove            | remove an extension, deleting its folder, entries in the user extension.cfg, and ask the user if they wish to keep config files
-save.             | pass this with remove/install to remove/add to the user config dependancies
-uninstall         | alias for remove
-add.              | alias for install
-help              | view help on using the cli
+
+
+| Option           | Description                                                              |
+|------------------|--------------------------------------------------------------------------|
+| example-settings | Use the example settings repo as a base                                  |
+| new-settings     | Create a new local settings repo                                         |
+| settings         | Install setting from an existing repo                                    |
+| install          | Install an additional extension via a github user/repo pair              |
+| remove           | remove an extension, deleting its folder                                 |
+| save             | pass this with remove/install to remove/add to the user extension config |
+| uninstall        | alias for remove                                                         |
+| add              | alias for install                                                        |
+| help             |                                                                          |
 
 # Planned Extensions
 * Vim
