@@ -122,20 +122,27 @@ function habitat_prep() {
 }
 
 function habitat_first_time_setup() {
-    local settings=""
-    if [ -n "$1" ]; then
-        settings="$1"
-    fi
-    if [ ! -f "$habitat_config_file" ]; then
-        local answer="$(user_choice.sh "Where is your settings repo?" 'example' 'new' '\w+/\w+' '(git|http)://')"
-        if regex_match.sh "$answer" "^example$" "0"; then
-            answer="brandonocasey/habitat-settings-example"
-        fi
-        if [ "$answer" = "new" ]; then
+    if [ ! -d "$habitat_settings" ]; then
+        log_header.sh "First Time Setup"
+        local settings="$(user_choice.sh "Where is your settings repo?" 'example' 'new' '.*/.*' '(git|http|https)://')"
+        local grab_repo=""
+        log.sh "The user said there settings are going to be: $settings"
+
+        if regex_match.sh "$settings" "^example$" "0"; then
+            grab_repo="brandonocasey/habitat-settings-example"
+        elif regex_match.sh "$settings" "^new$" "0"; then
             : > "$habitat_config_file"
         else
-            local settings="$answer"
+            grab_repo="$settings"
         fi
+
+        if [ -n "$grab_repo" ]; then
+            log.sh "grabing $grab_repo for settings"
+            log_result.sh grab_repo.sh "$grab_repo" "$habitat_base" "$habitat_settings"
+        fi
+    fi
+
+    if [ ! -f "$habitat_config_file" ] || [ -z "$(get_config.sh "_habitat_update_type" "$habitat_config_file")" ]; then
         answer="$(user_choice.sh "Do you want updates?" 'y|yes' 'n|no')"
         local final_answer
         if regex_match.sh "$answer" "^y|yes$" "0"; then
@@ -145,13 +152,15 @@ function habitat_first_time_setup() {
         fi
         set_config.sh "_habitat_update_type" "$final_answer" "$habitat_config_file"
     fi
+
 }
 
 function habitat_dependancy_management() {
+    habitat_first_time_setup
     log_header.sh "Dependancy Management"
+
     # key = name, minus habitat on the front
     # value = repo url/repo name and version
-
     # update existing
     local repo_update_list=("$habitat_settings")
     local extension
@@ -184,37 +193,48 @@ function habitat_dependancy_management() {
 }
 
 
+function habitat_extension_action() {
+    local action="$1"
+    local dir
+    for dir in "$habitat_extensions"/* ; do
+        if [ -d "$dir" ]; then
+            export custom_log_file="$habitat_logs/${dir}.log"
+            "$dir_$action"
+            export custom_log_file="$habitat_log_file"
+        fi
+    done
+}
+
 
 
 function habitat_cleanup() {
     log_header "Cleanup"
 
-
-    # extension cleanup
-
-    habitat_end_date="$(date)"
-    habitat_end_seconds="$(date +%s)"
-    log "Habitat all done at $habitat_end_date"
-    log "All done after $(($habitat_end_seconds-$habitat_start_seconds))"
-
     unset "custom_log_file"
     unset "custom_backup_dir"
 
+    log.sh "Cleaning up _habitat variables and functions"
     local functions_to_unset=("$(typeset -F | grep "habitat_" | sed -e 's~declare -f ~~')")
     local vars_to_unset=("$( ( set -o posix ; set ) | grep "habitat_" | sed -e "s~=.*$~~" )")
 
 
 
-    local key
-    for key in $(get_all_config.sh "$habitat_config_file"); do
-        if ! regex_match "$key" "_habitat"; then
-            key="$(regex_replace "$key" "s~habitat-~~g")"
-            key="$(regex_replace "$key" "s~-~_~g")"
-            functions_to_unset+=("$(typeset -F | grep "$key" | sed -e 's~declare -f ~~')")
-            vars_to_unset+=("$( ( set -o posix ; set ) | grep "$key" | sed -e "s~=.*$~~" )")
+    local dir
+    for dir in "$habitat_extensions"/* ; do
+        if [ -d "$dir" ]; then
+            dir="$(regex_replace "$dir" "s~^habitat-~~g")"
+            dir="$(regex_replace "$dir" "s~-~_~g")"
+            log.sh "Cleaning up $dir variables and functions"
+            functions_to_unset+=("$(typeset -F | grep "$dir" | sed -e 's~declare -f ~~')")
+            vars_to_unset+=("$( ( set -o posix ; set ) | grep "$dir" | sed -e "s~=.*$~~" )")
         fi
     done
 
+    habitat_end_date="$(date)"
+    habitat_end_seconds="$(date +%s)"
+
+    log "Habitat all done at $habitat_end_date"
+    log "All done after $(($habitat_end_seconds-$habitat_start_seconds))"
 
 
     local var_to_unset
@@ -271,16 +291,20 @@ while [ "$#" -gt "0" ]; do
 done
 
 # Step 2: Dependancy Management
-#habitat_first_time_setup
 habitat_dependancy_management
 
-# Step 3: Configuration
-#habitat_configuration
+# Step 3: Extensions
+## A Setup
+habitat_extension_action "setup"
 
-# Step 4: Deployment
-#habitat_deployment
+## B Deploy
+habitat_extension_action "deploy"
 
-# Step 5: Cleanup
-#habitat_cleanup
+## C Cleanup
+habitat_extension_action "cleanup"
+
+
+# Step 4: Cleanup
+habitat_cleanup
 
 return 0
