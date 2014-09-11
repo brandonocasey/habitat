@@ -121,59 +121,60 @@ function habitat_prep() {
 
 }
 
+function habitat_set_settings() {
+    local settings="$1"; shift
+    local repo_to_grab
+    if [ -d "$habitat_settings" ]; then
+        local result=`user_choice.sh "Are you sure you want to delete current settings?" "y|yes" "n|no"`
+        if regex_match.sh "$result" "^n|no$"; then
+            echo "Skipping as user answered $result"
+            return
+        else
+            rm -rf "$habitat_settings"
+        fi
+    fi
+
+    if regex_match.sh "$settings" "^example$" "0"; then
+        repo_to_grab="brandonocasey/habitat-settings-example"
+    elif regex_match.sh "$settings" "^new$" "0"; then
+        : > "$habitat_config_file"
+    else
+        repo_to_grab="$settings"
+    fi
+
+    if [ -n "$grab_repo" ]; then
+        echo "grabing $grab_repo for settings"
+        grab_repo.sh "$grab_repo" "$habitat_base" "$habitat_settings"
+    fi
+
+
+}
+
+
 function habitat_first_time_setup() {
     if [ ! -d "$habitat_settings" ]; then
         log_header.sh "First Time Setup"
         local settings="$(user_choice.sh "Where is your settings repo?" 'example' 'new' '.*/.*' '(git|http|https)://')"
         local grab_repo=""
         log.sh "The user said there settings are going to be: $settings"
-
-        if regex_match.sh "$settings" "^example$" "0"; then
-            grab_repo="brandonocasey/habitat-settings-example"
-        elif regex_match.sh "$settings" "^new$" "0"; then
-            : > "$habitat_config_file"
-        else
-            grab_repo="$settings"
-        fi
-
-        if [ -n "$grab_repo" ]; then
-            log.sh "grabing $grab_repo for settings"
-            log_result.sh grab_repo.sh "$grab_repo" "$habitat_base" "$habitat_settings"
-        fi
+        log.sh "`habitat_set_settings "$settings"`"
     fi
-
-    if [ ! -f "$habitat_config_file" ] || [ -z "$(get_config.sh "_habitat_update_type" "$habitat_config_file")" ]; then
-        answer="$(user_choice.sh "Do you want updates?" 'y|yes' 'n|no')"
-        local final_answer
-        if regex_match.sh "$answer" "^y|yes$" "0"; then
-            final_answer="$(user_choice.sh "How do you want updates?" 'auto' 'ask' 'inform' 'manual')"
-        else
-            final_answer="manual"
-        fi
-        set_config.sh "_habitat_update_type" "$final_answer" "$habitat_config_file"
-    fi
-
 }
 
-function habitat_dependancy_management() {
-    habitat_first_time_setup
-    log_header.sh "Dependancy Management"
-
+function habitat_update_and_install() {
     # key = name, minus habitat on the front
     # value = repo url/repo name and version
     # update existing
     local repo_update_list=("$habitat_settings")
     local extension
-    for extension in "$habitat_extensions"/*; do
-        if [ -d "$extension" ]; then
-            repo_update_list+=("$extension")
-        fi
+    for extension in `habitat_get_current_extension_dirs`; do
+        repo_update_list+=("$extension")
     done
 
 
     local update_dir
     for update_dir in "${repo_update_list[@]}"; do
-        log.sh "Doing an async update for $update_dir"
+        echo "Doing an async update for $update_dir"
         async_command.sh update_repo.sh "$update_dir"
     done
 
@@ -185,15 +186,46 @@ function habitat_dependancy_management() {
             local value="$(get_config.sh "$key" "$habitat_config_file")"
             local repo_location="$habitat_extensions/$key"
             if [ ! -d "$repo_location" ]; then
-                log.sh "Grabbing a new called $key with location $value"
-                log_result.sh grab_repo.sh "$value" "$habitat_extensions"
+                echo "Grabbing a new called $key with location $value"
+                grab_repo.sh "$value" "$habitat_extensions"
             fi
         fi
     done
+
+}
+function habitat_dependancy_management() {
+    habitat_first_time_setup
+    log_header.sh "Dependancy Management"
+
+    local config_setting="`get_config.sh "_habitat_update_type" "$habitat_config_file"`"
+    if [ -z "$config_setting" ]; then
+        local answer="$(user_choice.sh "Do you want updates?" 'y|yes' 'n|no')"
+        if regex_match.sh "$answer" "^y|yes$" "0"; then
+            answer="$(user_choice.sh "How do you want updates?" 'auto' 'ask' 'inform' 'manual')"
+        else
+            answer="manual"
+        fi
+        set_config.sh "_habitat_update_type" "$answer" "$habitat_config_file"
+        habitat_dependancy_management
+        return
+    elif [ "$config_setting" = "manual" ]; then
+        return
+    elif [ "$config_setting" = "inform" ]; then
+        echo "there are updates, please update"
+        return
+    elif [ "$config_setting" = "ask" ]; then
+        local answer="`user_choice.sh "There are updates, do you want them?" "n|no" "y|yes"`"
+        if regex_match.sh "$answer" "n|no"; then
+            return
+        fi
+    fi
+
+    log.sh "`habitat_update_and_install`"
+
 }
 
 # Extensions step
-habitat_get_current_extensions() {
+function habitat_get_current_extensions() {
     local dir
     for dir in "$habitat_extensions"/* ; do
         if [ -d "$dir" ]; then
@@ -204,7 +236,7 @@ habitat_get_current_extensions() {
     done
 }
 
-habitat_get_current_extension_dirs() {
+function habitat_get_current_extension_dirs() {
     local dir
     for dir in "$habitat_extensions"/* ; do
         if [ -d "$dir" ]; then
@@ -214,7 +246,7 @@ habitat_get_current_extension_dirs() {
 }
 
 
-habitat_extensions() {
+function habitat_extensions() {
     log_header.sh "Extensions"
     local dir
     for dir in $(habitat_get_current_extension_dirs) ; do
@@ -232,7 +264,7 @@ habitat_extensions() {
     habitat_extension_action "cleanup"
 
 }
-habitat_extension_action() {
+function habitat_extension_action() {
     local action="$1"; shift
     local extension
     for extension in $(habitat_get_current_extensions); do
@@ -245,7 +277,7 @@ habitat_extension_action() {
     done
 }
 
-habitat_get_functions() {
+function habitat_get_functions() {
     local search="$1"; shift
     local all_functions="$(declare -F | sed -e 's~declare -f ~~g')"
     echo "$(echo "$all_functions" | grep -E "$search")"
@@ -323,6 +355,30 @@ function habitat_cleanup() {
 }
 
 
+function habitat_install_extension() {
+    local extension="$1"; shift
+
+    grab_repo.sh "$extension" "$habitat_extensions"
+    local name="`regex_replace.sh "$extension" "s~^.*/~~"`"
+    # save to config
+    if [ -n "$1" ]; then
+        set_config.sh "$name" "$extension" "$habitat_config_file"
+    fi
+}
+
+function habitat_remove_extension() {
+    local extension="$1"; shift
+
+    if [ -d  "$habitat_extensions/$extension" ]; then
+        rm -rf "$habitat_extensions/$extension"
+        # remove from config
+        if [ -n "$1" ]; then
+            rm_config.sh "$extension" "$habitat_config_file"
+        fi
+    fi
+}
+
+
 # Step #1: Prep/Grab Args
 
 # Prep
@@ -334,30 +390,41 @@ while [ "$#" -gt "0" ]; do
     if regex_match.sh "$arg" "^\-\-?(help)$"; then
         habitat_show_usage="0"
     elif regex_match.sh "$arg" "^\-\-?(new-settings)$"; then
-        habitat_new_settings="0"
+        habitat_settings_choice="new"
     elif regex_match.sh "$arg" "^\-\-?(example-settings)$"; then
-        habitat_example_settings="0"
+        habitat_settings_choice="example"
     elif regex_match.sh "$arg" "^\-\-?(settings)$"; then
-        habitat_user_settings="$1"; shift
+        habitat_settings_choice="$1"; shift
     elif regex_match.sh "$arg" "^\-\-?(install|add)$"; then
-        habitat_install="$1"; shift
+        habitat_extension_add="$1"; shift
     elif regex_match.sh "$arg" "^\-\-?(save)$"; then
         habitat_save_to_config="0"
     elif regex_match.sh "$arg" "^\-\-?(update)$"; then
-        habitat_update="0"
+        habitat_update_extensions="0"
     elif regex_match.sh "$arg" "^\-\-?(remove|uninstall)$"; then
-        habitat_remove="$1"; shift
+        habitat_extension_remove="$1"; shift
     else
         echo "Invalid arg $arg"
     fi
 done
 
-# Step 2: Dependancy Management
-habitat_dependancy_management
+if [ -n "$habitat_show_usage" ]; then
+    habitat_usage
+elif [ -n "$habitat_extension_add" ]; then
+    habitat_install_extension "$habitat_extension_add" "$habitat_save_to_config"
+elif [ -n "$habitat_extension_remove" ]; then
+    habitat_remove_extension "$habitat_extension_remove" "$habitat_save_to_config"
+elif [ -n "$habitat_update_extensions" ]; then
+    habitat_update_and_install
+elif [ -n "$habitat_settings_choice" ]; then
+    habitat_set_settings "$habitat_settings_choice"
+else
+    # Step 2: Dependancy Management
+    habitat_dependancy_management
 
-# Step 3: Extensions
-habitat_extensions
-
+    # Step 3: Extensions
+    habitat_extensions
+fi
 # Step 4: Cleanup
 habitat_cleanup
 
