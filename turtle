@@ -67,7 +67,7 @@
 function habitat_prep() {
     # Base Folders
     export habitat_base="$HOME/.habitat"
-    export habitat_cli="$habitat_base/habitat"
+    export habitat_cli="$habitat_base/turtle"
     export habitat_storage="$habitat_base/storage"
     export habitat_test="$habitat_base/t"
     export habitat_bin="$habitat_base/bin"
@@ -222,28 +222,26 @@ habitat_extensions() {
         source "$dir/extension.habit"
     done
 
-    return
-
-    log_header.sh "Setup"
+    log_header.sh "A - Setup"
     habitat_extension_action "setup"
 
-    log_header.sh "Deploy"
+    log_header.sh "B - Deploy"
     habitat_extension_action "deploy"
 
-    log_header.sh "Cleanup"
+    log_header.sh "C - Cleanup"
     habitat_extension_action "cleanup"
 
 }
- habitat_extension_action() {
-     local action="$1"; shift
-     local extension
-     for extension in $(habitat_get_current_extensions); do
-        if is_installed.sh "${extension}_$action"; then
-            log_header.sh "${extension}_$action"
+habitat_extension_action() {
+    local action="$1"; shift
+    local extension
+    for extension in $(habitat_get_current_extensions); do
+         if [ -n "$(type "${extension}_$action" 2>&1 | grep -i -E 'is a function')" ]; then
+            log.sh "Running ${extension}_$action"
         else
             log.sh "${extension}_$action was skipped as it does not exist"
         fi
-     done
+    done
 }
 
 habitat_get_functions() {
