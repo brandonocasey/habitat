@@ -77,8 +77,6 @@ source ./habitat <options>
     * Vim Plugins
 * Binaries
 * Bash Completion
-* .sour
-* .syml
 * themes
 
 # Extending:
@@ -93,6 +91,7 @@ see Extending.md
 * mimic Perl functions, or use perl?
 * async output all lines to log
 * Multiple settings repos?
+* How does one extension use another?
 
 ## Alpha -> Beta
 ### Milestone 1 - Documentation/Base
