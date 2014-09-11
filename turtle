@@ -284,32 +284,31 @@ function habitat_cleanup() {
 
     # Extension Cleanup
     for dir in $(habitat_get_current_extensions); do
-        log.sh "Cleaning up ${dir}_ variables and functions"
+        log.sh "Cleaning up ${dir}_ vars and functions"
         for extension_var in `habitat_get_vars "^${dir}_"`; do
-            log.sh "Unsetting var $extension_var"
+            #log.sh "Unsetting var $extension_var"
             unset "$extension_var"
         done
 
         for extension_function in `habitat_get_functions "^${dir}_"`; do
-            log.sh "Unsetting function $extension_function"
+            #log.sh "Unsetting function $extension_function"
             unset -f "$extension_function"
         done
 
     done
 
 
-    for habitat_vars in `habitat_get_functions "^habitat_"`; do
-        log.sh "Unsetting function $habitat_func"
-        if [ "$habitat_func" = "habitat_get_vars" ] || [ "$habitat_func" != "habitat_cleanup" ] || ; then
+    log.sh "Cleaning up habitat_ vars and functions"
+    for habitat_func in `habitat_get_functions "^habitat_"`; do
+        #log.sh "Unsetting function $habitat_func"
+        if [ "$habitat_func" != "habitat_get_vars" ] && [ "$habitat_func" != "habitat_cleanup" ]; then
             unset -f "$habitat_func"
         fi
     done
 
-    for habitat_func in `habitat_get_functions "^habitat_"`; do
-        log.sh "Unsetting function $habitat_func"
-        if [ "$habitat_func" = "habitat_get_vars" ]; then
-            unset -f "$habitat_func"
-        fi
+    for habitat_var in `habitat_get_vars "^habitat_"`; do
+        #log.sh "Unsetting var $habitat_var"
+        unset "$habitat_var"
     done
 
     IFS="$old_ifs"
