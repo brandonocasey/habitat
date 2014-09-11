@@ -99,6 +99,7 @@ The current roadmap from Alpha to Beta
 * Multiple settings repos?
 * How does one extension use another?
 * Can we make the bin folder, optionaly source friendly?
+* Generate Extension stubs
 
 ### ~~Milestone 1 - Documentation/Base~~
 * ~~Create the Documentation for extending and the readme~~
