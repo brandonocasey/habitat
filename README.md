@@ -104,7 +104,7 @@ The current roadmap from Alpha to Beta
 * ~~Add several portable binaries~~
 * ~~Add a stubbed habitat cli~~
 
-### Milestone 2 - Extensions
+### ~~Milestone 2 - Extensions~~
 * ~~Habitat should be able to manage an extension, through the CLI~~
     * ~~install~~
     * ~~save~~
@@ -132,6 +132,9 @@ The current roadmap from Alpha to Beta
 
 ## Beta -> Release
 The current roadmap for Beta to release
+
+### General
+* Nothing yet
 
 ### Milestone 1 - Unit test
 * Unit test habitat and the portable binaries
