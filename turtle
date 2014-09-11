@@ -103,7 +103,7 @@ function habitat_prep() {
     rm -rf "$habitat_tmp"/*
     "$habitat_bin"/log.sh "Cleaned $habitat_tmp"
 
-    "$habitat_bin"/log_result.sh "$habitat_bin"/add_to_string.sh "$PATH" "$habitat_bin" ":"
+    PATH=`"$habitat_bin"/add_to_string.sh "$PATH" "$habitat_bin" ":"`
     log_result.sh link_files.sh "$habitat_cli" "$HOME/.bash_profile" "$habitat_backup"
     local os="UNKNOWN"
     if is_installed.sh "sw_vers" >/dev/null; then
@@ -197,8 +197,8 @@ habitat_get_current_extensions() {
     local dir
     for dir in "$habitat_extensions"/* ; do
         if [ -d "$dir" ]; then
-            dir="$(regex_replace "$dir" "s~$habitat_extensions/habitat\-~~g")"
-            dir="$(regex_replace "$dir" "s~-~_~g")"
+            dir="$(regex_replace.sh "$dir" "s~$habitat_extensions/habitat\-~~g")"
+            dir="$(regex_replace.sh "$dir" "s~-~_~g")"
             echo "$dir"
         fi
     done
