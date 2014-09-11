@@ -92,6 +92,7 @@ see Extending.md
 * async output all lines to log
 * Multiple settings repos?
 * How does one extension use another?
+* Can we make the bin folder, optionaly source friendly?
 
 ## Alpha -> Beta
 ### Milestone 1 - Documentation/Base
