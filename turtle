@@ -103,7 +103,7 @@ function habitat_prep() {
     rm -rf "$habitat_tmp"/*
     "$habitat_bin"/log.sh "Cleaned $habitat_tmp"
 
-    PATH=`"$habitat_bin"/add_to_string.sh "$PATH" "$habitat_bin" ":"`
+    export PATH=`"$habitat_bin"/add_to_string.sh "$PATH" "$habitat_bin" ":"`
     log_result.sh link_files.sh "$habitat_cli" "$HOME/.bash_profile" "$habitat_backup"
     local os="UNKNOWN"
     if is_installed.sh "sw_vers" >/dev/null; then
@@ -285,10 +285,8 @@ function habitat_get_functions() {
 
 habitat_get_vars() {
     local search="$1"; shift
-    local everything=$( set -o posix ; set )
-    local all_variables="$( echo "$everything" | sed -e 's~=.*~~' | grep -E '^habitat')"
+    local all_variables="$( (set -o posix ; set) | sed -e 's~=.*~~')"
     echo "$(echo "$all_variables" | grep -E "$search")"
-
 }
 
 function habitat_usage() {
@@ -314,13 +312,16 @@ function habitat_cleanup() {
     IFS=$'\n'
 
     # Extension Cleanup
+    local dir
     for dir in $(habitat_get_current_extensions); do
         log.sh "Cleaning up ${dir}_ vars and functions"
+        local extension_var
         for extension_var in `habitat_get_vars "^${dir}_"`; do
-            #log.sh "Unsetting var $extension_var"
+            log.sh "Unsetting var $extension_var"
             unset "$extension_var"
         done
 
+        local extension_function
         for extension_function in `habitat_get_functions "^${dir}_"`; do
             #log.sh "Unsetting function $extension_function"
             unset -f "$extension_function"
@@ -330,6 +331,7 @@ function habitat_cleanup() {
 
 
     log.sh "Cleaning up habitat_ vars and functions"
+    local habitat_func
     for habitat_func in `habitat_get_functions "^habitat_"`; do
         #log.sh "Unsetting function $habitat_func"
         if [ "$habitat_func" != "habitat_get_vars" ] && [ "$habitat_func" != "habitat_cleanup" ]; then
@@ -337,6 +339,7 @@ function habitat_cleanup() {
         fi
     done
 
+    local habitat_var
     for habitat_var in `habitat_get_vars "^habitat_"`; do
         #log.sh "Unsetting var $habitat_var"
         unset "$habitat_var"
@@ -379,9 +382,8 @@ function habitat_remove_extension() {
 }
 
 
-# Step #1: Prep/Grab Args
 
-# Prep
+# Step #1: Prep/Grab Args
 habitat_prep
 
 # Grab Args
