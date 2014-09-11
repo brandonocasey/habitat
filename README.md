@@ -95,6 +95,7 @@ The current roadmap from Alpha to Beta
 * export colors
 * mimic Perl functions, or use perl?
 * async output all lines to log
+* log_async and regular async
 * Multiple settings repos?
 * How does one extension use another?
 * Can we make the bin folder, optionaly source friendly?
