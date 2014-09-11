@@ -122,9 +122,8 @@ The current roadmap from Alpha to Beta
     * ~~new~~
     * ~~example~~
 * ~~Solidify the extension API~~
+* ~~make sure nothing uninteded goes to the users environment~~
 * Add requirements.cfg checking in extension folders
-* make sure nothing uninteded goes to the users environment
-    * check before environment vs after environment
 * determine what other variables would be usefull to the user
 
 ### Milestone 4 - General TODO
