@@ -82,8 +82,13 @@ source ./habitat <options>
 # Extending:
 see Extending.md
 
-# TODO
-## General
+# RoadMap
+The Roadmap from Alpha to Release
+
+## Alpha -> Beta
+The current roadmap from Alpha to Beta
+
+### General
 * Give all binaires argument parsing
 * Give all binaries a help
 * check command return codes
@@ -94,32 +99,41 @@ see Extending.md
 * How does one extension use another?
 * Can we make the bin folder, optionaly source friendly?
 
-## Alpha -> Beta
-### Milestone 1 - Documentation/Base
+### ~~Milestone 1 - Documentation/Base~~
 * ~~Create the Documentation for extending and the readme~~
 * ~~Add several portable binaries~~
 * ~~Add a stubbed habitat cli~~
-* determine what variables would be usefull to the user
 
-### Milestone 2 - User Settings
-* ~~Have the ability to manage users settings from a repo (svn, git, etc)~~
-    * ~~update~~
+### Milestone 2 - Extensions
+* Habitat should be able to manage an extension, through the CLI
+    * install
+    * save
+    * uninstall
+* ~~Extensions should be cleaned up automatically~~
+* ~~Extensions should be run successfully~~
+* ~~create an extension to test with~~
+
+### Milestone 3 - User Settings
+* Give the CLI the ability to do the following for settings
+    * update
     * install
     * uninstall
-    * ~~new~~
-    * ~~example~~
-* ~~Solidify the extension API~~
+    * new
+    * example
+* Solidify the extension API
 * make sure nothing uninteded goes to the users environment
+    * check before environment vs after environment
+* determine what other variables would be usefull to the user
 
-### Milestone 3 - Extensions
-* Habitat should be able to manage an extension (same steps as user repo)
-* Extensions should be cleaned up automatically
-* Extensions should be run successfully
-* determine if anything else would be helpful for the user to have
-* create an extension to test with
-
+### Milestone 4 - General TODO
+* Go over the items in general TODO and add to roadmap
+* add comments to rough code
+* Fix tab/spacing issues
+* Add colors to the output
 
 ## Beta -> Release
+The current roadmap for Beta to release
+
 ### Milestone 1 - Unit test
 * Unit test habitat and the portable binaries
 * Use those unit tests on multiple enviornments/shells to make everything more robust
@@ -128,7 +142,12 @@ see Extending.md
 * Comment everything using a standard
 * create a website using that comment standard
 
-### Milestone 3 - Website
+### Milestone 3 - General TODO
+* go over the general TODO section and fix things
+* Finish off the documentation
+* make all the extensions that have been talked about
+
+### Milestone 4 - Website
 * Develop a website to register extensions with
 * implement cli searching for extensions
 * switch extensions over from repository urls only to repository urls or project names from the website
