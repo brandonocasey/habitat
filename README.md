@@ -105,21 +105,20 @@ The current roadmap from Alpha to Beta
 * ~~Add a stubbed habitat cli~~
 
 ### Milestone 2 - Extensions
-* Habitat should be able to manage an extension, through the CLI
-    * install
-    * save
-    * uninstall
+* ~~Habitat should be able to manage an extension, through the CLI~~
+    * ~~install~~
+    * ~~save~~
+    * ~~uninstall~~
 * ~~Extensions should be cleaned up automatically~~
 * ~~Extensions should be run successfully~~
 * ~~create an extension to test with~~
 
 ### Milestone 3 - User Settings
-* Give the CLI the ability to do the following for settings
-    * update
-    * install
-    * uninstall
-    * new
-    * example
+* ~~Give the CLI the ability to do the following for settings~~
+    * ~~update~~
+    * ~~change~~
+    * ~~new~~
+    * ~~example~~
 * Solidify the extension API
 * make sure nothing uninteded goes to the users environment
     * check before environment vs after environment
