@@ -62,15 +62,16 @@ source ./habitat <options>
 
 | Option           | Description                                                              |
 |------------------|--------------------------------------------------------------------------|
-| example-settings | Use the example settings repo as a base                                  |
-| new-settings     | Create a new local settings repo                                         |
-| settings         | Install setting from an existing repo                                    |
+| settings         | Install setting from an existing repo, or use new/example                |
 | install          | Install an additional extension via a github user/repo pair              |
 | remove           | remove an extension, deleting its folder                                 |
 | save             | pass this with remove/install to remove/add to the user extension config |
 | uninstall        | alias for remove                                                         |
 | add              | alias for install                                                        |
+| stub             | stub an extension in the extensions folder                               |
 | help             | show this help                                                           |
+| debug            | Show debug output in the log                                             |
+| verbose          | Show verbose output in the log                                           |
 
 # Planned Extensions
 * Vim
@@ -100,6 +101,9 @@ The current roadmap from Alpha to Beta
 * How does one extension use another?
 * Can we make the bin folder, optionaly source friendly?
 * Generate Extension stubs
+* requirements.cfg - Required for this extension to work
+* optional.cfg - if these extensions are installed, use them
+
 
 ### ~~Milestone 1 - Documentation/Base~~
 * ~~Create the Documentation for extending and the readme~~
