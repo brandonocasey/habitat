@@ -93,8 +93,6 @@ The current roadmap from Alpha to Beta
 * Give all binaires argument parsing
 * Give all binaries a help
 * check command return codes
-* export colors
-* mimic Perl functions, or use perl?
 * async output all lines to log
 * log_async and regular async
 * Multiple settings repos?
@@ -103,6 +101,9 @@ The current roadmap from Alpha to Beta
 * Generate Extension stubs
 * requirements.cfg - Required for this extension to work
 * optional.cfg - if these extensions are installed, use them
+* 256 Colors
+* Seperate usable binaries, from lib binaries
+* Export Some habitat directory for user usage
 
 
 ### ~~Milestone 1 - Documentation/Base~~
@@ -128,7 +129,7 @@ The current roadmap from Alpha to Beta
 * ~~Solidify the extension API~~
 * ~~make sure nothing uninteded goes to the users environment~~
 * Add requirements.cfg checking in extension folders
-* determine what other variables would be usefull to the user
+* ~~determine what other variables would be usefull to the user~~
 
 ### Milestone 4 - General TODO
 * Go over the items in general TODO and add to roadmap

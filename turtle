@@ -1,68 +1,5 @@
 #! /usr/bin/env sh
 
-# Define Colors: Stolen From https://github.com/mathiasbynens/dotfiles/blob/master/.bash_prompt
-#if [[ $COLORTERM = gnome-* && $TERM = xterm ]] && infocmp gnome-256color >/dev/null 2>&1; then
-#    export TERM="gnome-256color"
-#elif infocmp xterm-256color >/dev/null 2>&1; then
-#    export TERM="xterm-256color"
-#fi
-
-#RED="\e[0;31m"
-#ORANGE="\033[1;33m"
-#YELLOW="\e[0;33m"
-#GREEN="\033[1;32m"
-#BLUE=""
-#LIGHT_BLUE=""
-#PURPLE="\033[1;35m"
-#PINK=""
-#WHITE="\033[1;37m"
-#GRAY=""
-#GREY=""
-#BLACK="\e[0;30m"
-#BROWN=""
-#CYAN="\e[0;36m"
-## Extras
-#BOLD=""
-#RESET="\033[m"
-#DIM=""
-#
-#if command -v 'tput' > /dev/null; then
-#    if [ "$(tput colors)" -ge 256 ]; then
-#        RED="$(tput setaf 196)"
-#        ORANGE="$(tput setaf 202)"
-#        YELLOW="$(tput setaf 226)"
-#        GREEN="$(tput setaf 34)"
-#        BLUE="$(tput setaf 21)"
-#        LIGHT_BLUE="$(tput setaf 51)"
-#        PURPLE="$(tput setaf 58)"
-#        PINK="$(tput setaf 171)"
-#        WHITE="$(tput setaf 255)"
-#        GRAY="$(tput setaf 244)"
-#        GREY="$(tput setaf 244)"
-#        BLACK="$(tput setaf 256)"
-#        BROWN="$(tput setaf 130)"
-#        CYAN="$(tput setaf 39)"
-#    else
-#        RED="$(tput setaf 1)"
-#        ORANGE=""
-#        YELLOW="$(tput setaf 3)"
-#        GREEN="$(tput setaf 2)"
-#        BLUE="$(tput setaf 4)"
-#        LIGHT_BLUE=""
-#        PURPLE=""
-#        PINK="$(tput setaf 5)"
-#        WHITE="$(tput setaf 7)"
-#        GRAY=""
-#        GREY=""
-#        BLACK="$(tput setaf 0)"
-#        BROWN=""
-#        CYAN="$(tput setaf 6)"
-#    fi
-#    BOLD="$(tput bold)"
-#    RESET="$(tput sgr0)"
-#    DIM="$(tput dim)"
-#fi
-
 # Make sure to escape these in PS* with \[${YELLOW}\] so that it does not get messed up
 function habitat_define_colors() {
     # Define Colors
@@ -433,6 +370,37 @@ function habitat_install_extension() {
     fi
 }
 
+function habitat_stub() {
+    local extension_name="$1"; shift
+    extension_name="`echo "$extension_name | sed -e 's~(_| )~-~'"`"
+    local underscore_extension_name="`echo "$extension_name | sed -e 's~-~_~'"`"
+    mkdir "$habitat_extensions/$extension_name"
+    touch "$habitat_extensions/$extension_name/requirements.cfg"
+    touch "$habitat_extensions/$extension_name/optional.cfg"
+    echo "#! /bin/sh" > "$habitat_extensions/$extension_name/extension.habit"
+    echo "" >> "$habitat_extensions/$extension_name/extension.habit"
+
+    echo "${underscore_extension_name}_setup() {" >> "$habitat_extensions/$extension_name/extension.habit"
+    echo "    # insert setup here" >> "$habitat_extensions/$extension_name/extension.habit"
+    echo "    echo \"$extension_name Setup Stub!\"" >> "$habitat_extensions/$extension_name/extension.habit"
+    echo "}" >> "$habitat_extensions/$extension_name/extension.habit"
+    echo "" >> "$habitat_extensions/$extension_name/extension.habit"
+
+    echo "${underscore_extension_name}_deploy() {" >> "$habitat_extensions/$extension_name/extension.habit"
+    echo "    # insert deploy here" >> "$habitat_extensions/$extension_name/extension.habit"
+    echo "    echo \"$extension_name Deploy Stub!\"" >> "$habitat_extensions/$extension_name/extension.habit"
+    echo "}" >> "$habitat_extensions/$extension_name/extension.habit"
+    echo "" >> "$habitat_extensions/$extension_name/extension.habit"
+
+    echo "${underscore_extension_name}_cleanup() {" >> "$habitat_extensions/$extension_name/extension.habit"
+    echo "    # insert cleanup if you want to here" >> "$habitat_extensions/$extension_name/extension.habit"
+    echo "    echo \"Optional $extension_name Cleanup Stub!\"" >> "$habitat_extensions/$extension_name/extension.habit"
+    echo "}" >> "$habitat_extensions/$extension_name/extension.habit"
+    echo "" >> "$habitat_extensions/$extension_name/extension.habit"
+
+
+
+}
 function habitat_remove_extension() {
     local extension="$1"; shift
 
@@ -455,6 +423,8 @@ while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     if regex_match.sh "$arg" "^\-\-?(help)$"; then
         habitat_show_usage="0"
+    elif regex_match.sh "$arg" "^\-\-?(stub)$"; then
+        habitat_extension_stub="$1"
     elif regex_match.sh "$arg" "^\-\-?(settings)$"; then
         habitat_settings_choice="$1"; shift
     elif regex_match.sh "$arg" "^\-\-?(install|add)$"; then
@@ -480,6 +450,8 @@ elif [ -n "$habitat_update_extensions" ]; then
     habitat_update_and_install
 elif [ -n "$habitat_settings_choice" ]; then
     habitat_set_settings "$habitat_settings_choice"
+elif [ -n "$habitat_extension_stub" ]; then
+    habitat_stub "$habitat_extension_stub"
 else
     # Step 2: Dependancy Management
     habitat_dependancy_management
