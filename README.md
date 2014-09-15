@@ -98,12 +98,12 @@ The current roadmap from Alpha to Beta
 * Multiple settings repos?
 * How does one extension use another?
 * Can we make the bin folder, optionaly source friendly?
-* Generate Extension stubs
 * requirements.cfg - Required for this extension to work
 * optional.cfg - if these extensions are installed, use them
 * 256 Colors
 * Seperate usable binaries, from lib binaries
 * Export Some habitat directory for user usage
+* Better Config files
 
 
 ### ~~Milestone 1 - Documentation/Base~~
@@ -128,7 +128,7 @@ The current roadmap from Alpha to Beta
     * ~~example~~
 * ~~Solidify the extension API~~
 * ~~make sure nothing uninteded goes to the users environment~~
-* Add requirements.cfg checking in extension folders
+* Add a config file to house optional and real requirements
 * ~~determine what other variables would be usefull to the user~~
 
 ### Milestone 4 - General TODO
