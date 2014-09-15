@@ -374,32 +374,30 @@ function habitat_stub() {
     local extension_name="$1"; shift
     extension_name="`echo "$extension_name | sed -e 's~(_| )~-~'"`"
     local underscore_extension_name="`echo "$extension_name | sed -e 's~-~_~'"`"
-    mkdir "$habitat_extensions/$extension_name"
-    touch "$habitat_extensions/$extension_name/requirements.cfg"
-    touch "$habitat_extensions/$extension_name/optional.cfg"
-    echo "#! /bin/sh" > "$habitat_extensions/$extension_name/extension.habit"
-    echo "" >> "$habitat_extensions/$extension_name/extension.habit"
+    local extension_dir="$habitat_extensions/$extension_name"
+    local extension_file="$extension_dir/etension.sh"
+    mkdir "$extension_dir"
+    touch "$extension_dir/turtle.cfg"
+    echo "#! /bin/sh" > "$extension_file"
+    echo "" >> "$extension_file"
 
-    echo "${underscore_extension_name}_setup() {" >> "$habitat_extensions/$extension_name/extension.habit"
-    echo "    # insert setup here" >> "$habitat_extensions/$extension_name/extension.habit"
-    echo "    echo \"$extension_name Setup Stub!\"" >> "$habitat_extensions/$extension_name/extension.habit"
-    echo "}" >> "$habitat_extensions/$extension_name/extension.habit"
-    echo "" >> "$habitat_extensions/$extension_name/extension.habit"
+    echo "${underscore_extension_name}_setup() {" >> "$extension_file"
+    echo "    # insert setup here" >> "$extension_file"
+    echo "    echo \"$extension_name Setup Stub!\"" >> "$extension_file"
+    echo "}" >> "$extension_file"
+    echo "" >> "$extension_file"
 
-    echo "${underscore_extension_name}_deploy() {" >> "$habitat_extensions/$extension_name/extension.habit"
-    echo "    # insert deploy here" >> "$habitat_extensions/$extension_name/extension.habit"
-    echo "    echo \"$extension_name Deploy Stub!\"" >> "$habitat_extensions/$extension_name/extension.habit"
-    echo "}" >> "$habitat_extensions/$extension_name/extension.habit"
-    echo "" >> "$habitat_extensions/$extension_name/extension.habit"
+    echo "${underscore_extension_name}_deploy() {" >> "$extension_file"
+    echo "    # insert deploy here" >> "$extension_file"
+    echo "    echo \"$extension_name Deploy Stub!\"" >> "$extension_file"
+    echo "}" >> "$extension_file"
+    echo "" >> "$extension_file"
 
-    echo "${underscore_extension_name}_cleanup() {" >> "$habitat_extensions/$extension_name/extension.habit"
-    echo "    # insert cleanup if you want to here" >> "$habitat_extensions/$extension_name/extension.habit"
-    echo "    echo \"Optional $extension_name Cleanup Stub!\"" >> "$habitat_extensions/$extension_name/extension.habit"
-    echo "}" >> "$habitat_extensions/$extension_name/extension.habit"
-    echo "" >> "$habitat_extensions/$extension_name/extension.habit"
-
-
-
+    echo "${underscore_extension_name}_cleanup() {" >> "$extension_file"
+    echo "    # insert cleanup if you want to here" >> "$extension_file"
+    echo "    echo \"Optional $extension_name Cleanup Stub!\"" >> "$extension_file"
+    echo "}" >> "$extension_file"
+    echo "" >> "$extension_file"
 }
 function habitat_remove_extension() {
     local extension="$1"; shift
