@@ -15,7 +15,8 @@ A general overview of creating and developing an extension
 * Anything with extension_name in the front will be cleaned up (functions/vars) for you, use it
 * Make sure use local in your functions if you dont want to cleanup a ton of variables at the end
 
-# Required Functions
+# Functions
+Any of these is optional although setup is highly recommened
 ## extension_name_setup
 * Declare variables that you will need later
 * Ask the user questions and configure the environment based off answers (usually first time only, and from then on stored in a config file)
@@ -24,7 +25,6 @@ A general overview of creating and developing an extension
 ## extension_name_deploy
 * Deploy the configured enviornment
 
-# Optional Function
 ## extension_name_cleanup
 * Cleanup any and all files/functions the user wont want/need
 * remove things from the PATH that the user wont need
