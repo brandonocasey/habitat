@@ -372,23 +372,23 @@ function habitat_install_extension() {
 
 function habitat_stub() {
     local extension_name="$1"; shift
-    extension_name="`echo "$extension_name | sed -e 's~(_| )~-~'"`"
-    local underscore_extension_name="`echo "$extension_name | sed -e 's~-~_~'"`"
+    extension_name="$(echo "$extension_name" | sed -e 's~(_| )~-~')"
+    local underscore_extension_name="$(echo "$extension_name" | sed -e 's~-~_~')"
     local extension_dir="$habitat_extensions/$extension_name"
-    local extension_file="$extension_dir/etension.sh"
+    local extension_file="$extension_dir/extension.sh"
     mkdir "$extension_dir"
     touch "$extension_dir/turtle.cfg"
     echo "#! /bin/sh" > "$extension_file"
     echo "" >> "$extension_file"
 
     echo "${underscore_extension_name}_setup() {" >> "$extension_file"
-    echo "    # insert setup here" >> "$extension_file"
+    echo "    # insert setup here if you want" >> "$extension_file"
     echo "    echo \"$extension_name Setup Stub!\"" >> "$extension_file"
     echo "}" >> "$extension_file"
     echo "" >> "$extension_file"
 
     echo "${underscore_extension_name}_deploy() {" >> "$extension_file"
-    echo "    # insert deploy here" >> "$extension_file"
+    echo "    # insert deploy here if you want" >> "$extension_file"
     echo "    echo \"$extension_name Deploy Stub!\"" >> "$extension_file"
     echo "}" >> "$extension_file"
     echo "" >> "$extension_file"
@@ -398,6 +398,8 @@ function habitat_stub() {
     echo "    echo \"Optional $extension_name Cleanup Stub!\"" >> "$extension_file"
     echo "}" >> "$extension_file"
     echo "" >> "$extension_file"
+
+    echo "Succesfully stubbed your extension in $extension_file"
 }
 function habitat_remove_extension() {
     local extension="$1"; shift
@@ -422,7 +424,7 @@ while [ "$#" -gt "0" ]; do
     if regex_match.sh "$arg" "^\-\-?(help)$"; then
         habitat_show_usage="0"
     elif regex_match.sh "$arg" "^\-\-?(stub)$"; then
-        habitat_extension_stub="$1"
+        habitat_extension_stub="$1"; shift
     elif regex_match.sh "$arg" "^\-\-?(settings)$"; then
         habitat_settings_choice="$1"; shift
     elif regex_match.sh "$arg" "^\-\-?(install|add)$"; then
