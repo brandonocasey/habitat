@@ -6,7 +6,7 @@
 
 script_dir="$( cd "$( dirname "$0" )" && pwd )"
 test_dir="$script_dir/t"
-export test_tmp_dir="$script_dir/storage/tmp"
+tmp_dir="$script_dir/storage/tmp"
 
 assert_script="/tmp/assert.sh"
 stub_script="/tmp/stub.sh"
@@ -44,7 +44,7 @@ if [ "${#subset[@]}" -eq "0" ]; then
 fi
 
 for FILE in "${subset[@]}"; do
-    rm -rf ./"$test_tmp_dir"/*
+    rm -rf ./"$tmp_dir"/*
     file_path="$( echo "$(dirname "$FILE")" | sed -e "s~$test_dir/~~" )"
     file="$(basename "${FILE%.*}")"
     script_file="$( echo "$script_dir/$file_path/$file."* )"
@@ -64,4 +64,3 @@ for FILE in "${subset[@]}"; do
         echo "$FILE does not have a script file at $script_file"
     fi
 done
-unset test_tmp_dir
