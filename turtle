@@ -1,51 +1,5 @@
 #! /usr/bin/env sh
 
-# Make sure to escape these in PS* with \[${YELLOW}\] so that it does not get messed up
-function habitat_define_colors() {
-    # Define Colors
-    local reset=""
-    local bold=""
-    local underline=""
-    local black=""
-    local red=""
-    local green=""
-    local yellow=""
-    local blue=""
-    local magenta=""
-    local cyan=""
-    local white=""
-
-    if is_installed.sh "tput"; then
-        local how_many_colors="`tput colors`"
-        if [ -n "$how_many_colors" ] && [ "$how_many_colors"  -ge "8" ]; then
-            reset="$(tput sgr0)"
-            bold="$(tput bold)"
-            underline="$(tput smul)"
-            black="$(tput setaf 0)"
-            red="$(tput setaf 1)"
-            green="$(tput setaf 2)"
-            yellow="$(tput setaf 3)"
-            blue="$(tput setaf 4)"
-            magenta="$(tput setaf 5)"
-            cyan="$(tput setaf 6)"
-            white="$(tput setaf 7)"
-        fi
-    fi
-
-    export BOLD="$bold"
-    export UNDERLINE="$underline"
-    export RESET="$reset"
-    export BLACK="$black"
-    export RED="$red"
-    export GREEN="$green"
-    export YELLOW="$yellow"
-    export BLUE="$blue"
-    export MAGENTA="$magenta"
-    export CYAN="$cyan"
-    export WHITE="$white"
-
-}
-
 function habitat_prep() {
     # Base Folders
     export habitat_base="$HOME/.habitat"
@@ -88,22 +42,7 @@ function habitat_prep() {
 
     export PATH=`"$habitat_bin"/add_to_string.sh "$PATH" "$habitat_bin" ":"`
 
-    # Colors
-    habitat_define_colors
-
     log_result.sh link_files.sh "$habitat_cli" "$HOME/.bash_profile" "$habitat_backup"
-    local os="UNKNOWN"
-    if is_installed.sh "sw_vers" >/dev/null; then
-        os="OSX $(sw_vers -productVersion)"
-    elif is_installed.sh 'lsb_release' >/dev/null; then
-        os="$(lsb_release -a | grep 'Description' | sed -e 's/Description:\t//')"
-    elif [ -f "/etc/*release*" ]; then
-        os=$(cat /etc/*release*)
-    elif [ -f "/etc/issue" ]; then
-        os=$(cat /etc/issue)
-    fi
-    log.sh "Found that operating system is $os"
-    export OPERATING_SYSTEM="$os"
 
 
 }
@@ -372,28 +311,32 @@ function habitat_install_extension() {
 
 function habitat_stub() {
     local extension_name="$1"; shift
-    extension_name="$(echo "$extension_name" | sed -e 's~(_| )~-~')"
-    local underscore_extension_name="$(echo "$extension_name" | sed -e 's~-~_~')"
+    extension_name="$(echo "$extension_name" | sed -e 's~(_| )~-~g')"
+    local underscore_extension_name="$(echo "$extension_name" | sed -e 's~-~_~g' | sed -e 's~habitat_~~g')"
     local extension_dir="$habitat_extensions/$extension_name"
-    local extension_file="$extension_dir/extension.sh"
+    local extension_file="$extension_dir/extension.habit"
+    if [ -d "$extension_dir" ]; then
+        echo "Extension Name already exists at $extension_dir"
+        return
+    fi
     mkdir "$extension_dir"
     touch "$extension_dir/turtle.cfg"
     echo "#! /bin/sh" > "$extension_file"
     echo "" >> "$extension_file"
 
-    echo "${underscore_extension_name}_setup() {" >> "$extension_file"
+    echo "function ${underscore_extension_name}_setup() {" >> "$extension_file"
     echo "    # insert setup here if you want" >> "$extension_file"
     echo "    echo \"$extension_name Setup Stub!\"" >> "$extension_file"
     echo "}" >> "$extension_file"
     echo "" >> "$extension_file"
 
-    echo "${underscore_extension_name}_deploy() {" >> "$extension_file"
+    echo "function ${underscore_extension_name}_deploy() {" >> "$extension_file"
     echo "    # insert deploy here if you want" >> "$extension_file"
     echo "    echo \"$extension_name Deploy Stub!\"" >> "$extension_file"
     echo "}" >> "$extension_file"
     echo "" >> "$extension_file"
 
-    echo "${underscore_extension_name}_cleanup() {" >> "$extension_file"
+    echo "function ${underscore_extension_name}_cleanup() {" >> "$extension_file"
     echo "    # insert cleanup if you want to here" >> "$extension_file"
     echo "    echo \"Optional $extension_name Cleanup Stub!\"" >> "$extension_file"
     echo "}" >> "$extension_file"

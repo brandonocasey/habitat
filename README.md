@@ -99,7 +99,6 @@ The current roadmap from Alpha to Beta
 * How does one extension use another?
 * Can we make the bin folder, optionaly source friendly?
 * turtle.cfg - Required for this extension to work
-* 256 Colors
 * Seperate usable binaries, from lib binaries
 * Export Some habitat directory for user usage
 * Better Config files
@@ -130,19 +129,16 @@ The current roadmap from Alpha to Beta
 * ~~Solidify the extension API~~
 * ~~make sure nothing uninteded goes to the users environment~~
 * Add a config file to house optional and real requirements
-* ~~determine what other variables would be usefull to the user~~
+* ~~determine what other variables would be usefull to the user~~ ~~Remove this~~
 
 ### Milestone 4 - General TODO
 * Go over the items in general TODO and add to roadmap
 * add comments to rough code
 * Fix tab/spacing issues
-* Add colors to the output
+* ~~Add colors to the output~~ ~~No Need~~
 
 ## Beta -> Release
 The current roadmap for Beta to release
-
-### General
-* Nothing yet
 
 ### Milestone 1 - Unit test
 * Unit test habitat and the portable binaries
