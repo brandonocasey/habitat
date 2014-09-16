@@ -40,7 +40,7 @@ function habitat_prep() {
     rm -rf "$habitat_tmp"/*
     "$habitat_bin"/log.sh "Cleaned $habitat_tmp"
 
-    export PATH=`"$habitat_bin"/add_to_string.sh "$PATH" "$habitat_bin" ":"`
+    export PATH="$("$habitat_bin"/add_to_string.sh "$PATH" "$habitat_bin" ":")"
 
     log_result.sh link_files.sh "$habitat_cli" "$HOME/.bash_profile" "$habitat_backup"
 
@@ -51,7 +51,7 @@ function habitat_set_settings() {
     local settings="$1"; shift
     local repo_to_grab
     if [ -d "$habitat_settings" ]; then
-        local result=`user_choice.sh "Are you sure you want to delete current settings?" "y|yes" "n|no"`
+        local result="$(user_choice.sh "Are you sure you want to delete current settings?" "y|yes" "n|no")"
         if regex_match.sh "$result" "^n|no$"; then
             echo "Skipping as user answered $result"
             return
@@ -83,7 +83,7 @@ function habitat_first_time_setup() {
         local settings="$(user_choice.sh "Where is your settings repo?" 'example' 'new' '.*/.*' '(git|http|https)://')"
         local grab_repo=""
         log.sh "The user said there settings are going to be: $settings"
-        log.sh "`habitat_set_settings "$settings"`"
+        log.sh "$(habitat_set_settings "$settings")"
     fi
 }
 
@@ -95,7 +95,7 @@ function habitat_update_and_install() {
     # TODO: read requirements.cfg
     local repo_update_list=("$habitat_settings")
     local extension
-    for extension in `habitat_get_current_extension_dirs`; do
+    for extension in $(habitat_get_current_extension_dirs); do
         repo_update_list+=("$extension")
     done
 
@@ -125,7 +125,7 @@ function habitat_dependancy_management() {
     habitat_first_time_setup
     log_header.sh "Dependancy Management"
 
-    local config_setting="`get_config.sh "_habitat_update_type" "$habitat_config_file"`"
+    local config_setting="$(get_config.sh "_habitat_update_type" "$habitat_config_file")"
     if [ -z "$config_setting" ]; then
         local answer="$(user_choice.sh "Do you want updates?" 'y|yes' 'n|no')"
         if regex_match.sh "$answer" "^y|yes$" "0"; then
@@ -142,13 +142,13 @@ function habitat_dependancy_management() {
         echo "there are updates, please update"
         return
     elif [ "$config_setting" = "ask" ]; then
-        local answer="`user_choice.sh "There are updates, do you want them?" "n|no" "y|yes"`"
+        local answer="$(user_choice.sh "There are updates, do you want them?" "n|no" "y|yes")"
         if regex_match.sh "$answer" "n|no"; then
             return
         fi
     fi
 
-    log.sh "`habitat_update_and_install`"
+    log.sh "$(habitat_update_and_install)"
 
 }
 
@@ -250,13 +250,13 @@ function habitat_cleanup() {
     for dir in $(habitat_get_current_extensions); do
         log.sh "Cleaning up ${dir}_ vars and functions"
         local extension_var
-        for extension_var in `habitat_get_vars "^${dir}_"`; do
+        for extension_var in $(habitat_get_vars "^${dir}_"); do
             log.sh "Unsetting var $extension_var"
             unset "$extension_var"
         done
 
         local extension_function
-        for extension_function in `habitat_get_functions "^${dir}_"`; do
+        for extension_function in $(habitat_get_functions "^${dir}_"); do
             #log.sh "Unsetting function $extension_function"
             unset -f "$extension_function"
         done
@@ -266,7 +266,7 @@ function habitat_cleanup() {
 
     log.sh "Cleaning up habitat_ vars and functions"
     local habitat_func
-    for habitat_func in `habitat_get_functions "^habitat_"`; do
+    for habitat_func in $(habitat_get_functions "^habitat_"); do
         #log.sh "Unsetting function $habitat_func"
         if [ "$habitat_func" != "habitat_get_vars" ] && [ "$habitat_func" != "habitat_cleanup" ]; then
             unset -f "$habitat_func"
@@ -274,7 +274,7 @@ function habitat_cleanup() {
     done
 
     local habitat_var
-    for habitat_var in `habitat_get_vars "^habitat_"`; do
+    for habitat_var in $(habitat_get_vars "^habitat_"); do
         #log.sh "Unsetting var $habitat_var"
         unset "$habitat_var"
     done
@@ -298,7 +298,7 @@ function habitat_install_extension() {
 
     # TODO: read requirements.cfg
     grab_repo.sh "$extension" "$habitat_extensions"
-    local name="`regex_replace.sh "$extension" "s~^.*/~~"`"
+    local name="$(regex_replace.sh "$extension" "s~^.*/~~")"
 
     if [ -f "$habitat_extensions/$name/requiremens.cfg" ]; then
         echo "Call Self!"
