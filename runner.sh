@@ -53,6 +53,9 @@ for FILE in "${subset[@]}"; do
         (
             source "$stub_script"
             source "$assert_script"
+            if [ -f "$(dirname "$FILE")/base" ]; then
+                source "$(dirname "$FILE")/base" "$script_file"
+            fi
             source "$FILE" "$script_file"
             assert_end "$file_path/$file"
         )
