@@ -104,6 +104,7 @@ The current roadmap from Alpha to Beta
 * Better Config files
 * get_all_config.sh cat test.cfg | grep -v '^\s*#' | sed 's~=.*~~g'
 * get one config key="optional.habitat-source-files";cat test.cfg | grep -v '^\s*#' | grep "$key" | sed -e 's~.*="~~g' | sed -e 's~".*~~g'
+* store extensions in a user dir
 
 
 ### ~~Milestone 1 - Documentation/Base~~
@@ -128,7 +129,7 @@ The current roadmap from Alpha to Beta
     * ~~example~~
 * ~~Solidify the extension API~~
 * ~~make sure nothing uninteded goes to the users environment~~
-* Add a config file to house optional and real requirements
+* Find a good way to make a dependancy tree
 * ~~determine what other variables would be usefull to the user~~ ~~Remove this~~
 
 ### Milestone 4 - General TODO

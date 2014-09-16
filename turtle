@@ -1,5 +1,13 @@
 #! /usr/bin/env sh
 
+
+#*==============================================================================
+# habitat_prep
+#
+# Prepare the habitat environment, by adding the bin directory to the path, and
+# adding a few keywords for habitat directories
+#
+#*==============================================================================
 function habitat_prep() {
     # Base Folders
     export habitat_base="$HOME/.habitat"
@@ -46,6 +54,65 @@ function habitat_prep() {
 
 
 }
+
+
+
+#*==============================================================================
+# habitat_extensions
+#
+# Source the extensions into our environment and run their setup, deploy, and
+# cleanup functions in the order of dependancy
+#
+#*==============================================================================
+function habitat_extensions() {
+    log_header.sh "Extensions"
+    local dir
+    for dir in $(habitat_get_current_extension_dirs) ; do
+        log.sh "Sourcing $dir/extension.habit"
+        source "$dir/extension.habit"
+    done
+
+    log_header.sh "A - Setup"
+    habitat_extension_action "setup"
+
+    log_header.sh "B - Deploy"
+    habitat_extension_action "deploy"
+
+    log_header.sh "C - Cleanup"
+    habitat_extension_action "cleanup"
+
+}
+
+#*==============================================================================
+# habitat_extensions
+#
+# See if a function exists for every extension, and run it if it does
+#
+#*==============================================================================
+function habitat_extension_action() {
+    local action="$1"; shift
+    local extension
+    for extension in $(habitat_get_current_extensions); do
+         if [ -n "$(type "${extension}_$action" 2>&1 | grep -i -E 'is a function')" ]; then
+            log.sh "Running ${extension}_$action"
+            "${extension}_$action"
+        else
+            log.sh "${extension}_$action was skipped as it does not exist"
+        fi
+    done
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 function habitat_set_settings() {
     local settings="$1"; shift
@@ -149,7 +216,6 @@ function habitat_dependancy_management() {
     fi
 
     log.sh "$(habitat_update_and_install)"
-
 }
 
 # Extensions step
@@ -174,36 +240,7 @@ function habitat_get_current_extension_dirs() {
 }
 
 
-function habitat_extensions() {
-    log_header.sh "Extensions"
-    local dir
-    for dir in $(habitat_get_current_extension_dirs) ; do
-        log.sh "Sourcing $dir/extension.habit"
-        source "$dir/extension.habit"
-    done
 
-    log_header.sh "A - Setup"
-    habitat_extension_action "setup"
-
-    log_header.sh "B - Deploy"
-    habitat_extension_action "deploy"
-
-    log_header.sh "C - Cleanup"
-    habitat_extension_action "cleanup"
-
-}
-function habitat_extension_action() {
-    local action="$1"; shift
-    local extension
-    for extension in $(habitat_get_current_extensions); do
-         if [ -n "$(type "${extension}_$action" 2>&1 | grep -i -E 'is a function')" ]; then
-            log.sh "Running ${extension}_$action"
-            "${extension}_$action"
-        else
-            log.sh "${extension}_$action was skipped as it does not exist"
-        fi
-    done
-}
 
 function habitat_get_functions() {
     local search="$1"; shift
@@ -380,6 +417,7 @@ while [ "$#" -gt "0" ]; do
         habitat_extension_remove="$1"; shift
     else
         echo "Invalid arg $arg"
+        return 1
     fi
 done
 
