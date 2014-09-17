@@ -22,26 +22,22 @@ fi
 unset -f download
 
 subset=()
-while test $# -gt 0; do
-    if [ -f "$1" ]; then
-        subset+=("$1"); shift
-    elif [ -f "$test_dir"/"$1" ]; then
-        subset+=("$test_dir"/"$1"); shift
-    else
-        echo "$1 is not a test that we can run"
-        exit
+
+for i in $(find "$test_dir" -not -path '../bin' -name '*.t'); do
+    match="0"
+    if [ "$#" -gt "0" ]; then
+        match="1"
+        for subset_match in "$@"; do
+            if [ -n "$(echo "$i" | grep "$subset_match")" ]; then
+                match="0"
+            fi
+        done
+    fi
+    if [ "$match" -eq "0" ]; then
+        subset+=("$i")
     fi
 done
 
-
-source "$stub_script"
-source "$assert_script"
-
-if [ "${#subset[@]}" -eq "0" ]; then
-    for i in $(find "$test_dir" -not -path '../bin' -name '*.t'); do
-        subset+=("$i")
-    done
-fi
 
 for FILE in "${subset[@]}"; do
     if [ -d "$test_tmp_dir" ]; then
