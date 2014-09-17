@@ -99,12 +99,8 @@ The current roadmap from Alpha to Beta
 * How does one extension use another?
 * Can we make the bin folder, optionaly source friendly?
 * turtle.cfg - Required for this extension to work
-* Seperate usable binaries, from lib binaries
 * Export Some habitat directory for user usage
-* Better Config files
-* get_all_config.sh cat test.cfg | grep -v '^\s*#' | sed 's~=.*~~g'
-* get one config key="optional.habitat-source-files";cat test.cfg | grep -v '^\s*#' | grep "$key" | sed -e 's~.*="~~g' | sed -e 's~".*~~g'
-* store extensions in a user dir
+* store extensions in a user dir ex: extensions/brandonocasey/{habitat-things,habitat-lols}
 
 
 ### ~~Milestone 1 - Documentation/Base~~
