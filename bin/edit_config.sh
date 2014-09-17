@@ -11,7 +11,7 @@ function remove_comments() {
 }
 
 # Find a specific key
-function find_key_value() {
+function get() {
   local config="$1"; shift
   local key="$1"; shift
   local key_found="1"
@@ -42,7 +42,7 @@ function find_key_value() {
 }
 
 # Verify that the config is valid
-function verify_config() {
+function verify() {
   # make sure the config is valid
   local config="$1"; shift
 
@@ -99,7 +99,7 @@ function verify_config() {
   fi
 }
 
-function find_all_keys() {
+function getkeys() {
   local config="$1"; shift
   while read line; do
     line="$(remove_comments "$line")"
@@ -112,7 +112,7 @@ function find_all_keys() {
 
 }
 
-function set_config_value() {
+function upsert() {
   local config="$1"; shift
   local key="$1"; shift
   local new_value="$1"; shift
@@ -136,7 +136,7 @@ function set_config_value() {
   printf "$new_config" > "$config"
 }
 
-function remove_key() {
+function delete() {
   local config="$1"; shift
   local key="$1"; shift
 
@@ -165,53 +165,63 @@ function remove_key() {
 }
 
 
-key="extensions"
-quotes_found="0"
+function usage() {
+    echo
+    echo "    ./$(basename "$0") <config> --<action> <args>"
+    echo
+    echo '    Info:'
+    echo '    Remove, Upsert, Get, or Get all settings from a config file'
+    echo '    Config files can have comments, but config keys cannot be empty string'
+    echo
+    echo '    Example:'
+    echo '    thing="55"'
+    echo '    example="55"'
+    echo
+    echo '    Return Codes:'
+    echo '    0 = Success'
+    echo '    1 = Error'
+    echo '    2 = Argument Passing Error'
+    echo '    3 = Validation Error'
+    echo
+    echo '    Arguments'
+    echo '    <config>                 The Location of the config to read (will be created if needed)'
+    echo '    --upsert <key> <value>   Insert/update a new/existing key, value pair'
+    echo '    --delete <key>           Remove a key from the config entirly'
+    echo '    --get <key>              Get the value of a key if it exists, or empty string'
+    echo '    --getkeys                Get all the keys in the config (good for use with get)'
+    echo
+    exit 2
+}
 
-printf '# extensions=
-        # extensions=
-extensions="things/things#1.1.0 derp/derp#1.0.0 last/pass#0.0.0"# comments
+if [ -z "$1" ] || [ -z "$2" ] || [ "$#" -gt "4" ]; then
+  usage
+fi
+config="$1"; shift
+if [ ! -f "$config" ]; then
+  touch "$config"
+fi
+verify "$config"
 
-other="11235"
+for arg in "$@"; do
+    if [ -n "$(echo "$arg" | grep -E '^--?(h|help)$')" ]; then
+      usage
+    elif [ -n "$(echo "$arg" | grep -E '^--?(upsert)$')" ]; then
+      key="$1"; shift
+      value="$1"; shift
+      upsert "$config" "$key" "$value"
+    elif [ -n "$(echo "$arg" | grep -E '^--?(delete)$')" ]; then
+      key="$1"; shift
+      delete "$config" "$key"
+    elif [ -n "$(echo "$arg" | grep -E '^--?(get)$')" ]; then
+      key="$1"; shift
+      get "$config" "$key"
+    elif [ -n "$(echo "$arg" | grep -E '^--?(getall)$')" ]; then
+      getall "$config"
+    elif [ -n "$(echo "$arg" | grep -E '^--?(verify)$')" ]; then
+      do_verify="0"
+    else
+      usage
+    fi
+done
 
-batmans="bsd"
-things="dasd"' > "$1"
-
-verify_config "$1"
-find_key_value "$1" "extensions"
-find_key_value "$1" "other"
-find_key_value "$1" "batmans"
-find_key_value "$1" "things"
-
-echo
-echo "----all Keys----"
-find_all_keys "$1"
-
-rand="$RANDOM"
-echo "----Setting key other to $rand----"
-set_config_value "$1" "other" "$rand"
-find_key_value "$1" "other"
-
-echo "Real Config"
-printf "$(cat "$1")\n"
-
-echo '----Setting Lerp----'
-set_config_value "$1" "lerp" "$RANDOM"
-find_key_value "$1" "lerp"
-
-echo "Real Config"
-printf "$(cat "$1")\n"
-
-echo '----Setting Again----'
-set_config_value "$1" "lerp" "$RANDOM"
-find_key_value "$1" "lerp"
-
-echo "Real Config"
-printf "$(cat "$1")\n"
-
-
-echo '----Remove Lerp----'
-remove_key "$1" "lerp"
-
-echo "Real Config"
-printf "$(cat "$1")\n"
+exit 0

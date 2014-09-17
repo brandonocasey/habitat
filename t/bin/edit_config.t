@@ -1,6 +1,12 @@
 #! /bin/sh
 
 script_file="$1"
+
+assert_raises "$script_file ''" "2"
+assert_raises "$script_file '' ''" "2"
+assert_raises "$script_file '' '' '' '' ''" "2"
+assert_raises "$script_file '/tmp/thing' '-bom' 'nope'" "2"
+
 key="extensions"
 quotes_found="0"
 
