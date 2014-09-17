@@ -17,6 +17,10 @@ function get() {
   local key_found="1"
   local quotes_found="0"
   local line
+  if [ -z "$key" ]; then
+    echo "Key is required for get"
+    exit 3
+  fi
   while read line; do
     # remove comments
     line="$(remove_comments "$line")"
@@ -41,8 +45,8 @@ function get() {
   done < "$config"
 }
 
-# Verify that the config is valid
-function verify() {
+# validate that the config is valid
+function validate() {
   # make sure the config is valid
   local config="$1"; shift
 
@@ -50,16 +54,21 @@ function verify() {
   local quotes_found="0"
   local current_key=""
   local current_value=""
+
   while read line; do
     line="$(remove_comments "$line")"
     if [ -n "$line" ]; then
-      if [ -n "$( echo "$line" | grep '^.*=')" ]; then
+      if [ -z "$(echo "$line" | grep '^.*=.*')" ]; then
+        echo "Cannot have a key that has no value"
+        exit 3
+      fi
+      if [ -n "$(echo "$line" | grep '^.*=')" ]; then
         local new_key="$(echo "$line" | sed -e 's~=.*$~~')"
         if [ -z "$current_key" ]; then
           current_key="$new_key"
         else
           echo "Another key '$new_key' was found before old key '$current_key' ended"
-          exit 1
+          exit 3
         fi
         line="$(echo "$line" | sed -e "s~$current_key=~~")"
       fi
@@ -79,29 +88,41 @@ function verify() {
       if [ "$quotes_found" -eq "2" ]; then
         if [ -z "$current_value" ]; then
           echo "key $current_key does not have a value"
-          exit 1
+          exit 3
         fi
         quotes_found="0"
         current_key=""
         current_value=""
       elif [ "$quotes_found" -gt "2" ]; then
         echo "To many quotes following $current_key"
-        exit 1
+        exit 3
       fi
     fi
-
-
   done < "$config"
+
+  for i in $(getkeys "$config"); do
+    match="0"
+    for z in $(getkeys "$config"); do
+      if [ -n "$( echo "$i" | grep "$z")" ]; then
+        match=$((match+1))
+      fi
+    done
+
+    if [ "$match" -gt "1" ]; then
+      echo "key $i is in the config $match times"
+      exit 3
+    fi
+  done
 
   if [ -n "$current_key" ] && [ "$quotes_found" -lt "2" ]; then
     echo "Not enough quotes for the last key $current_key"
-    exit 1
+    exit 3
   fi
 }
 
 function getkeys() {
   local config="$1"; shift
-  while read line; do
+  while read -r line; do
     line="$(remove_comments "$line")"
     if [ -n "$( echo "$line" | grep '^.*=')" ]; then
       echo "$line" | sed -e 's~=.*$~~'
@@ -119,28 +140,36 @@ function upsert() {
 
   if [ -z "$new_value" ]; then
     echo "Cannot Set config $key with a blank value"
-    exit 1;
+    exit 3
+  fi
+  if [ -z "$key" ]; then
+    echo "Key cannot be blank"
+    exit 3
   fi
 
-  local value="$(find_key_value "$config" "$key")"
+  local old_value="$(get "$config" "$key")"
 
   # if we have  value we know its in the config file
-  if [ -n "$value" ]; then
-    echo "seding in new value $value"
-    local new_config="$(cat "$config" | sed -e "s~$key=\"$value\"~$key=\"$new_value\"~")"
+  if [ -n "$old_value" ]; then
+    local new_config="$(cat "$config" | sed -e "s~$key=\".*\"~$key=\"$new_value\"~")"
   else
     local new_config="$(cat "$config")"
     new_config+="\n$(echo "$key=\"$new_value\"")"
   fi
 
-  printf "$new_config" > "$config"
+  printf "$new_config\n" > "$config"
 }
 
 function delete() {
   local config="$1"; shift
   local key="$1"; shift
 
-  if [ -z "$(find_key_value "$config" "$key")" ]; then
+  if [ -z "$key" ]; then
+    echo "Key is required for delete"
+    exit 3
+  fi
+
+  if [ -z "$(get "$config" "$key")" ]; then
     echo "Cannot remove $key as it is not in the config file"
     exit 1
   fi
@@ -149,19 +178,24 @@ function delete() {
   local line
   local skip="1"
   while read line; do
-    if [ -n "$( echo "$line" | grep "$key=")" ]; then
-      line="$(echo "$line" | sed -e 's~.*=".*"[[:space:]]*~~')"
+    if [ -n "$( echo "$line" | grep "^$key=")" ]; then
+      line="$(echo "$line" | sed -e "s~^$key=\".*\"[[:space:]]*~~")"
       if [ -z "$line" ]; then
         skip="0"
       fi
     fi
-    if [ "$skip" -eq "0" ]; then
-      new_config+="$line"
+    if [ "$skip" -eq "1" ]; then
+      new_config+="$line\n"
     else
       skip="1"
     fi
   done < "$config"
-  echo "$new_config" > "$config"
+  if [ -n "$new_config" ]; then
+    printf "$new_config\n" > "$config"
+  else
+    : > "$config"
+
+  fi
 }
 
 
@@ -189,6 +223,7 @@ function usage() {
     echo '    --delete <key>           Remove a key from the config entirly'
     echo '    --get <key>              Get the value of a key if it exists, or empty string'
     echo '    --getkeys                Get all the keys in the config (good for use with get)'
+    echo '    --validate               Validate the config file (done automatically every other action)'
     echo
     exit 2
 }
@@ -200,26 +235,31 @@ config="$1"; shift
 if [ ! -f "$config" ]; then
   touch "$config"
 fi
-verify "$config"
 
-for arg in "$@"; do
+while [ "$#" -gt "0" ]; do
+  arg="$1"; shift
     if [ -n "$(echo "$arg" | grep -E '^--?(h|help)$')" ]; then
       usage
     elif [ -n "$(echo "$arg" | grep -E '^--?(upsert)$')" ]; then
+      validate "$config"
       key="$1"; shift
       value="$1"; shift
       upsert "$config" "$key" "$value"
     elif [ -n "$(echo "$arg" | grep -E '^--?(delete)$')" ]; then
+      validate "$config"
       key="$1"; shift
       delete "$config" "$key"
     elif [ -n "$(echo "$arg" | grep -E '^--?(get)$')" ]; then
+      validate "$config"
       key="$1"; shift
       get "$config" "$key"
-    elif [ -n "$(echo "$arg" | grep -E '^--?(getall)$')" ]; then
-      getall "$config"
-    elif [ -n "$(echo "$arg" | grep -E '^--?(verify)$')" ]; then
-      do_verify="0"
+    elif [ -n "$(echo "$arg" | grep -E '^--?(getkeys)$')" ]; then
+      validate "$config"
+      getkeys "$config"
+    elif [ -n "$(echo "$arg" | grep -E '^--?(validate)$')" ]; then
+      validate "$config"
     else
+      echo "Invalid option $arg"
       usage
     fi
 done
