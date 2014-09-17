@@ -1,6 +1,6 @@
 #!/bin/sh
 
-download="$tmp_dir/download_thing"
+download="$test_tmp_dir/download_thing"
 
 function startup() {
 	stub_and_eval 'wget' "return 3"

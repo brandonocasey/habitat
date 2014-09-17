@@ -7,9 +7,10 @@
 script_dir="$( cd "$( dirname "$0" )" && pwd )"
 test_dir="$script_dir/t"
 tmp_dir="$script_dir/storage/tmp"
+test_tmp_dir="$script_dir/storage/tmp/test"
 
-assert_script="/tmp/assert.sh"
-stub_script="/tmp/stub.sh"
+assert_script="$tmp_dir/assert.sh"
+stub_script="$tmp_dir/stub.sh"
 
 
 if [ ! -f "$assert_script" ] || [ ! -f "$stub_script" ]; then
@@ -33,7 +34,6 @@ while test $# -gt 0; do
 done
 
 
-
 source "$stub_script"
 source "$assert_script"
 
@@ -44,7 +44,11 @@ if [ "${#subset[@]}" -eq "0" ]; then
 fi
 
 for FILE in "${subset[@]}"; do
-    rm -rf ./"$tmp_dir"/*
+    if [ -d "$test_tmp_dir" ]; then
+        rm -rf "$test_tmp_dir"
+    fi
+    mkdir -p "$test_tmp_dir"
+
     file_path="$( echo "$(dirname "$FILE")" | sed -e "s~$test_dir/~~" )"
     file="$(basename "${FILE%.*}")"
     script_file="$( echo "$script_dir/$file_path/$file."* )"
