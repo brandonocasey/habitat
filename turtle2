@@ -13,9 +13,9 @@ while read -r extension_dir; do
 	if [ ! -d "$extension_dir/.git" ]; then
 		echo "$extension_dir is not under version control"
 	else
-		LOCAL="$(cd "$extension_dir" && git rev-parse @)"
+		LOCAL="$(cd "$extension_dir" && git rev-parse @{0})"
 		REMOTE="$(cd "$extension_dir" && git rev-parse @{u})"
-		BASE="$(cd "$extension_dir" && git merge-base @ @{u})"
+		BASE="$(cd "$extension_dir" && git merge-base @{0} @{u})"
 		if [ "$LOCAL" = "$BASE" ]; then
 			echo "Update possible for $extension_dir"
 		fi
