@@ -51,9 +51,18 @@ The habitat cli is called turtle and it follows a four step proccess in setting 
 # How do extensions work?
 Extensions are a big part of every step in the life cycle of a program
 
-# Binaries:
+# Binaries
+## Return Codes
+| Code | Meaning          |
+|------|------------------|
+| 0    | Success          |
+| 1    | Failure          |
+| 2    | Argument Error   |
+| 3    | Validation Error |
 
-# Variables:
+## Descriptions
+
+# Variables
 
 # Options:
 if no options are passed then habitat will configure the environment
