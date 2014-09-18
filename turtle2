@@ -1,0 +1,24 @@
+#! /bin/sh
+
+habitat_extensions="$( cd "$(dirname "$0")" && pwd )/test"
+function get_extension_dirs() {
+	for author_dir in "$habitat_extensions/"*; do
+		for extension in "$author_dir/"*; do
+			echo "$extension"
+		done
+	done
+}
+
+while read -r extension_dir; do
+	if [ ! -d "$extension_dir/.git" ]; then
+		echo "$extension_dir is not under version control"
+	else
+		LOCAL="$(cd "$extension_dir" && git rev-parse @)"
+		REMOTE="$(cd "$extension_dir" && git rev-parse @{u})"
+		BASE="$(cd "$extension_dir" && git merge-base @ @{u})"
+		if [ "$LOCAL" = "$BASE" ]; then
+			echo "Update possible for $extension_dir"
+		fi
+		# Check if git update
+	fi
+done <<< "$(get_extension_dirs)"
