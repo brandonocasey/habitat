@@ -4,21 +4,21 @@ source "$( cd "$(dirname $0 )/.." && pwd)/lib/shared.sh"
 question=""
 answers=""
 
-help="q Question to ask the user$nl"
-help+="a Pipe deliminated answers where default is the first asd|dsa|no|yes $nl"
+help="question Question to ask the user$nl"
+help+="answers Pipe deliminated answers where default is the first asd|dsa|no|yes $nl"
 while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
         --help)
         usage "$help"
         ;;
-        --q)
+        --question)
         if [ -z "$1" ]; then
             argument_error "Must have an argument after $arg"
         fi
         question="$1"; shift
         ;;
-        --a)
+        --answers)
         if [ -z "$1" ]; then
             argument_error "Must have an argument after $arg"
         fi
