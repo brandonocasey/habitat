@@ -33,10 +33,24 @@ function validation_error() {
 
 # Example:
 # THINGS=""
-# THINGS+="--thing|t thing it woo $nl"
-# THINGS+="--ping|p ping it doop $nl"
-# THINGS+="--foo|f  foo that stuff $nl"
-# THINGS+="--bar|b  The bar $nl"
+# THINGS+="thing thing it woo $nl"
+# THINGS+="ping ping it doop $nl"
+# THINGS+="# 1 - pings the best"
+# THINGS+="# 2 - pings the worst"
+# THINGS+="foo  foo that stuff $nl"
+# THINGS+="bar  The bar $nl"
+
+# Output would be
+#
+#  ./script.sh <options
+#
+#  --thing    thing it woo
+#  --ping     ping it doop
+#               1 - pings the best
+#               2 - pings the worst
+#  --foo      foo that stuff
+#  --bar      The bar
+#
 
 # usage "$THINGS"
 function usage() {
@@ -60,15 +74,20 @@ function usage() {
 
     (while read -r item; do
         local real_item=""
-        for var in $item; do
-            real_item+="$var "
-            if [ "$real_item" = "$var " ]; then
-                real_item="  --$real_item"
-                local length="${#var}"
-                length=$((max_length-length))
-                real_item+="$(printf "%-${length}s" " ")"
-            fi
-        done
+        if [ -z "$(echo "$item" | grep "^#")" ]; then
+            for var in $item; do
+                real_item+="$var "
+                if [ "$real_item" = "$var " ]; then
+                    real_item="  --$real_item"
+                    local length="${#var}"
+                    length=$((max_length-length))
+                    real_item+="$(printf "%-${length}s" " ")"
+                fi
+            done
+        else
+            real_item+="$(printf "%-$((max_length+5))s" " ")"
+            real_item+="  $(echo "$item" | sed -e "s~^#[[:space:]]*~~")"
+        fi
         echo "$real_item"
     done <<< "$items")
     echo
