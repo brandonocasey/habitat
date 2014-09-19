@@ -1,5 +1,5 @@
 #! /bin/sh
-source "$( cd "$(dirname $0 )/.." && pwd)/lib/shared.sh"
+source "$( cd "$(dirname $0 )/.." && pwd)/lib/main.sh"
 
 question=""
 answers=""

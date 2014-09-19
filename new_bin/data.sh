@@ -5,7 +5,7 @@
 #
 # Distributed under terms of the MIT license.
 #
-source "$( cd "$(dirname $0 )/.." && pwd)/lib/shared.sh"
+source "$( cd "$(dirname $0 )/.." && pwd)/lib/main.sh"
 
 # Move, symlink, and copy with automatic backup
 

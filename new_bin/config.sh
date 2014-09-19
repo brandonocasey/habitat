@@ -1,6 +1,6 @@
 #! /bin/sh
 
-source "$( cd "$(dirname $0 )/.." && pwd)/lib/shared.sh"
+source "$( cd "$(dirname $0 )/.." && pwd)/lib/main.sh"
 # TODO:
 # * support single quotes
 # * support quotes inside quotes if escaped
