@@ -6,7 +6,6 @@ answers=""
 
 help="q Question to ask the user$nl"
 help+="a Pipe deliminated answers where default is the first asd|dsa|no|yes $nl"
-help+="enter $nl"
 while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
