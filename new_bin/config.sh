@@ -1,5 +1,6 @@
 #! /bin/sh
 
+source "$( cd "$(dirname $0 )/.." && pwd)/lib/shared.sh"
 # TODO:
 # * support single quotes
 # * support quotes inside quotes if escaped
@@ -12,7 +13,6 @@ function remove_comments() {
 
 # Find a specific key
 function get() {
-  local config="$1"; shift
   local key="$1"; shift
   local key_found="1"
   local quotes_found="0"
@@ -48,7 +48,6 @@ function get() {
 # validate that the config is valid
 function validate() {
   # make sure the config is valid
-  local config="$1"; shift
 
   local key_found="1"
   local quotes_found="0"
@@ -121,7 +120,6 @@ function validate() {
 }
 
 function getkeys() {
-  local config="$1"; shift
   while read -r line; do
     line="$(remove_comments "$line")"
     if [ -n "$( echo "$line" | grep '^.*=')" ]; then
@@ -134,7 +132,6 @@ function getkeys() {
 }
 
 function upsert() {
-  local config="$1"; shift
   local key="$1"; shift
   local new_value="$1"; shift
 
@@ -161,7 +158,6 @@ function upsert() {
 }
 
 function delete() {
-  local config="$1"; shift
   local key="$1"; shift
 
   if [ -z "$key" ]; then
@@ -199,69 +195,63 @@ function delete() {
 }
 
 
-function usage() {
-    echo
-    echo "    ./$(basename "$0") <config> --<action> <args>"
-    echo
-    echo '    Info:'
-    echo '    Remove, Upsert, Get, or Get all settings from a config file'
-    echo '    Config files can have comments, but config keys cannot be empty string'
-    echo
-    echo '    Example:'
-    echo '    thing="55"'
-    echo '    example="55"'
-    echo
-    echo '    Return Codes:'
-    echo '    0 = Success'
-    echo '    1 = Error'
-    echo '    2 = Argument Passing Error'
-    echo '    3 = Validation Error'
-    echo
-    echo '    Arguments'
-    echo '    <config>                 The Location of the config to read (will be created if needed)'
-    echo '    --upsert <key> <value>   Insert/update a new/existing key, value pair'
-    echo '    --delete <key>           Remove a key from the config entirly'
-    echo '    --get <key>              Get the value of a key if it exists, or empty string'
-    echo '    --getkeys                Get all the keys in the config (good for use with get)'
-    echo '    --validate               Validate the config file (done automatically every other action)'
-    echo
-    exit 2
-}
 
-if [ -z "$1" ] || [ -z "$2" ] || [ "$#" -gt "4" ]; then
-  usage
+help="config    location of the config$nl"
+help+="upsert   <key> <value> insert/update a key/value pair$nl"
+help+="delete   <key> delete a key/value pair$nl"
+help+="get      <key> get the value of a key$nl"
+help+="getkeys  get all of the keys$nl"
+while [ "$#" -gt "0" ]; do
+    arg="$1"; shift
+    case $arg in
+        --help)
+        usage "$help"
+        ;;
+        --config)
+        if [ -z "$1" ]; then
+            argument_error "Must have an argument after $arg"
+        fi
+        if [ -n "$config" ]; then
+            argument_error "--config cannot be set to $1 it is already set to $config"
+        fi
+        config="$1"; shift
+        ;;
+        --upsert)
+        if [ -z "$1" ] || [ -z "$2" ]; then
+            argument_error "Must have two arguments after $arg"
+        fi
+        action="$arg"
+        arg1="$1"; shift
+        arg2="$1"; shift
+        ;;
+        --delete|--get)
+        if [ -z "$1" ]; then
+            argument_error "Must have an argument after $arg"
+        fi
+        action="$arg"
+        arg1="$1"; shift
+        ;;
+        *)
+            argument_error "Invalid Argument $arg"
+        ;;
+    esac
+done
+if [ -z "$config" ]; then
+  validation_error "Config must be set using --config"
 fi
-config="$1"; shift
 if [ ! -f "$config" ]; then
   touch "$config"
 fi
 
-while [ "$#" -gt "0" ]; do
-  arg="$1"; shift
-    if [ -n "$(echo "$arg" | grep -E '^--?(h|help)$')" ]; then
-      usage
-    elif [ -n "$(echo "$arg" | grep -E '^--?(upsert)$')" ]; then
-      validate "$config"
-      key="$1"; shift
-      value="$1"; shift
-      upsert "$config" "$key" "$value"
-    elif [ -n "$(echo "$arg" | grep -E '^--?(delete)$')" ]; then
-      validate "$config"
-      key="$1"; shift
-      delete "$config" "$key"
-    elif [ -n "$(echo "$arg" | grep -E '^--?(get)$')" ]; then
-      validate "$config"
-      key="$1"; shift
-      get "$config" "$key"
-    elif [ -n "$(echo "$arg" | grep -E '^--?(getkeys)$')" ]; then
-      validate "$config"
-      getkeys "$config"
-    elif [ -n "$(echo "$arg" | grep -E '^--?(validate)$')" ]; then
-      validate "$config"
-    else
-      echo "Invalid option $arg"
-      usage
-    fi
-done
+validate "$config"
+if [ "$action" = "--upsert" ]; then
+  upsert "$arg1" "$arg2"
+elif [ "$action" = "--delete" ]; then
+  delete "$arg1"
+elif [ "$action" = "--get" ]; then
+  get "$arg1"
+elif [ "$action" = "--getkeys" ]; then
+  getkeys
+fi
 
 exit 0
