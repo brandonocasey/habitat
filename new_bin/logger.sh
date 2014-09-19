@@ -1,10 +1,6 @@
 #! /bin/sh
 source "$( cd "$(dirname $0 )/.." && pwd)/lib/main.sh"
 
-# TODO:
-# * Prefix on stdout?
-# * Prefix in the log is broken
-
 function get_prefix() {
     local prefix=""
     if [ "$action" = "--stdout" ]; then
@@ -21,7 +17,7 @@ function log() {
     local no_prefix="$1"; shift
     (while read -r line;do
         if [ -n "$line" ]; then
-            if [ -n "$use_prefix" ]; then
+            if [ -n "$no_prefix" ]; then
                 echo "$line"
             else
                 echo "$(get_prefix) $line"
@@ -33,12 +29,16 @@ function log() {
 
 
 function log_header() {
-    local header="$1"; shift
-}
+    "$@" | "$0 --stdout"
+} 1>&3
 
 function log_result() {
-    echo "NYI"
-}
+    (while read -r line;do
+        if [ -n "$line" ]; then
+            echo "*----$line----*" 2>&1
+        fi
+    done <<< "$log_lines")
+} 1>&3
 
 
 log_lines=""
@@ -49,24 +49,22 @@ if [ ! -t 0 ]; then
     done
 fi
 
-header=""
+action=""
 file=""
-level=""
-result=""
 
 help=""
 help+="# Anything passed without -- is assumed to be a log line/part of a command$nl"
 help+="# Environment Variables:$nl"
 help+="# CUSTOM_LOG_FILE - file to log to or stdout for stdout$nl"
-help+="# CUSTOM_LOG_LEVEL - Current log level$nl"
+help+="# CUSTOM_LOG_LEVEL - Current log level default is 2$nl"
 help+="# CUSTOM_LOG_PREFIX - Custom log prefix$nl"
+
+help+="file The file to log export CUSTOM_LOG_FILE$nl"
+
 
 help+="header Print log lines in header format$nl"
 help+="stdout Log to stdout instead of file$nl"
 help+="result Log the result of a command$nl"
-help+="file The file to log export CUSTOM_LOG_FILE$nl"
-
-
 help+="error log to level 1$nl"
 help+="info  log to level 2$nl"
 help+="debug log to level 3$nl"
@@ -77,24 +75,17 @@ while [ "$#" -gt "0" ]; do
         --help)
         usage "$help"
         ;;
-        --header)
-        if [ -z "$1" ]; then
-            argument_error "Must have an argument after $arg"
+        --header|--stdout|--result|--error|--debug|--info|--devel)
+        if [ -n "$action" ]; then
+            argument_error "Cannot run $action and $arg"
         fi
         action="$arg"
-        arg1="$1"; shift
         ;;
         --file)
         if [ -z "$1" ]; then
             argument_error "Must have an argument after $arg"
         fi
         file="$1"; shift
-        ;;
-        --level)
-        if [ -z "$1" ]; then
-            argument_error "Must have an argument after $arg"
-        fi
-        level="$1"; shift
         ;;
         --*)
             argument_error "Invalid Argument $arg"
@@ -105,11 +96,14 @@ while [ "$#" -gt "0" ]; do
     esac
 done
 
-if [ "$level" ]; then
-    validation_error "A log level must be set"
+if [ -z "$CURRENT_LOG_LEVEL" ]; then
+    current_level="2"
+else
+    current_level="$CURRENT_LOG_LEVEL"
 fi
+
 if [ -z "$log_lines" ]; then
-    validation_error "Must pass in lines to log"
+    validation_error "You must pass in lines to log or a command"
 fi
 
 if [ "$action" != "--stdout" ]; then
@@ -137,7 +131,7 @@ elif [ "$action" = "--stdout" ]; then
 elif [ "$action" = "--header" ]; then
     log_header
 elif [ "$action" = "--result" ]; then
-    log_result
+    log_result "$log_lines"
 fi
 
 exec 3>&-
