@@ -2,7 +2,7 @@
 source "$( cd "$(dirname $0 )/.." && pwd)/lib/main.sh"
 
 function match() {
-    if [ -n "$insensitive" ]; then
+    if [ "$insensitive" -eq "0" ]; then
         local result="$(echo "$1" | grep -E -i "$2")"
     else
         local result="$(echo "$1" | grep -E "$2")"
@@ -20,7 +20,7 @@ function replace() {
     # local variable declartion as a return code so it overwrote the actual return code
     # http://stackoverflow.com/a/4764877
     local result
-    if [ -n "$insensitive" ]; then
+    if [ "$insensitive" -eq "0" ]; then
         result="$( set -o pipefail; echo "$1" | sed -e "s~$2~$3~i")"
     else
         result="$( set -o pipefail; echo "$1" | sed -e "s~$2~$3~i")"
