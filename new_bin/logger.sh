@@ -27,12 +27,14 @@ function log() {
 } 1>&3
 
 
-
-function log_header() {
-    "$@" | "$0 --stdout"
+# Run the command and pipe the output to this binary
+# have this binary print to stdout
+# redirect stdout to the log
+function log_result() {
+    "$@" 2>&1 | "$0 --stdout"
 } 1>&3
 
-function log_result() {
+function log_header() {
     (while read -r line;do
         if [ -n "$line" ]; then
             echo "*----$line----*" 2>&1
