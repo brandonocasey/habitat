@@ -20,11 +20,14 @@ function replace() {
     # local variable declartion as a return code so it overwrote the actual return code
     # http://stackoverflow.com/a/4764877
     local result
+    local flags=""
     if [ "$insensitive" -eq "0" ]; then
-        result="$( set -o pipefail; echo "$1" | sed -e "s~$2~$3~i")"
-    else
-        result="$( set -o pipefail; echo "$1" | sed -e "s~$2~$3~i")"
+        flags+="i"
     fi
+    if [ "$global" -eq "0" ];then
+        flags+="g"
+    fi
+    result="$( set -o pipefail; echo "$1" | sed -e "s~$2~$3~$flags")"
     if [ "$?" -ne "0" ]; then
         echo "Regex Error: $result"
         exit 2
@@ -34,19 +37,24 @@ function replace() {
 }
 
 insensitive="1"
+global="1"
 action=""
 help=""
 help+="match <string> <regex>, 0 if matches 1 otherwise$nl"
 help+="replace <string> <regex_search> <replacement> replace from a string$nl"
 help+="i insensitive case matching$nl"
+help+="g global replace$nl"
 while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
         --help)
         usage "$help"
         ;;
-        --)
+        --i)
             insensitive="0"
+        ;;
+        --g)
+            global="0"
         ;;
         --match)
         if [ -n "$action" ]; then
