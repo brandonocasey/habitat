@@ -6,6 +6,7 @@
 # Distributed under terms of the MIT license.
 #
 
+source "$( cd "$(dirname $0 )/.." && pwd)/lib/main.sh"
 # Define
 NO_TYPE=0
 GIT_TYPE=1
@@ -16,7 +17,6 @@ MER_TYPE=3
 function check_repo_status() {
     local repo_dir="$1"; shift
     local repo_type="$1"; shift
-
 
     # http://stackoverflow.com/a/3278427
     if [ "$repo_type" -eq "$GIT_TYPE" ]; then
@@ -65,6 +65,43 @@ function download_repo() {
     elif [ "$repo_type" -eq "$SVN_TYPE" ]; then
         svn up "$repo_dir"
     fi
-
-
 }
+
+
+action=""
+help=""
+help+="match <string> <regex>, 0 if matches 1 otherwise$nl"
+help+="replace <string> <regex_search> <replacement> replace from a string$nl"
+help+="i insensitive case matching$nl"
+while [ "$#" -gt "0" ]; do
+    arg="$1"; shift
+    case $arg in
+        --help)
+        usage "$help"
+        ;;
+        --)
+            insensitive="0"
+        ;;
+        --match)
+        if [ -n "$action" ]; then
+            argument_error "Cannot do $arg and $action"
+        fi
+        if [ -z "$1" ] || [ -z "$2" ]; then
+            argument_error "$arg requires two arguments"
+        fi
+        action="$arg"
+        ;;
+        --replace)
+        if [ -z "$1" ]; then
+            argument_error "Must have an argument after $arg"
+        fi
+        if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
+            argument_error "$arg requires three arguments"
+        fi
+        action="$arg"
+        ;;
+        *)
+            argument_error "Invalid Argument $arg"
+        ;;
+    esac
+done
