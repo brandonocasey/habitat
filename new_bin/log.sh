@@ -46,9 +46,7 @@ function log_header() {
 log_lines=""
 # if stdin is a tty: process command line
 if [ ! -t 0 ]; then
-    while read var; do
-        log_lines+="${var}${nl}"
-    done
+    set -- "$@" "$var"
 fi
 
 action=""
@@ -112,15 +110,20 @@ while [ "$#" -gt "0" ]; do
             fi
             file="$1"; shift
         ;;
-        --*)
-            argument_error "Invalid Argument $arg"
-        ;;
         *)
-            log_lines+="${arg}${nl}"
+
+            if [ -z "$log_lines" ]; then
+                log_lines+="${arg}"
+            else
+                log_lines+="${nl}${arg}"
+            fi
         ;;
     esac
 done
 
+if [ -z "$level" ]; then
+    level="2"
+fi
 if [ -z "$CURRENT_LOG_LEVEL" ]; then
     current_level="2"
 else
