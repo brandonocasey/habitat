@@ -267,8 +267,6 @@ function habitat_usage() {
     echo "    --save       save/install a dependancy to your environment list"
     echo "    --update     update/install extensions based on configs and whats installed"
     echo "    --stub       stub an extension name in the extensions directory"
-    echo "    --verbose    show verbose output in the log"
-    echo "    --debug      show debug output in the log"
     echo
 }
 

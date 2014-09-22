@@ -1,8 +1,80 @@
 #! /bin/sh
 source "$( cd "$(dirname $0 )/.." && pwd)/lib/main.sh"
 
-help="stub Question to ask the user$nl"
-help+="install|add Pipe deliminated answers where default is the first asd|dsa|no|yes $nl"
+function habitat_prep() {
+    # Base Folders
+    export habitat_base="$HOME/.habitat"
+    export habitat_cli="$habitat_base/turtle"
+    export habitat_storage="$habitat_base/storage"
+    export habitat_test="$habitat_base/t"
+    export habitat_bin="$habitat_base/bin"
+    export habitat_extensions="$habitat_base/extensions"
+    export habitat_settings="$habitat_base/settings"
+
+    # Specific Folders
+    export habitat_tmp="$habitat_storage/tmp"
+    export habitat_backup="$habitat_storage/backup"
+    export habitat_logs="$habitat_storage/logs"
+    export habitat_configs="$habitat_settings/configs"
+
+    # Specific Files
+    export habitat_log_file="$habitat_logs/turtle.log"
+    export habitat_config_file="$habitat_settings/turtle.cfg"
+    export habitat_settings_bin="$habitat_settings/bin"
+
+    # For things to log to
+    export custom_log_file="$habitat_log_file"
+    export custom_log_file="$habitat_backup"
+
+    # The date
+    export habitat_start_seconds="$(date +%s)"
+
+    : > "$habitat_log_file"
+    # Assure that we have a good environment
+    "$habitat_bin"/log.sh --header "Prep"
+    "$habitat_bin"/log.sh --result unalias -a
+
+    alias habitat="source $habitat_cli"
+    alias turtle="source $habitat_cli"
+    "$habitat_bin"/log.sh "Added turtle and habitat alias"
+
+    rm -rf "$habitat_tmp"/*
+    "$habitat_bin"/log.sh "Cleaned $habitat_tmp"
+
+    export PATH="$("$habitat_bin"/string.sh --split ":" "$PATH" | "$habitat_bin"/string.sh --joinu ":")"
+
+    log.sh --result  data.sh --link "$habitat_cli" "$HOME/.bash_profile" --backup "$habitat_backup"
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+action=""
+save="1"
+help=""
+help+="install|add         install a dependancy to your environment$nl"
+help+="remove|uninstall    uninstall a dependancy from your environment$nl"
+help+="save                save/install a dependancy to your environment list$nl"
+help+="setting             Can be set to new, example, or a github repo$nl"
+help+="stub                stub an extension name in the extensions directory$nl"
 while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
@@ -15,9 +87,14 @@ while [ "$#" -gt "0" ]; do
         --uninstall|--remove)
 			action="$arg"
         ;;
-
-		--uninstall|--remove)
+		--settings)
 			action="$arg"
+        ;;
+		--stub)
+			action="$arg"
+        ;;
+		--stub)
+			save="0"
         ;;
 
         *)
@@ -25,6 +102,42 @@ while [ "$#" -gt "0" ]; do
         ;;
     esac
 done
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 habitat_extensions="$( cd "$(dirname "$0")" && pwd )/test"
 function get_extension_dirs() {
