@@ -346,7 +346,7 @@ while [ "$#" -gt "0" ]; do
             action="$arg"
         ;;
         --stub)
-            save="0"
+            action="stub"
         ;;
 
         *)
@@ -358,9 +358,23 @@ done
 
 # Prep
 habitat_prep
-# Dependancy Maanagement
+
+if [ "$action" = "main" ]; then
+
+    # Dependancy Maanagement
 habitat_dependancy_management
+
 # Extension Deployment
 habitat_extension_deployment
+
+elif [ "$action" = "stub" ]; then
+    habitat_stub_extension
+elif [ "$action" = "install" ]; then
+    habitat_install_extension
+elif [ "$action" = "uninstall" ]; then
+    habitat_remove_extension
+elif [ "$action" = "settings" ]; then
+    habitat_install_settings
+fi
 # Cleanup
 habitat_cleanup
