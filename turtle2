@@ -1,6 +1,14 @@
 #! /bin/sh
 source "$( cd "$(dirname $0 )/.." && pwd)/lib/main.sh"
 
+
+#*==============================================================================
+# habitat_prep
+#
+# Prepare the habitat environment, by adding the bin directory to the path, and
+# adding a few keywords for habitat directories
+#
+#*==============================================================================
 function habitat_prep() {
     # Base Folders
     export habitat_base="$HOME/.habitat"
@@ -20,7 +28,6 @@ function habitat_prep() {
     # Specific Files
     export habitat_log_file="$habitat_logs/turtle.log"
     export habitat_config_file="$habitat_settings/turtle.cfg"
-    export habitat_settings_bin="$habitat_settings/bin"
 
     # For things to log to
     export custom_log_file="$habitat_log_file"
@@ -47,24 +54,269 @@ function habitat_prep() {
 }
 
 
+function habitat_install_settings() {
+    local settings="$1"; shift
+    if [ ! -d "$habitat_settings" ] && [ -z "$settings" ]; then
+        local settings="$(ask.sh -question "Where is your settings repo?" --answers 'example|new|.*/.*|(git|http|https)://')"
+        log.sh "The user said there settings are going to be: $settings"
+    fi
+
+    local repo=""
+    if [ "$settings" = "example" ]; then
+        repo="brandonocasey/habitat-settings-example"
+    elif [ "$settings" = "new" ]; then
+        mkdir -p "$habitat_settings"
+        : > "$habitat_config_file"
+    else
+        repo="$settings"
+    fi
+
+    if [ -n "$repo" ]; then
+        echo "Installing repo $repo under settings"
+        repo.sh --download "$repo" "$habitat_settings"
+    fi
+}
+
+function habitat_update_settings() {
+    local type="$1";shift
+    local ask=""
+    if repo.sh --status "$habitat_settings"; then
+        if [ "$type" = "inform" ]; then
+            echo "There are updates avilable for your settings repo"
+        elif [ "$type" = "ask" ]; then
+            ask="$(ask.sh --question "There are updates for your settings do you want them?" --answers "y|yes|n|no")"
+        fi
+        if [ "$type" = "auto" ] || regex.sh --match "$ask" "y|yes" -i; then
+            repo.sh --update "$habitat_settings"
+        fi
+    fi
+}
+
+# Deps Management
+function habitat_dependancy_management() {
+    log.sh --header "Dependancy Management"
+    # First Time Stuff
+    habitat_install_settings
+    local config_setting="$(config.sh --key "update_type" --config "$habitat_config_file")"
+    if [ -z "$config_setting" ]; then
+        local answer="$(ask.sh --question "Do you want updates?" --answers 'y|yes|n|no')"
+        if regex.sh --match "$answer" "^y|yes$" -i; then
+            answer="$(ask.sh --question "How do you want updates?" --answers 'auto|ask|inform|manual')"
+        else
+            answer="manual"
+        fi
+        config.sh --upsert "update_type" "$answer" --config "$habitat_config_file"
+    fi
+
+    # if they don't want to update ever
+    if [ "$config_setting" = "manual" ]; then
+        return
+    fi
+
+    # otherwise check for settings repo updates
+    habitat_update_settings "$config_setting"
+
+    # then check for extensions to install
+    local config_extensions="$(config.sh --key "extensions" --config "$habitat_config_file")"
+    local extension
+    for extension in $config_extensions; do
+        habitat_install_extension "$extension"
+    done
+
+    # Then check for extensions to update
+    (while read extension; do
+        habitat_update_Extension "$extension" "$config_setting"
+    done <<< "$(habitat_extension_directories)")
+
+}
+
+function habitat_install_extension() {
+    local extension_name="$1"; shift
+    local save="$1"; shift
+
+    dir="$(repo.sh --download "$extension_name" "$habitat_tmp")"
+
+    # stuff into author name dir
+    local author="$(echo "$extension_name" | sed 's~\(.*\)/.*~\1~' | sed 's~.*/~~')"
+    mkdir "$habitat_extensions/$author"
+    mv -R $habitat_tmp/$dir "$habitat_extensions/$author/$dir"
+
+}
+
+function habitat_remove_extension() {
+    local extension_dir="$1"; shift
+    local save="$1"; shift
+    rm -rf "$extension_dir"
+}
+
+function habitat_update_extension() {
+    local extension_dir="$1"; shift
+    local config_setting="$1"; shift
+    if [ -z "$config_setting" ]; then
+        config_setting="auto"
+    fi
+    repo.sh --update "$extension_dir"
+
+}
 
 
+#*==============================================================================
+# habitat_extension_deployment
+#
+# Source the extensions into our environment and run their setup, deploy, and
+# cleanup functions in the order of dependancy
+#
+#*==============================================================================
+function habitat_extension_deployment() {
+    log.sh --header "Extensions"
+    local dir
+    locl extension=""
+    (while read extension; do
+        log.sh "Sourcing $dir/extension.habit"
+        source "$dir/extension.habit"
+    done <<< "$(habitat_extension_directories)")
+
+    log.sh --header "A - Setup"
+    habitat_extension_action "setup"
+
+    log.sh --header "B - Deploy"
+    habitat_extension_action "deploy"
+
+    log.sh --header "C - Cleanup"
+    habitat_extension_action "cleanup"
+
+}
+
+function habitat_extension_action() {
+    local action="$1"; shift
+    local extension
+    (while read extension; do
+        if [ -n "$(type "${extension}_$action" 2>&1 | grep -i -E 'is a function')" ]; then
+            log.sh "Running ${extension}_$action"
+            "${extension}_$action"
+        else
+            log.sh "${extension}_$action was skipped as it does not exist"
+        fi
+    done <<< "$(habitat_extension_names)")
+}
+
+function habitat_extension_names() {
+    local extension
+    (while read extension; do
+        extension="$(basename "$extension")"
+        extension="$(regex_replace.sh "$extension" "s~^habitat\-~~g")"
+        extension="$(regex_replace.sh "$extension" "s~-~_~g")"
+        echo "$extension"
+    done <<< "$(habitat_extension_directories)")
+}
 
 
+function habitat_extension_directories() {
+    for author_dir in "$habitat_extensions/"*; do
+        for extension in "$author_dir/"*; do
+            echo "$extension"
+        done
+    done
+}
 
 
+function habitat_stub() {
+    local extension_name="$1"; shift
+    extension_name="$(echo "$extension_name" | sed -e 's~(_| )~-~g')"
+    local underscore_extension_name="$(echo "$extension_name" | sed -e 's~-~_~g' | sed -e 's~habitat_~~g')"
+    local extension_dir="$habitat_extensions/$extension_name"
+    local extension_file="$extension_dir/extension.habit"
+    if [ -d "$extension_dir" ]; then
+        echo "Extension Name already exists at $extension_dir"
+        return
+    fi
+    mkdir "$extension_dir"
+    touch "$extension_dir/turtle.cfg"
+    echo "#! /bin/sh" > "$extension_file"
+    echo "" >> "$extension_file"
+
+    echo "function ${underscore_extension_name}_setup() {" >> "$extension_file"
+    echo "    # insert setup here if you want" >> "$extension_file"
+    echo "    echo \"$extension_name Setup Stub!\"" >> "$extension_file"
+    echo "}" >> "$extension_file"
+    echo "" >> "$extension_file"
+
+    echo "function ${underscore_extension_name}_deploy() {" >> "$extension_file"
+    echo "    # insert deploy here if you want" >> "$extension_file"
+    echo "    echo \"$extension_name Deploy Stub!\"" >> "$extension_file"
+    echo "}" >> "$extension_file"
+    echo "" >> "$extension_file"
+
+    echo "function ${underscore_extension_name}_cleanup() {" >> "$extension_file"
+    echo "    # insert cleanup if you want to here" >> "$extension_file"
+    echo "    echo \"Optional $extension_name Cleanup Stub!\"" >> "$extension_file"
+    echo "}" >> "$extension_file"
+    echo "" >> "$extension_file"
+
+    echo "Succesfully stubbed your extension in $extension_file"
+}
 
 
+# Cleanup
+
+function habitat_get_functions() {
+    local search="$1"; shift
+    local all_functions="$(declare -F | sed -e 's~declare -f ~~g')"
+    echo "$(echo "$all_functions" | grep -E "$search")"
+}
+
+function habitat_get_vars() {
+    local search="$1"; shift
+    local all_variables="$( (set -o posix ; set) | sed -e 's~=.*~~')"
+    echo "$(echo "$all_variables" | grep -E "$search")"
+}
 
 
+function habitat_cleanup() {
+    log.sh --header "Cleanup"
+    local start_seconds="$habitat_start_seconds"
+    log.sh "Cleaning up habitat_ variables and functions"
+
+    # Extension Cleanup
+    local extension
+    (while read extension; do
+        log.sh "Cleaning up ${extension}_ vars and functions"
+        local extension_var
+        while read extension_var; do
+            log.sh --debug "Unsetting var $extension_var"
+            unset "$extension_var"
+        done <<< "$(habitat_get_vars "^${extension}_")"
+
+        local extension_function
+        while read extension_function;do
+            log.sh --debug "Unsetting function $extension_function"
+            unset -f "$extension_function"
+        done <<< "$(habitat_get_functions "^${extension_function}_")"
+
+    done <<< "$(habitat_extension_names)")
 
 
+    log.sh "Cleaning up habitat_ vars and functions"
+    local habitat_func
+    for habitat_func in $(habitat_get_functions "^habitat_"); do
+        log.sh --debug "Unsetting function $habitat_func"
+        if [ "$habitat_func" != "habitat_get_vars" ] && [ "$habitat_func" != "habitat_cleanup" ]; then
+            unset -f "$habitat_func"
+        fi
+    done
 
+    local habitat_var
+    for habitat_var in $(habitat_get_vars "^habitat_"); do
+        log.sh --debug "Unsetting var $habitat_var"
+        unset "$habitat_var"
+    done
+    log.sh "Habitat all done at $(date)"
+    log.sh "All done after $(($(date +%s)-$start_seconds))"
 
-
-
-
-
+    unset "custom_log_file"
+    unset -f "habitat_get_vars"
+    unset -f "habitat_cleanup"
+}
 
 
 action=""
@@ -82,19 +334,19 @@ while [ "$#" -gt "0" ]; do
         usage "$help"
         ;;
         --install|--add)
-			action="$arg"
+            action="$arg"
         ;;
         --uninstall|--remove)
-			action="$arg"
+            action="$arg"
         ;;
-		--settings)
-			action="$arg"
+        --settings)
+            action="$arg"
         ;;
-		--stub)
-			action="$arg"
+        --stub)
+            action="$arg"
         ;;
-		--stub)
-			save="0"
+        --stub)
+            save="0"
         ;;
 
         *)
@@ -104,60 +356,11 @@ while [ "$#" -gt "0" ]; do
 done
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-habitat_extensions="$( cd "$(dirname "$0")" && pwd )/test"
-function get_extension_dirs() {
-	for author_dir in "$habitat_extensions/"*; do
-		for extension in "$author_dir/"*; do
-			echo "$extension"
-		done
-	done
-}
-
-while read -r extension_dir; do
-	if [ ! -d "$extension_dir/.git" ]; then
-		echo "$extension_dir is not under version control"
-	else
-		LOCAL="$(cd "$extension_dir" && git rev-parse @{0})"
-		REMOTE="$(cd "$extension_dir" && git rev-parse @{u})"
-		BASE="$(cd "$extension_dir" && git merge-base @{0} @{u})"
-		if [ "$LOCAL" = "$BASE" ]; then
-			echo "Update possible for $extension_dir"
-		fi
-		# Check if git update
-	fi
-done <<< "$(get_extension_dirs)"
+# Prep
+habitat_prep
+# Dependancy Maanagement
+habitat_dependancy_management
+# Extension Deployment
+habitat_extension_deployment
+# Cleanup
+habitat_cleanup
