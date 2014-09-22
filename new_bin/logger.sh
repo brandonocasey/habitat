@@ -77,14 +77,37 @@ while [ "$#" -gt "0" ]; do
         --help)
             usage "$help"
         ;;
-        --header|--stdout|--result|--error|--debug|--info|--devel)
+        --error)
+            if [ -n "$level" ]; then
+                argument_error "Cannot print to $level and $arg"
+            fi
+            level="1"
+        ;;
+       --info)
+            if [ -n "$level" ]; then
+                argument_error "Cannot print to $level and $arg"
+            fi
+            level="2"
+        ;;
+        --debug)
+            if [ -n "$level" ]; then
+                argument_error "Cannot print to $level and $arg"
+            fi
+            level="3"
+        ;;
+         --devel)
+            if [ -n "$level" ]; then
+                argument_error "Cannot print to $level and $arg"
+            fi
+            level="4"
+        ;;
+        --header|--stdout|--result)
             if [ -n "$action" ]; then
                 argument_error "Cannot run $action and $arg"
             fi
             action="$arg"
-        ;;
-            --file)
-                if [ -z "$1" ]; then
+        --file)
+            if [ -z "$1" ]; then
                 argument_error "Must have an argument after $arg"
             fi
             file="$1"; shift
@@ -117,24 +140,26 @@ if [ "$action" != "--stdout" ]; then
     exec 3>> "$file"
 fi
 
-if [ "$action" = "--error" ] && [ "$current_level" -ge "1" ]; then
-    log
-    exec 3>&2
-    log "0"
-elif [ "$action" = "--info" ] && [ "$current_level" -ge "2" ]; then
-    log
-elif [ "$action" = "--debug" ] && [ "$current_level" -ge "3" ]; then
-    log
-elif [ "$action" = "--devel" ] && [ "$current_level" -ge "4" ]; then
-    log
-elif [ "$action" = "--stdout" ]; then
-    exec 3>&1
-    log "0"
-elif [ "$action" = "--header" ]; then
-    log_header
-elif [ "$action" = "--result" ]; then
-    log_result "$log_lines"
+if [ "$current_level" -ge "$level" ]; then
+    if [ "$action" = "--header" ]; then
+        log_header
+    elif [ "$action" = "--result" ]; then
+        log_result "$log_lines"
+    else
+        log
+    fi
+    if [ "$level" = "--error" ]; then
+        exec 3>&2
+        if [ "$action" = "--header" ]; then
+            log_header
+        elif [ "$action" = "--result" ]; then
+            log_result "$log_lines"
+        else
+            log
+        fi
+    fi
 fi
+
 
 exec 3>&-
 exit 0
