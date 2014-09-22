@@ -75,18 +75,21 @@ function update() {
 
 function download() {
     local repo_url="$1"; shift
+    local end_location="$1"; shift
 
     if [ "$repo_type" -eq "$GIT_TYPE" ]; then
-        (cd "$repo_dir" && git pull "$repo_dir")
+        local dir="$(echo "$extension_name" | sed 's~.*/\(.*\)~\1~')"
+        git clone "$repo_url" "$end_location"
+        echo "$dir"
     elif [ "$repo_type" -eq "$SVN_TYPE" ]; then
-        svn up "$repo_dir"
+        svn co "$repo_url" "$end_location"
     fi
 }
 
 
 action=""
 help=""
-help+="download <url> download a repo$nl"
+help+="download <url> <dir> download a repo$nl"
 help+="status   <dir> get the status of a rrepo$nl"
 help+="# return code of 1 indicates everything is up to date$nl"
 help+="# return code of 0 indicates updates are possible$nl"
@@ -100,7 +103,17 @@ while [ "$#" -gt "0" ]; do
         --i)
             insensitive="0"
         ;;
-        --download|--status|--update)
+        --download)
+            if [ -n "$action" ]; then
+                argument_error "Cannot do $arg and $action"
+            fi
+            if [ -z "$1" ]; then
+                argument_error "$arg requires an argument"
+            fi
+            arg1="$1"; shift
+            arg2="$1"; shift
+        ;;
+        --status|--update)
             if [ -n "$action" ]; then
                 argument_error "Cannot do $arg and $action"
             fi
@@ -119,7 +132,7 @@ done
 repo_type=$(type "$arg1")
 
 if [ "$action" = "--download" ]; then
-    download "$arg1"
+    download "$arg1" "$arg2"
 elif [ "$action" = "--status" ]; then
     status "$arg1"
 elif [ "$action" = "--update" ]; then
