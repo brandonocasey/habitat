@@ -205,31 +205,31 @@ while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
         --help)
-        usage "$help"
+          usage "$help"
         ;;
         --config)
-        if [ -z "$1" ]; then
-            argument_error "Must have an argument after $arg"
-        fi
-        if [ -n "$config" ]; then
-            argument_error "--config cannot be set to $1 it is already set to $config"
-        fi
-        config="$1"; shift
+          if [ -z "$1" ]; then
+              argument_error "Must have an argument after $arg"
+          fi
+          if [ -n "$config" ]; then
+              argument_error "--config cannot be set to $1 it is already set to $config"
+          fi
+          config="$1"; shift
         ;;
         --upsert)
-        if [ -z "$1" ] || [ -z "$2" ]; then
-            argument_error "Must have two arguments after $arg"
-        fi
-        action="$arg"
-        arg1="$1"; shift
-        arg2="$1"; shift
+          if [ -z "$1" ] || [ -z "$2" ]; then
+              argument_error "Must have two arguments after $arg"
+          fi
+          action="$arg"
+          arg1="$1"; shift
+          arg2="$1"; shift
         ;;
         --delete|--get)
-        if [ -z "$1" ]; then
-            argument_error "Must have an argument after $arg"
-        fi
-        action="$arg"
-        arg1="$1"; shift
+          if [ -z "$1" ]; then
+              argument_error "Must have an argument after $arg"
+          fi
+          action="$arg"
+          arg1="$1"; shift
         ;;
         *)
             argument_error "Invalid Argument $arg"

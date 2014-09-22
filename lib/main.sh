@@ -9,8 +9,6 @@
 nl="
 "
 
-
-
 function _print_error() {
     local exit_code="$1"; shift
     for error in "$@"; do

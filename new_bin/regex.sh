@@ -48,7 +48,7 @@ while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
         --help)
-        usage "$help"
+            usage "$help"
         ;;
         --i)
             insensitive="0"
@@ -57,22 +57,22 @@ while [ "$#" -gt "0" ]; do
             global="0"
         ;;
         --match)
-        if [ -n "$action" ]; then
-            argument_error "Cannot do $arg and $action"
-        fi
-        if [ -z "$1" ] || [ -z "$2" ]; then
-            argument_error "$arg requires two arguments"
-        fi
-        action="$arg"
+                if [ -n "$action" ]; then
+                    argument_error "Cannot do $arg and $action"
+            fi
+            if [ -z "$1" ] || [ -z "$2" ]; then
+                argument_error "$arg requires two arguments"
+            fi
+            action="$arg"
         ;;
         --replace)
-        if [ -z "$1" ]; then
-            argument_error "Must have an argument after $arg"
-        fi
-        if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
-            argument_error "$arg requires three arguments"
-        fi
-        action="$arg"
+            if [ -z "$1" ]; then
+                argument_error "Must have an argument after $arg"
+            fi
+            if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
+                argument_error "$arg requires three arguments"
+            fi
+            action="$arg"
         ;;
         *)
             argument_error "Invalid Argument $arg"

@@ -10,19 +10,19 @@ while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
         --help)
-        usage "$help"
+            usage "$help"
         ;;
         --question)
-        if [ -z "$1" ]; then
-            argument_error "Must have an argument after $arg"
-        fi
-        question="$1"; shift
+            if [ -z "$1" ]; then
+                argument_error "Must have an argument after $arg"
+            fi
+            question="$1"; shift
         ;;
         --answers)
-        if [ -z "$1" ]; then
-            argument_error "Must have an argument after $arg"
-        fi
-        answers="${1}"; shift
+            if [ -z "$1" ]; then
+                argument_error "Must have an argument after $arg"
+            fi
+            answers="$1"; shift
         ;;
         *)
             argument_error "Invalid Argument $arg"

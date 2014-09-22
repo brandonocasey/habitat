@@ -75,19 +75,19 @@ while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
         --help)
-        usage "$help"
+            usage "$help"
         ;;
         --header|--stdout|--result|--error|--debug|--info|--devel)
-        if [ -n "$action" ]; then
-            argument_error "Cannot run $action and $arg"
-        fi
-        action="$arg"
+            if [ -n "$action" ]; then
+                argument_error "Cannot run $action and $arg"
+            fi
+            action="$arg"
         ;;
-        --file)
-        if [ -z "$1" ]; then
-            argument_error "Must have an argument after $arg"
-        fi
-        file="$1"; shift
+            --file)
+                if [ -z "$1" ]; then
+                argument_error "Must have an argument after $arg"
+            fi
+            file="$1"; shift
         ;;
         --*)
             argument_error "Invalid Argument $arg"

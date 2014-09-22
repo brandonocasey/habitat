@@ -101,34 +101,34 @@ while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
         --help)
-        usage "$help"
+            usage "$help"
         ;;
         --link|--copy|--move|--download|--find)
-        if [ -n "$action" ]; then
-            argument_error "Cannot do $action and $arg at the same time"
-        fi
-        if [ -z "$1" ] || [ -z "$2" ]; then
-            argument_error "Must have two arguments after $arg"
-        fi
-        action="$arg"
-        arg1="$1"; shift
-        arg2="$(full_path "$1")"; shift
+            if [ -n "$action" ]; then
+                argument_error "Cannot do $action and $arg at the same time"
+            fi
+            if [ -z "$1" ] || [ -z "$2" ]; then
+                argument_error "Must have two arguments after $arg"
+            fi
+            action="$arg"
+            arg1="$1"; shift
+            arg2="$(full_path "$1")"; shift
         ;;
         --full_path)
-        if [ -n "$action" ]; then
-            argument_error "Cannot do $action and $arg at the same time"
-        fi
-        if [ -z "$1" ]; then
-            argument_error "Must have one argument after $arg"
-        fi
-        action="$arg"
-        arg1="$1"; shift
+            if [ -n "$action" ]; then
+                argument_error "Cannot do $action and $arg at the same time"
+            fi
+            if [ -z "$1" ]; then
+                argument_error "Must have one argument after $arg"
+            fi
+            action="$arg"
+            arg1="$1"; shift
         ;;
         --backup)
-        if [ -z "$1" ]; then
-            argument_error "Must have one argument after $arg"
-        fi
-        backup="$1"; shift
+            if [ -z "$1" ]; then
+                argument_error "Must have one argument after $arg"
+            fi
+            backup="$1"; shift
         ;;
         *)
             argument_error "Invalid Argument $arg"

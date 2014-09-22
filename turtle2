@@ -1,4 +1,30 @@
 #! /bin/sh
+source "$( cd "$(dirname $0 )/.." && pwd)/lib/main.sh"
+
+help="stub Question to ask the user$nl"
+help+="install|add Pipe deliminated answers where default is the first asd|dsa|no|yes $nl"
+while [ "$#" -gt "0" ]; do
+    arg="$1"; shift
+    case $arg in
+        --help)
+        usage "$help"
+        ;;
+        --install|--add)
+			action="$arg"
+        ;;
+        --uninstall|--remove)
+			action="$arg"
+        ;;
+
+		--uninstall|--remove)
+			action="$arg"
+        ;;
+
+        *)
+            argument_error "Invalid Argument $arg"
+        ;;
+    esac
+done
 
 habitat_extensions="$( cd "$(dirname "$0")" && pwd )/test"
 function get_extension_dirs() {

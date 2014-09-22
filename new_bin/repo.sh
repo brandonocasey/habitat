@@ -95,20 +95,20 @@ while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
         --help)
-        usage "$help"
+            usage "$help"
         ;;
-        --)
+        --i)
             insensitive="0"
         ;;
         --download|--status|--update)
-        if [ -n "$action" ]; then
-            argument_error "Cannot do $arg and $action"
-        fi
-        if [ -z "$1" ]; then
-            argument_error "$arg requires an argument"
-        fi
-        action="$arg"
-        arg1="$1"; shift
+            if [ -n "$action" ]; then
+                argument_error "Cannot do $arg and $action"
+            fi
+            if [ -z "$1" ]; then
+                argument_error "$arg requires an argument"
+            fi
+            action="$arg"
+            arg1="$1"; shift
         ;;
         *)
             argument_error "Invalid Argument $arg"
