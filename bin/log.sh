@@ -3,9 +3,7 @@ source "$( cd "$(dirname $0 )/.." && pwd)/lib/main.sh"
 
 function get_prefix() {
     local prefix=""
-    if [ "$action" = "--stdout" ]; then
-        prefix=""
-    elif [ -z "$CUSTOM_LOG_PREFIX" ]; then
+    if [ -z "$CUSTOM_LOG_PREFIX" ]; then
         prefix="$(eval "$CUSTOM_LOG_PREFIX")"
     else
         prefix="$(date): "
@@ -156,7 +154,7 @@ elif [ "$action" = "--stdout" ]; then
 else
     if [ "$current_level" -ge "$level" ]; then
         if [ "$action" = "--header" ]; then
-            log_settings="2"
+            log_settings="1"
         fi
         log "$log_settings"
         if [ "$level" = "--error" ]; then
