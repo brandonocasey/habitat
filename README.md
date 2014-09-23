@@ -53,16 +53,49 @@ Extensions are a big part of every step in the life cycle of a program
 
 # Binaries
 ## Return Codes
-| Code | Meaning          |
-|------|------------------|
-| 0    | Success          |
-| 1    | Failure          |
-| 2    | Argument Error   |
-| 3    | Validation Error |
+| Code | Meaning  |
+|------|----------|
+| 0    | Success  |
+| 1    | Failure  |
+| 2    | Error    |
 
 ## Descriptions
+* ask.sh - Ask the user a question and pass all possible answers, enter/control +c default to the first answer
+* command.sh - Check if a command is executable in the shell and run an async command
+* config.sh - remove, insert, and update config entires
+* data.sh - symlink, move, copy, and download data with backup support, also finds and gets the full path of a file
+* regex.sh - return 0 on regex match, and regex replace a string
+* repo.sh - download, update, and get the status of a version control repo
+* string.sh - Split and Join a string on a deliminator, can even join unique
 
 # Variables
+| Name                | Value                        | Description                                                |
+|---------------------|------------------------------|------------------------------------------------------------|
+| habitat_base        | $HOME/.habitat               | Base path for everything                                   |
+| habitat_cli         | $habitat_base/turtle         | The Location of the CLI                                    |
+| habitat_storage     | $habitat_base/storage        | The location of all habitat storage                        |
+| habitat_bin         | $habitat_base/bin            | The Location of all binaries                               |
+| habitat_extensions  | $habitat_base/extensions     | The Location of extensions                                 |
+| habitat_setting     | $habitat_base/settings       | The Location of your settings                              |
+| habitat_tmp         | $habitat_storage/tmp         | Storage of temporary files                                 |
+| habitat_backup      | $habitat_stoarge/backup      | Storage of file backups                                    |
+| habitat_logs        | $habitat_storage/logs        | Storage of all the logs                                    |
+| habitat_log_file    | $habitat_logs/turtle.log     | The main log file                                          |
+| CUSTOM_LOG_FILE     | $habitat_log_file            | The main log file, so we don't have to pass it to binaries |
+| habitat_config_file | $habitat_settings/turtle.cfg | The habitat config file                                    |
+
+# Config
+* update_type - how to update extensions and settings
+* extensions  - extensions to install
+* log_level   - Valid levels are:
+    * 0 - None
+    * 1 - Errors
+    * 2 - Info
+    * 3 - Debug
+    * 4 - Devel
+    * 5 - Eveything to STDOUT
+
+
 
 # Options:
 if no options are passed then habitat will configure the environment
