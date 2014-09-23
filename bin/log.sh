@@ -36,7 +36,9 @@ function log() {
 # have this binary print to stdout
 # redirect stdout to the log
 function log_result() {
-"$@" 2>&1 | "$( cd $(dirname $0) && pwd)/$(basename "$0")" --stdout
+    echo "Running $@"
+    "$@" 2>&1
+    echo "Return Code "$?"
 } 1>&3
 
 function log_header() {
