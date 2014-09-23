@@ -32,7 +32,6 @@ export CUSTOM_BACKUP="$habitat_backup"
 
 # The date
 export habitat_start_seconds="$(date +%s)"
-script_name="turtle"
 
 : > "$habitat_log_file"
 # Assure that we have a good environment
@@ -72,30 +71,19 @@ function habitat_usage() {
     echo
     exit 0
 }
+
 while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
         --help)
             habitat_usage "$help"
         ;;
-        --install|--add)
+        --install|--add|--uninstall|--remove|--settings|--stub)
             action="$arg"
+            arg1="$1"; shift
         ;;
-        --uninstall|--remove)
-            action="$arg"
-        ;;
-        --settings)
-            action="$arg"
-        ;;
-        --stub)
-            action="$arg"
-        ;;
-        --stub)
-            action="stub"
-        ;;
-
         *)
-            argument_error "Invalid Argument $arg"
+            error "Invalid Argument $arg"
         ;;
     esac
 done
