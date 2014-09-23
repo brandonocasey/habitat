@@ -98,6 +98,7 @@ while [ "$#" -gt "0" ]; do
                 error "Cannot run $action and $arg"
             fi
             action="$arg"
+        ;;
         --file)
             if [ -z "$1" ]; then
                 error "Must have an argument after $arg"
@@ -134,7 +135,10 @@ if [ "$action" != "--stdout" ]; then
     elif [ -z "$file" ]; then
         log_file="$CUSTOM_LOG_FILE"
     fi
-    exec 3>> "$file"
+    if [ ! -f "$log_file" ]; then
+        touch "$log_file"
+    fi
+    exec 3>> "$log_file"
 fi
 
 log_settings="0"
