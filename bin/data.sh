@@ -12,12 +12,13 @@ source "$( cd "$(dirname $0 )/.." && pwd)/lib/main.sh"
 function backup() {
     local file="$1"; shift
     local name="$(basename "$file")"
-    if [ ! -f "$file" ] && [ ! -d "$file" ] && [ -h "$file" ]; then
-        rm "$file"
+    local new_name="$name_$RANDOM"
+    if [ -L "$file" ]; then
+        rm -f "$file"
     elif [  -f "$file" ]; then
-        mv "$file" "$backup/$name"
+        mv "$file" "$backup/$new_name"
     elif [ -d "$file" ]; then
-        mv -R "$file" "$backup/$name"
+        mv -R "$file" "$backup/$new_name"
     fi
 }
 
@@ -136,8 +137,10 @@ done
 if [ -z "$action" ]; then
     error "Must pass in an action, --move, --copy etc"
 fi
-if [ -n "$(echo "$action" | grep '\-\-link|\-\-copy|\-\-download|\-\-move')" ]; then
-    if [ -z "$backup" ]; then
+if [ "$action" = "--link" ] || [ "$action" = "--download" ] || [ "$action" = "--copy" ] || [ "$action" = "--move" ]; then
+    if [ -z "$backup" ] && [ -n "$CUSTOM_BACKUP" ]; then
+        backup="$CUSTOM_BACKUP"
+    elif [ -z "$backup" ] && [ -z "$CUSTOM_BACKUP" ]; then
         error "Must pass in an arg to --backup for $action"
     fi
     if [ ! -d "$backup" ]; then
