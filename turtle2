@@ -28,6 +28,7 @@ export habitat_config_file="$habitat_settings/turtle.cfg"
 
 # For things to log to
 export CUSTOM_LOG_FILE="$habitat_log_file"
+export CUSTOM_BACKUP="$habitat_backup"
 
 # The date
 export habitat_start_seconds="$(date +%s)"
@@ -36,6 +37,7 @@ script_name="turtle"
 : > "$habitat_log_file"
 # Assure that we have a good environment
 "$habitat_bin"/log.sh --header "Prep"
+
 "$habitat_bin"/log.sh --result unalias -a
 
 alias habitat="source $habitat_cli"
@@ -47,7 +49,7 @@ rm -rf "$habitat_tmp"/*
 
 export PATH="$("$habitat_bin"/string.sh --split ":" "$PATH" | "$habitat_bin"/string.sh --joinu ":")"
 
-log.sh --result  data.sh --link "$habitat_cli" "$HOME/.bash_profile" --backup "$habitat_backup"
+log.sh --result data.sh --link "$habitat_cli" "$HOME/.bash_profile"
 
 source "$habitat_lib/lib.sh"
 source "$habitat_lib/cleanup.sh"
