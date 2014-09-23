@@ -196,29 +196,27 @@ function delete() {
 
 
 
-help="config    location of the config$nl"
-help+="upsert   <key> <value> insert/update a key/value pair$nl"
-help+="delete   <key> delete a key/value pair$nl"
-help+="get      <key> get the value of a key$nl"
-help+="getkeys  get all of the keys$nl"
+opt "config"  "location of the config"
+opt "upsert"  "<key> <value> insert/update a key/value pair"
+opt "delete"  "<key> delete a key/value pair"
+opt "get"     "<key> get the value of a key"
+opt "getkeys" "get all of the keys"
+parse_args "$@"
 while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
-        --help)
-          usage "$help"
-        ;;
         --config)
           if [ -z "$1" ]; then
-              argument_error "Must have an argument after $arg"
+              error "Must have an argument after $arg"
           fi
           if [ -n "$config" ]; then
-              argument_error "--config cannot be set to $1 it is already set to $config"
+              error "--config cannot be set to $1 it is already set to $config"
           fi
           config="$1"; shift
         ;;
         --upsert)
           if [ -z "$1" ] || [ -z "$2" ]; then
-              argument_error "Must have two arguments after $arg"
+              error "Must have two arguments after $arg"
           fi
           action="$arg"
           arg1="$1"; shift
@@ -226,18 +224,18 @@ while [ "$#" -gt "0" ]; do
         ;;
         --delete|--get)
           if [ -z "$1" ]; then
-              argument_error "Must have an argument after $arg"
+              error "Must have an argument after $arg"
           fi
           action="$arg"
           arg1="$1"; shift
         ;;
         *)
-            argument_error "Invalid Argument $arg"
+            error "Invalid Argument $arg"
         ;;
     esac
 done
 if [ -z "$config" ]; then
-  validation_error "Config must be set using --config"
+  error "Config must be set using --config"
 fi
 if [ ! -f "$config" ]; then
   touch "$config"

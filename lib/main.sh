@@ -8,25 +8,18 @@
 
 nl="
 "
-
-function _print_error() {
-    local exit_code="$1"; shift
-    for error in "$@"; do
-        echo "$error" 1>&2
-    done
-    exit "$exit_code"
-}
 function failure() {
-    _print_error "1" "$@"
+    for failure in "$@"; do
+        echo "FAIL: ${failure}" 1>&2
+    done
+    exit 1
 }
 
-function argument_error() {
-    _print_error "2" "$@"
-
-}
-
-function validation_error() {
-    _print_error "2" "$@"
+function error() {
+    for error in "$@"; do
+        echo "ERROR: ${error} see --help for help" 1>&2
+    done
+    exit 2
 }
 
 # Example:
@@ -57,6 +50,7 @@ function usage() {
     echo "  ./$(basename "$0") <options>"
     echo
     items+="help Show help options"
+    # get the longest arg length
     local max_length="$(
         local length="0"
         while read -r item; do
@@ -70,6 +64,7 @@ function usage() {
         echo "$((length+1))"
     )"
 
+    # Print the help
     (while read -r item; do
         local real_item=""
         if [ -z "$(echo "$item" | grep "^#")" ]; then
@@ -91,3 +86,29 @@ function usage() {
     echo
     exit 0
 }
+
+help_menu=""
+options=""
+
+function opt() {
+    local opt="$1"; shift
+    local desc="$1"; shift
+    options+="${opt}${nl}"
+    help_menu+="${opt%%:*} ${desc}${nl}"
+}
+
+function parse_args() {
+    while [ "$#" -gt "0" ]; do
+        arg="$1"; shift
+        if [ "$arg" = "--help" ] || [ "$arg" = "-help" ]; then
+            usage "$help_menu"
+        fi
+    done
+}
+
+# if stdin is not a tty: read variables from pipe into args
+if [ ! -t 0 ]; then
+    while read var; do
+        set -- "$@" "$var"
+    done
+fi

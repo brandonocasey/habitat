@@ -39,17 +39,14 @@ function replace() {
 insensitive="1"
 global="1"
 action=""
-help=""
-help+="match <string> <regex>, 0 if matches 1 otherwise$nl"
-help+="replace <string> <regex_search> <replacement> replace from a string$nl"
-help+="i insensitive case matching$nl"
-help+="g global replace$nl"
+opt "match"   "<string> <regex>, 0 if matches 1 otherwise"
+opt "replace" "<string> <regex_search> <replacement> replace from a string"
+opt "i"       "insensitive case matching"
+opt "g"       "global replace"
+parse_args "$@"
 while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
-        --help)
-            usage "$help"
-        ;;
         --i)
             insensitive="0"
         ;;
@@ -58,30 +55,30 @@ while [ "$#" -gt "0" ]; do
         ;;
         --match)
                 if [ -n "$action" ]; then
-                    argument_error "Cannot do $arg and $action"
+                    error "Cannot do $arg and $action"
             fi
             if [ -z "$1" ] || [ -z "$2" ]; then
-                argument_error "$arg requires two arguments"
+                error "$arg requires two arguments"
             fi
             action="$arg"
         ;;
         --replace)
             if [ -z "$1" ]; then
-                argument_error "Must have an argument after $arg"
+                error "Must have an argument after $arg"
             fi
             if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
-                argument_error "$arg requires three arguments"
+                error "$arg requires three arguments"
             fi
             action="$arg"
         ;;
         *)
-            argument_error "Invalid Argument $arg"
+            error "Invalid Argument $arg"
         ;;
     esac
 done
 
 if [ -z "$action" ]; then
-    argument_error "Must select an action to preform"
+    error "Must select an action to preform"
 fi
 
 if [ "$action" = "--match"  ]; then

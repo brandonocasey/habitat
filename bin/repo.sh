@@ -88,21 +88,15 @@ function download() {
 
 
 action=""
-help=""
-help+="download <url> <dir> download a repo$nl"
-help+="status   <dir> get the status of a rrepo$nl"
-help+="# return code of 1 indicates everything is up to date$nl"
-help+="# return code of 0 indicates updates are possible$nl"
-help+="update   <dir> update a repo$nl"
+opt "download" "<url> <dir> download a repo"
+opt "status"   "  <dir> get the status of a rrepo"
+opt "#"        " return code of 1 indicates everything is up to date"
+opt "#"        " return code of 0 indicates updates are possible"
+opt "update"   "  <dir> update a repo"
+parse_args "$@"
 while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
-        --help)
-            usage "$help"
-        ;;
-        --i)
-            insensitive="0"
-        ;;
         --download)
             if [ -n "$action" ]; then
                 argument_error "Cannot do $arg and $action"

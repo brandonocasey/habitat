@@ -86,29 +86,26 @@ function find_this() {
 
 
 
-help="backup     <location> Required for move, copy, link, and download $nl"
-help+="move      <file> <destination> $nl"
-help+="link      <file> <destination> $nl"
-help+="copy      <file> <destination> $nl"
-help+="download  <url> <destination> download something if possible $nl"
-help+="full_path <location> full path of a local file $nl"
-help+="find      <regex_search> <location> Recurive search for anything matching regex $nl"
-
+opt "backup"    "<location> Required for move, copy, link, and download"
+opt "move"      "<file> <destination>"
+opt "link"      "<file> <destination>"
+opt "copy"      "<file> <destination>"
+opt "download"  "<url> <destination> download something if possible"
+opt "full_path" "<location> full path of a local file"
+opt "find"      "<regex_search> <location> Recurive search for anything matching regex"
+parse_args "$@"
 arg1=""
 arg2=""
 action=""
 while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
-        --help)
-            usage "$help"
-        ;;
         --link|--copy|--move|--download|--find)
             if [ -n "$action" ]; then
-                argument_error "Cannot do $action and $arg at the same time"
+                error "Cannot do $action and $arg at the same time"
             fi
             if [ -z "$1" ] || [ -z "$2" ]; then
-                argument_error "Must have two arguments after $arg"
+                error "Must have two arguments after $arg"
             fi
             action="$arg"
             arg1="$1"; shift
@@ -116,32 +113,32 @@ while [ "$#" -gt "0" ]; do
         ;;
         --full_path)
             if [ -n "$action" ]; then
-                argument_error "Cannot do $action and $arg at the same time"
+                error "Cannot do $action and $arg at the same time"
             fi
             if [ -z "$1" ]; then
-                argument_error "Must have one argument after $arg"
+                error "Must have one argument after $arg"
             fi
             action="$arg"
             arg1="$1"; shift
         ;;
         --backup)
             if [ -z "$1" ]; then
-                argument_error "Must have one argument after $arg"
+                error "Must have one argument after $arg"
             fi
             backup="$1"; shift
         ;;
         *)
-            argument_error "Invalid Argument $arg"
+            error "Invalid Argument $arg"
         ;;
     esac
 done
 
 if [ -z "$action" ]; then
-    argument_error "Must pass in an action, --move, --copy etc"
+    error "Must pass in an action, --move, --copy etc"
 fi
 if [ -n "$(echo "$action" | grep '\-\-link|\-\-copy|\-\-download|\-\-move')" ]; then
     if [ -z "$backup" ]; then
-        validation_error "Must pass in an arg to --backup for $action"
+        error "Must pass in an arg to --backup for $action"
     fi
     if [ ! -d "$backup" ]; then
         mkdir -p "$(full_path $backup)"
@@ -152,7 +149,7 @@ if [ -n "$(echo "$action" | grep '\-\-link|\-\-copy|\-\-move')" ]; then
     arg1="$(full_path "$arg1")"
 fi
 if [ -n "$(echo "$action" | grep '\-\-find|\-\-full_path')" ] && [ -n "$backup" ]; then
-    validation_error "Backup is not needed for $action"
+    error "Backup is not needed for $action"
 fi
 
 if [ "$action" = "--link" ]; then

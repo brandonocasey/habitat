@@ -3,64 +3,65 @@ source "$( cd "$(dirname $0 )/.." && pwd)/lib/main.sh"
 
 question=""
 answers=""
+default=""
 
-help="question Question to ask the user$nl"
-help+="answers Pipe deliminated answers where default is the first asd|dsa|no|yes $nl"
+opt "question" "Question to ask the user"
+opt "answers"  "Pipe deliminated answers where default is the first asd|dsa|no|yes"
+parse_args "$@"
 while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
-        --help)
-            usage "$help"
-        ;;
         --question)
             if [ -z "$1" ]; then
-                argument_error "Must have an argument after $arg"
+                error "Must have an argument after $arg"
             fi
             question="$1"; shift
         ;;
         --answers)
             if [ -z "$1" ]; then
-                argument_error "Must have an argument after $arg"
+                error "Must have an argument after $arg"
             fi
             answers="$1"; shift
         ;;
         *)
-            argument_error "Invalid Argument $arg"
+            error "Invalid Argument $arg"
         ;;
     esac
 done
 
-function check_against_answers() {
-    local answer="$1"; shift
-    while read -r possible_answer; do
-        if [ -n "$(echo "$answer" | grep -E -i "$possible_answer")" ]; then
-            echo "0"
-            return
-        fi
-    done <<< "$answers"
-
-    echo "1"
-}
-
 if [ -z "$question" ]; then
-    validation_error "question must be defined with --q"
+    error "A question must be defined"
 fi
 
 if [ -z "$answers" ]; then
-    validation_error "at least one answer must be defined with --a"
+    error "An answer must be defined"
 fi
 
-while IFS='|' read -ra first_answer; do
-    default="$first_answer"
-    continue
-done <<< "$answers"
 
-trap "echo $default; exit 0" SIGINT
+function check_against_answers() {
+    local answer="$1"; shift
+    if echo "$answer" | grep -E -q "$answers"; then
+        echo "0"
+        return
+    fi
+    echo "1"
+}
+
+
+# grab the first answer and make it the default
+default="$(while IFS='|' read -ra first_answer; do
+    echo "$first_answer"
+    break
+done <<< "$answers")"
+
+# if user hits control + c use default
+trap "echo '$default'; exit 0" SIGINT
 
 answered="1"
 while [ "$answered" -ne "0" ]; do
     echo "$question? [$answers]" 1>&2
     read -e answer
+    # if user hits enter use default
     if [ -z "$answer" ]; then
         answer="$default"
     fi

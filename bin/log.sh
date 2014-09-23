@@ -49,69 +49,58 @@ function log_header() {
 
 
 log_lines=""
-# if stdin is a tty: process command line
-if [ ! -t 0 ]; then
-    set -- "$@" "$var"
-fi
-
 action=""
 file=""
 
-help=""
-help+="# Anything passed without -- is assumed to be a log line/part of a command$nl"
-help+="# Environment Variables:$nl"
-help+="# CUSTOM_LOG_FILE - file to log to or stdout for stdout$nl"
-help+="# CUSTOM_LOG_LEVEL - Current log level default is 2$nl"
-help+="# CUSTOM_LOG_PREFIX - Custom log prefix$nl"
-
-help+="file The file to log export CUSTOM_LOG_FILE$nl"
-
-
-help+="header Print log lines in header format$nl"
-help+="stdout Log to stdout instead of file$nl"
-help+="result Log the result of a command$nl"
-help+="error log to level 1$nl"
-help+="info  log to level 2$nl"
-help+="debug log to level 3$nl"
-help+="devel log to level 4$nl"
+opt "#"      "Anything passed without -- is assumed to be a log line/part of a command"
+opt "#"      "Environment Variables:"
+opt "#"      "CUSTOM_LOG_FILE - file to log to or stdout for stdout"
+opt "#"      "CUSTOM_LOG_LEVEL - Current log level default is 2"
+opt "#"      "CUSTOM_LOG_PREFIX - Custom log prefix"
+opt "file"   "The file to log export CUSTOM_LOG_FILE"
+opt "header" "Print log lines in header format"
+opt "stdout" "Log to stdout instead of file"
+opt "result" "Log the result of a command"
+opt "error"  "log to level 1"
+opt "info"   "log to level 2"
+opt "debug"  "log to level 3"
+opt "devel"  "log to level 4"
+parse_args "$@"
 while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
-        --help)
-            usage "$help"
-        ;;
         --error)
             if [ -n "$level" ]; then
-                argument_error "Cannot print to $level and $arg"
+                error "Cannot print to $level and $arg"
             fi
             level="1"
         ;;
        --info)
             if [ -n "$level" ]; then
-                argument_error "Cannot print to $level and $arg"
+                error "Cannot print to $level and $arg"
             fi
             level="2"
         ;;
         --debug)
             if [ -n "$level" ]; then
-                argument_error "Cannot print to $level and $arg"
+                error "Cannot print to $level and $arg"
             fi
             level="3"
         ;;
          --devel)
             if [ -n "$level" ]; then
-                argument_error "Cannot print to $level and $arg"
+                error "Cannot print to $level and $arg"
             fi
             level="4"
         ;;
         --header|--stdout|--result)
             if [ -n "$action" ]; then
-                argument_error "Cannot run $action and $arg"
+                error "Cannot run $action and $arg"
             fi
             action="$arg"
         --file)
             if [ -z "$1" ]; then
-                argument_error "Must have an argument after $arg"
+                error "Must have an argument after $arg"
             fi
             file="$1"; shift
         ;;
@@ -136,12 +125,12 @@ else
 fi
 
 if [ -z "$log_lines" ]; then
-    validation_error "You must pass in lines to log or a command"
+    error "You must pass in lines to log or a command"
 fi
 
 if [ "$action" != "--stdout" ]; then
     if [ -z "$file" ] && [ -z "$CUSTOM_LOG_FILE" ]; then
-        validation_error "A Log file must be set with --file or CUSTOM_LOG_FILE"
+        error "A Log file must be set with --file or CUSTOM_LOG_FILE"
     elif [ -z "$file" ]; then
         log_file="$CUSTOM_LOG_FILE"
     fi

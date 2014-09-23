@@ -49,10 +49,10 @@ if [ ! -t 0 ]; then
 fi
 
 action=""
-help=""
-help+="split   <delim> split a string on a deliminator$nl"
-help+="join    <delim> join a string on a deliminator$nl"
-help+="joinu   <delim> join a string on a deliminator, with no duplicates$nl"
+opt "split" "<delim> split a string on a deliminator"
+opt  "join"  "<delim> join a string on a deliminator"
+opt "joinu" "<delim> join a string on a deliminator, with no duplicates"
+parse_args "$@"
 while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
@@ -78,7 +78,7 @@ while [ "$#" -gt "0" ]; do
             fi
         ;;
     esac
-done
+d ne
 if [ -z "$delim" ]; then
     validation_error "deliminator must be defined"
 fi
