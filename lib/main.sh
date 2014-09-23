@@ -47,7 +47,11 @@ function error() {
 function usage() {
     local items="$1"; shift
     echo
-    echo "  ./$(basename "$0") <options>"
+    if [ -z "$script_name" ]; then
+        echo "  ./$(basename "$0") <options>"
+    else
+        echo "  ./$script_name <options>"
+    fi
     echo
     items+="help Show help options"
     # get the longest arg length

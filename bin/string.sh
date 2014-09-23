@@ -8,28 +8,28 @@ function split() {
             for i in $line; do
                 echo "$i"
             done)
-    done <<< "$@")
+    done <<< "$all_string")
 }
 
 function join() {
     local unique="$1"; shift
 
     (
-        local string=""
-        IFS="$nl"
-        for part in $@;do
-            if [ "$unique" -eq "0" ] && [ -n "$string" ]; then
-                if [ -n "$(echo "$string" | grep -E "(^|$delim)$part($delim|$)")" ]; then
-                    continue;
-                fi
+    local string=""
+    IFS="$nl"
+    for part in $all_string;do
+        if [ "$unique" -eq "0" ] && [ -n "$string" ]; then
+            if [ -n "$(echo "$string" | grep -E "(^|$delim)$part($delim|$)")" ]; then
+                continue;
             fi
-            if [ -z "$string" ]; then
-                string+="${part}"
-            else
-                string+="${delim}${part}"
-            fi
-        done
-        echo "$string"
+        fi
+        if [ -z "$string" ]; then
+            string+="${part}"
+        else
+            string+="${delim}${part}"
+        fi
+    done
+    echo "$string"
     )
 }
 
@@ -41,31 +41,20 @@ function fix_delim() {
 }
 
 all_string=""
-# if stdin is a tty: process command line
-if [ ! -t 0 ]; then
-    while read var; do
-        set -- "$@" "$var"
-    done
-fi
-
 action=""
 opt "split" "<delim> split a string on a deliminator"
-opt  "join"  "<delim> join a string on a deliminator"
+opt "join"  "<delim> join a string on a deliminator"
 opt "joinu" "<delim> join a string on a deliminator, with no duplicates"
 parse_args "$@"
 while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
-        --help)
-        usage "$help"
-        ;;
         --split|--join|--joinu)
             if [ -z "$1" ]; then
-                argument_error "$arg requires an argument"
+                error "$arg requires an argument"
             fi
-
             if [ -n "$action" ]; then
-                argument_error "Cannot $arg and $action"
+                error "Cannot $arg and $action"
             fi
             delim="$(fix_delim "$1")"; shift
             action="$arg"
@@ -78,17 +67,17 @@ while [ "$#" -gt "0" ]; do
             fi
         ;;
     esac
-d ne
+done
 if [ -z "$delim" ]; then
-    validation_error "deliminator must be defined"
+    error "deliminator must be defined"
 fi
 
 if [ "$action" = "--split" ]; then
-    split "$all_string"
+    split
 elif [ "$action" = "--join" ]; then
-    join "1" "$all_string"
+    join "1"
 elif [ "$action" = "--joinu" ]; then
-    join "0" "$all_string"
+    join "0"
 fi
 
 exit 0
