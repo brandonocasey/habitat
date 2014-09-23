@@ -22,7 +22,7 @@ function log() {
     (while read -r line;do
         if [ -n "$line" ]; then
             if [ "$setting" -eq "1" ]; then
-                line="*----$line----*"
+                line="*----${line}----*"
             elif [ "$setting" -eq "2" ]; then
                 line="$(get_prefix) $line"
             fi
@@ -36,9 +36,13 @@ function log() {
 # have this binary print to stdout
 # redirect stdout to the log
 function log_result() {
-    echo "Running $@"
-    "$@" 2>&1
-    echo "Return Code "$?"
+    local command="$(while read -r line;do
+        printf "%s " "$line"
+    done <<< "$@")"
+
+    echo "Running $command"
+    $command 2>&1
+    echo "Return Code $?"
 } 1>&3
 
 function log_header() {
