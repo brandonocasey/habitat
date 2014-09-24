@@ -24,19 +24,19 @@ function is_a_command() {
 }
 
 action=""
-opt "async_command" "<log> <command> Run an Async Command"
-opt "is_a_command"  "<binary> Check if a command is valid"
+opt "async_command|a" "<log> <command> Run an Async Command"
+opt "is_a_command|i"  "<binary> Check if a command is valid"
 parse_args "$@"
 while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
-        --is_a_command)
+        --is_a_command|-is_a_command|-i|--i)
             if [ -z "$1" ]; then
                 error "$arg requires an argument"
             fi
             is_a_command "$1"
         ;;
-        --async_command)
+        --async_command|-async_command|-a|--a)
             if [ -z "$1" ] || [ -z "$2" ]; then
                 error "$arg requires two arguments"
             fi

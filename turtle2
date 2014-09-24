@@ -29,10 +29,12 @@ export habitat_config_file="$habitat_settings/turtle.cfg"
 # For things to log to
 export CUSTOM_LOG_FILE="$habitat_log_file"
 export CUSTOM_BACKUP="$habitat_backup"
+export CUSTOM_CONFIG="$habitat_config_file"
 
 # The date
 export habitat_start_seconds="$(date +%s)"
 
+# Set log level
 : > "$habitat_log_file"
 # Assure that we have a good environment
 "$habitat_bin"/log.sh --header "Prep"

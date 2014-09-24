@@ -87,13 +87,13 @@ function find_this() {
 
 
 
-opt "backup"    "<location> Required for move, copy, link, and download"
-opt "move"      "<file> <destination>"
-opt "link"      "<file> <destination>"
-opt "copy"      "<file> <destination>"
-opt "download"  "<url> <destination> download something if possible"
-opt "full_path" "<location> full path of a local file"
-opt "find"      "<regex_search> <location> Recurive search for anything matching regex"
+opt "backup|b"    "<location> required for data cp,mv,link,dl or define CUSTOM_BACKUP"
+opt "move|m"      "<file> <destination>"
+opt "link|l"      "<file> <destination>"
+opt "copy|c"      "<file> <destination>"
+opt "download|d"  "<url> <destination> download something if possible"
+opt "full_path|p" "<location> full path of a local file"
+opt "find|f"      "<regex_search> <location> Recurive search for anything matching regex"
 parse_args "$@"
 arg1=""
 arg2=""
@@ -101,28 +101,73 @@ action=""
 while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
-        --link|--copy|--move|--download|--find)
+        --link|-l|-link|--l)
             if [ -n "$action" ]; then
                 error "Cannot do $action and $arg at the same time"
             fi
             if [ -z "$1" ] || [ -z "$2" ]; then
                 error "Must have two arguments after $arg"
             fi
-            action="$arg"
+            action="link"
             arg1="$1"; shift
             arg2="$(full_path "$1")"; shift
         ;;
-        --full_path)
+        --copy|-copy|--c|-c)
+            if [ -n "$action" ]; then
+                error "Cannot do $action and $arg at the same time"
+            fi
+            if [ -z "$1" ] || [ -z "$2" ]; then
+                error "Must have two arguments after $arg"
+            fi
+            action="copy"
+            arg1="$1"; shift
+            arg2="$(full_path "$1")"; shift
+        ;;
+        --move|-move|-m|--m)
+            if [ -n "$action" ]; then
+                error "Cannot do $action and $arg at the same time"
+            fi
+            if [ -z "$1" ] || [ -z "$2" ]; then
+                error "Must have two arguments after $arg"
+            fi
+            action="move"
+            arg1="$1"; shift
+            arg2="$(full_path "$1")"; shift
+        ;;
+        --download|-d|--download|--d)
+            if [ -n "$action" ]; then
+                error "Cannot do $action and $arg at the same time"
+            fi
+            if [ -z "$1" ] || [ -z "$2" ]; then
+                error "Must have two arguments after $arg"
+            fi
+            action="download"
+            arg1="$1"; shift
+            arg2="$(full_path "$1")"; shift
+        ;;
+        --find|-find|--f|-f)
+            if [ -n "$action" ]; then
+                error "Cannot do $action and $arg at the same time"
+            fi
+            if [ -z "$1" ] || [ -z "$2" ]; then
+                error "Must have two arguments after $arg"
+            fi
+            action="find"
+            arg1="$1"; shift
+            arg2="$(full_path "$1")"; shift
+
+        ;;
+        --full_path|-full_path|-p|--p)
             if [ -n "$action" ]; then
                 error "Cannot do $action and $arg at the same time"
             fi
             if [ -z "$1" ]; then
                 error "Must have one argument after $arg"
             fi
-            action="$arg"
+            action="full_path"
             arg1="$1"; shift
         ;;
-        --backup)
+        --backup|-backup|-b|--b)
             if [ -z "$1" ]; then
                 error "Must have one argument after $arg"
             fi
@@ -137,7 +182,7 @@ done
 if [ -z "$action" ]; then
     error "Must pass in an action, --move, --copy etc"
 fi
-if [ "$action" = "--link" ] || [ "$action" = "--download" ] || [ "$action" = "--copy" ] || [ "$action" = "--move" ]; then
+if [ "$action" = "link" ] || [ "$action" = "download" ] || [ "$action" = "copy" ] || [ "$action" = "move" ]; then
     if [ -z "$backup" ] && [ -n "$CUSTOM_BACKUP" ]; then
         backup="$CUSTOM_BACKUP"
     elif [ -z "$backup" ] && [ -z "$CUSTOM_BACKUP" ]; then
@@ -148,11 +193,8 @@ if [ "$action" = "--link" ] || [ "$action" = "--download" ] || [ "$action" = "--
     fi
     backup "$arg2"
 fi
-if [ -n "$(echo "$action" | grep '\-\-link|\-\-copy|\-\-move')" ]; then
+if [ -n "$(echo "$action" | grep 'link|copy|move')" ]; then
     arg1="$(full_path "$arg1")"
-fi
-if [ -n "$(echo "$action" | grep '\-\-find|\-\-full_path')" ] && [ -n "$backup" ]; then
-    error "Backup is not needed for $action"
 fi
 
 if [ "$action" = "--link" ]; then

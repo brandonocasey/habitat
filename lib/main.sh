@@ -104,9 +104,15 @@ function opt() {
 function parse_args() {
     while [ "$#" -gt "0" ]; do
         arg="$1"; shift
-        if [ "$arg" = "--help" ] || [ "$arg" = "-help" ]; then
+        if [ "$arg" = "--help" ] || [ "$arg" = "-help" ] || [ "$arg" = "-h" ] || [ "$arg" = "--h" ]; then
             usage "$help_menu"
         fi
+
+        (while read option; do
+            case $arg in
+                -${option%%:*}|--${option%%:*})
+            esac
+        done <<< "$options")
     done
 }
 

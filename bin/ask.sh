@@ -5,21 +5,27 @@ question=""
 answers=""
 default=""
 
-opt "question" "Question to ask the user"
-opt "answers"  "Pipe deliminated answers where default is the first asd|dsa|no|yes"
+opt "question|q" "Question to ask the user"
+opt "answers|a"  "Pipe deliminated answers where default is the first asd|dsa|no|yes"
 parse_args "$@"
 while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
-        --question)
+        --question|-q|--q|--question)
             if [ -z "$1" ]; then
                 error "Must have an argument after $arg"
             fi
+            if [ -n "$question" ]; then
+                error "Cannot ask two $question and $1"
+            fi
             question="$1"; shift
         ;;
-        --answers)
+        --answers|-a|--a|-answers|--answer|-answer)
             if [ -z "$1" ]; then
                 error "Must have an argument after $arg"
+            fi
+            if [ -z "$1" ]; then
+                error "Cannot have two answers $answers and $1"
             fi
             answers="$1"; shift
         ;;

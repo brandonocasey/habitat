@@ -196,16 +196,16 @@ function delete() {
 
 
 
-opt "config"  "location of the config"
-opt "upsert"  "<key> <value> insert/update a key/value pair"
-opt "delete"  "<key> delete a key/value pair"
-opt "get"     "<key> get the value of a key"
-opt "getkeys" "get all of the keys"
+opt "config|c"  "location of the config, or export CUSTOM_CONFIG"
+opt "upsert|u"  "<key> <value> insert/update a key/value pair"
+opt "delete|d"  "<key> delete a key/value pair"
+opt "get|g"     "<key> get the value of a key"
+opt "getkeys|a" "get all of the keys"
 parse_args "$@"
 while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
-        --config)
+        --config|-config|-c|--c)
           if [ -z "$1" ]; then
               error "Must have an argument after $arg"
           fi
@@ -218,37 +218,53 @@ while [ "$#" -gt "0" ]; do
           if [ -z "$1" ] || [ -z "$2" ]; then
               error "Must have two arguments after $arg"
           fi
-          action="$arg"
+          action="upsert"
           arg1="$1"; shift
           arg2="$1"; shift
         ;;
-        --delete|--get)
+        --get|-get|-g|--g)
           if [ -z "$1" ]; then
               error "Must have an argument after $arg"
           fi
-          action="$arg"
+          action="get"
           arg1="$1"; shift
         ;;
+        --delete|-delete|-d|--d)
+          if [ -z "$1" ]; then
+              error "Must have an argument after $arg"
+          fi
+          action="delete"
+          arg1="$1"; shift
+        ;;
+        --getkeys|-getkeys|-a|--a)
+          action="getkeys"
+        ;;
+
+
         *)
             error "Invalid Argument $arg"
         ;;
     esac
 done
-if [ -z "$config" ]; then
+
+if [ -z "$config" ] && [ -z "$CUSTOM_CONFIG" ]; then
   error "Config must be set using --config"
+elif [ -z "$config" ] && [ -n "$CUSTOM_CONFIG"]; then
+  config="$CUSTOM_CONFIG"
 fi
+
 if [ ! -f "$config" ]; then
   touch "$config"
 fi
 
 validate "$config"
-if [ "$action" = "--upsert" ]; then
+if [ "$action" = "upsert" ]; then
   upsert "$arg1" "$arg2"
-elif [ "$action" = "--delete" ]; then
+elif [ "$action" = "delete" ]; then
   delete "$arg1"
-elif [ "$action" = "--get" ]; then
+elif [ "$action" = "get" ]; then
   get "$arg1"
-elif [ "$action" = "--getkeys" ]; then
+elif [ "$action" = "getkeys" ]; then
   getkeys
 fi
 

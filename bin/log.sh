@@ -6,7 +6,7 @@ function get_prefix() {
     if [ -z "$CUSTOM_LOG_PREFIX" ]; then
         prefix="$(eval "$CUSTOM_LOG_PREFIX")"
     else
-        prefix="$(date): "
+        prefix="$(date):"
     fi
     echo "$prefix"
 }
@@ -21,7 +21,7 @@ function log() {
         if [ -n "$line" ]; then
             if [ "$setting" -eq "1" ]; then
                 line="*----${line}----*"
-            elif [ "$setting" -eq "2" ]; then
+            else
                 line="$(get_prefix) $line"
             fi
             echo "$line"
@@ -38,66 +38,56 @@ function log_result() {
         printf "%s " "$line"
     done <<< "$@")"
 
-    echo "Running $command"
+    echo "$(get_prefix) Running $command"
     $command 2>&1
-    echo "Return Code $?"
+    echo "$(get_prefix) Return Code $?"
 } 1>&3
-
-function log_header() {
-    (while read -r line;do
-        if [ -n "$line" ]; then
-            echo "*----$line----*" 2>&1
-        fi
-    done <<< "$log_lines")
-} 1>&3
-
 
 log_lines=""
 action=""
 file=""
 
-opt "#"      "Anything passed without -- is assumed to be a log line/part of a command"
-opt "#"      "Environment Variables:"
-opt "#"      "CUSTOM_LOG_FILE - file to log to or stdout for stdout"
-opt "#"      "CUSTOM_LOG_LEVEL - Current log level default is 2"
-opt "#"      "CUSTOM_LOG_PREFIX - Custom log prefix"
-opt "file"   "The file to log export CUSTOM_LOG_FILE"
-opt "header" "Print log lines in header format"
-opt "stdout" "Log to stdout instead of file"
-opt "result" "Log the result of a command"
-opt "error"  "log to level 1"
-opt "info"   "log to level 2"
-opt "debug"  "log to level 3"
-opt "devel"  "log to level 4"
+opt "#"         "Anything passed without -- is assumed to be a log line/part of a command"
+opt "#"         "Environment Variables:"
+opt "#"         "CUSTOM_LOG_FILE - file to log to or stdout for stdout"
+opt "#"         "CUSTOM_LOG_LEVEL - Current log level default is 2"
+opt "#"         "CUSTOM_LOG_PREFIX - Custom log prefix"
+opt "file|f"    "The file to log export CUSTOM_LOG_FILE"
+opt "header|h"  "Print log lines in header format"
+opt "result|r"  "Log the result of a command"
+opt "error|e"   "log to level 1"
+opt "info|i"    "log to level 2"
+opt "verbose|v" "log to level 3"
+opt "debug|d"   "log to level 4"
 parse_args "$@"
 while [ "$#" -gt "0" ]; do
     arg="$1"; shift
     case $arg in
-        --error)
+        --error|-error|-e|--e)
             if [ -n "$level" ]; then
                 error "Cannot print to $level and $arg"
             fi
             level="1"
         ;;
-       --info)
+       --info|-info|-i|--i)
             if [ -n "$level" ]; then
                 error "Cannot print to $level and $arg"
             fi
             level="2"
         ;;
-        --debug)
+        --verbose|-v|--v|-verbose)
             if [ -n "$level" ]; then
                 error "Cannot print to $level and $arg"
             fi
             level="3"
         ;;
-         --devel)
+         --debug|-d|-debug|--d)
             if [ -n "$level" ]; then
                 error "Cannot print to $level and $arg"
             fi
             level="4"
         ;;
-        --header|--stdout|--result)
+        --header|--result)
             if [ -n "$action" ]; then
                 error "Cannot run $action and $arg"
             fi
@@ -110,7 +100,6 @@ while [ "$#" -gt "0" ]; do
             file="$1"; shift
         ;;
         *)
-
             if [ -z "$log_lines" ]; then
                 log_lines+="${arg}"
             else
@@ -145,12 +134,8 @@ if [ "$action" != "--stdout" ]; then
     exec 3>> "$log_file"
 fi
 
-log_settings="0"
 if [ "$action" = "--result" ]; then
     log_result "$log_lines"
-elif [ "$action" = "--stdout" ]; then
-    exec 3>&1
-    log.sh "2"
 else
     if [ "$current_level" -ge "$level" ]; then
         if [ "$action" = "--header" ]; then

@@ -4,8 +4,8 @@ function habitat_extension_names() {
     local extension
     (while read extension; do
         extension="$(basename "$extension")"
-        extension="$(regex_replace.sh "$extension" "s~^habitat\-~~g")"
-        extension="$(regex_replace.sh "$extension" "s~-~_~g")"
+        extension="$(regex.sh -r "$extension" "habitat\-" "")"
+        extension="$(regex.sh -r"$extension" "-" "_" -g)"
         echo "$extension"
     done <<< "$(habitat_extension_directories)")
 }

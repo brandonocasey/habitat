@@ -54,6 +54,8 @@ function habitat_cleanup() {
     log.sh "All done after $(($(date +%s)-$start_seconds))"
 
     unset "CUSTOM_LOG_FILE"
+    unset "CUSTOM_BACKUP"
+    unset "CUSTOM_CONFIG"
     unset -f "habitat_get_vars"
     unset -f "habitat_cleanup"
 }
