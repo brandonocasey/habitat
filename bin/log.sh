@@ -13,7 +13,6 @@ function get_prefix() {
 
 # 0 no prefix
 # 1 header
-# 2 prefix
 function log() {
     local setting="$1"; shift
     local line=""
@@ -134,6 +133,7 @@ if [ "$action" != "--stdout" ]; then
     exec 3>> "$log_file"
 fi
 
+log_settings="0"
 if [ "$action" = "--result" ]; then
     log_result "$log_lines"
 else
