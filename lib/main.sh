@@ -122,3 +122,15 @@ if [ ! -t 0 ]; then
         set -- "$@" "$var"
     done
 fi
+
+if [ -n "$DEBUG" ]; then
+
+    # Exit on Error
+    set -o errexit
+
+    # Don't Allow Unset Variables
+    set -o nounset
+
+    # allow failures through pipes
+    set -o pipefail
+fi
