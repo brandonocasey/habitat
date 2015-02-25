@@ -1,26 +1,11 @@
 #!/bin/sh
 
 
-# From Configuration
-habitat_debug=""
-habitat_base=""
-habitat_plugins="$habitat_base/plugins"
-habitat_cli="$habitat_base/habitat"
-habitat_dotfiles="$habitat_base/dotfiles"
-
-# Specific Files
-habitat_config="$habitat_base/habitatrc"
-
-# The date
-habitat_start_seconds="$(date +%s)"
-
-#
-#
-#
-# COMPLETED FUNCTIONS
-#
-#
-#
+# TODO:
+# * finish all functions
+# * comment all functions
+# * write unit tests
+# * add debug/verbose statements
 
 # print to STDERR
 function habitat_error() {
@@ -28,12 +13,21 @@ function habitat_error() {
         local message="$1"; shift
         echo "Error: $message" 1>&2
     done
-
 }
 
 # print debug statements, if debug is set
 function habitat_debug() {
-    if [ -n "$habitat_debug" ]; then
+    if [ "$habitat_print_level" = "debug" ]; then
+        while [ $# -gt 0 ]; do
+            local message="$1"; shift
+            echo "$message"
+        done
+    fi
+}
+
+# print verbose statements
+function habitat_debug() {
+    if [ "$habitat_print_level" = "verbose" ] || [ "$habitat_print_level" = "debug" ]; then
         while [ $# -gt 0 ]; do
             local message="$1"; shift
             echo "$message"
@@ -63,18 +57,8 @@ function habitat_cleanup() {
 
 
 # Source plugins into environment
-# setup symlink and alias
 function habitat_setup() {
-    # syml this script to user home dir, if not already done
-    if [ ! -f "$HOME/.bash_profile" ]; then
-        ln -s "$HOME/.bash_profile" "$habitat_cli"
-    else
-        :
-        # TODO: choose wether to keep or destroy
-    fi
-    alias habitat=". $habitat_cli"
-
-    echo ""
+    # check status of bash_profile
     local author
     local plugin
     for author in "$habitat_plugins/"*; do
@@ -111,42 +95,6 @@ function habitat_run() {
     done
 }
 
-#
-#
-#
-# END COMPLETED FUNCTIONS
-#
-#
-#
-
-
-
-# TODO: ls to show installed plugins??
-# debug parameter option
-# show usage
-function habitat_usage() {
-    if [ -z "$1" ]; then
-        echo
-        echo "  . habitat <args>"
-        echo
-        echo "  add       add (a) plugin(s). use --save write a config change"
-        echo "  rm        remove (a) plugin(s). use --save to write a config change"
-        echo "  stub      stub a plugin in ${habitat_plugins}. ex: stub author/plugin_name"
-        echo "  help      show this help menu or plugin help. ex: help author/plugin_name"
-        echo
-    else
-        local author="$1"; shift
-        local plugin="$1"; shift
-        if type -t "habitat_${author}_${plugin}_usage"; then
-            habitat_${author}_${plugin}_usage
-        else
-            habitat_error "$author/$plugin is not installed or has no usage"
-        fi
-    fi
-}
-
-
-# TODO: finalize where plugins should go
 function habitat_stub() {
 
     if [ -z "$1" ]; then
@@ -156,6 +104,7 @@ function habitat_stub() {
 
     local author="$1"; shift
     local plugin="$1"; shift
+    mkdir -p "$habitat_plugins/$author/$plugin"
 
 
     echo "#!/bin/sh
@@ -170,15 +119,43 @@ function habitat_${author}_${plugin}_run() {
 function habitat_${author}_${plugin}_usage() {
     :
 }
-" > "$habitat_plugins/$author/$plugin/habit"
+" > "$habitat_plugins/$author/$plugin"
 
 }
+
+
+
+# show usage
+function habitat_usage() {
+    if [ -z "$1" ]; then
+        echo
+        echo "  . habitat <args>"
+        echo
+        echo "  add       add (a) plugin(s). use --save write a config change"
+        echo "  rm        remove (a) plugin(s). use --save to write a config change"
+        echo "  stub      stub a plugin in ${habitat_plugins}. ex: stub author/plugin_name"
+        echo "  help      show this help menu or plugin help. ex: help author/plugin_name"
+    #    echo "  ls        show installed plugins"
+    #    echo "  verbose   print everything that habitat does"
+    #    echo "  debug     verbose with debug statements"
+        echo
+    else
+        local author="$1"; shift
+        local plugin="$1"; shift
+        if type -t "habitat_${author}_${plugin}_usage"; then
+            habitat_${author}_${plugin}_usage
+        else
+            habitat_error "$author/$plugin is not installed or has no usage"
+        fi
+    fi
+}
+
+
 
 
 # read config
 function habitat_read_config() {
     echo ""
-
 }
 
 # write to config, when doing rm or add
@@ -195,8 +172,46 @@ function habitat_manage() {
     :
 }
 
+function habitat_ls() {
+
+}
+
+function habitat_first_time_setup() {
+    # create config and default values
+}
 
 
+#
+#
+#
+# MAIN
+#
+#
+#
+
+if [ -z "$HOME" ]; then
+    habitat_error "HOME must be defined in your environment to use habitat"
+    exit 1
+fi
+
+# From Configuration
+habitat_debug="1"
+habitat_base="$HOME/.habitat"
+habitat_plugins="$habitat_base/plugins"
+habitat_cli="$habitat_base/habitat"
+habitat_dotfiles="$habitat_base/dotfiles"
+
+# Specific Files
+habitat_config="$habitat_base/habitatrc"
+
+# The date
+habitat_start_seconds="$(date +%s)"
+
+
+alias habitat=". $habitat_cli"
+if [ ! -f "$habitat_config" ]; then
+    habitat_first_time_setup
+fi
 habitat_setup
 
 # user passed in args
