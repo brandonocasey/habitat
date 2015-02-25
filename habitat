@@ -2,12 +2,19 @@
 
 
 # TODO:
-# * finish all functions
 # * comment all functions
 # * write unit tests
 # * add debug/verbose statements
+# * write/read config
+# * add/rm plugins once with --save
+# * habitat_manage
 
-# print to STDERR
+##
+# habitat_error(message*)
+# print messages to STDERR
+#
+# message - any number of messages to print to STDERR
+##
 function habitat_error() {
     while [ $# -gt 0 ]; do
         local message="$1"; shift
@@ -15,7 +22,12 @@ function habitat_error() {
     done
 }
 
-# print debug statements, if debug is set
+##
+# habitat_debug(message*)
+# print to STDOUT when print level is >= 2
+#
+# message - any number of messages to print
+##
 function habitat_debug() {
     if [ "$habitat_print_level" = "debug" ]; then
         while [ $# -gt 0 ]; do
@@ -25,7 +37,12 @@ function habitat_debug() {
     fi
 }
 
-# print verbose statements
+##
+# habitat_verbose(message*)
+# print to STDOUT when print level is >= 1
+#
+# message - any number of messages to print
+##
 function habitat_debug() {
     if [ "$habitat_print_level" = "verbose" ] || [ "$habitat_print_level" = "debug" ]; then
         while [ $# -gt 0 ]; do
@@ -35,7 +52,10 @@ function habitat_debug() {
     fi
 }
 
-# remove all habitat_* variables and functions from the environment
+##
+# habitat_cleanup()
+# remove all function/variables from the environment that start with habitat_
+##
 function habitat_cleanup() {
     local func
     (while read -r func; do
@@ -56,21 +76,27 @@ function habitat_cleanup() {
 }
 
 
-# Source plugins into environment
+# TODO: only source functions and nothing else
+##
+# habitat_setup()
+# source run, setup, and usage functions from plugins
+##
 function habitat_setup() {
-    # check status of bash_profile
     local author
     local plugin
     for author in "$habitat_plugins/"*; do
         for plugin in "$author/"*; do
             habitat_debug "Going to source $plugin"
-            #. "$plugin"
+            #. "$plugin/habit"
         done
     done
-
 }
 
 
+##
+# habitat_run()
+# run plugin setup and run functions
+##
 function habitat_run() {
     local author
     local plugin
@@ -95,37 +121,52 @@ function habitat_run() {
     done
 }
 
+##
+# habitat_stub(plugin)
+# stub out a new plugin
+#
+# plugin - 'author/repo' of the github url
+##
 function habitat_stub() {
 
     if [ -z "$1" ]; then
-        habitat_error "Please pass in author/plugin_name"
+        habitat_error "Please pass in author/repo"
         return
     fi
+    local plugin="$1"
+    local name="$(echo "$plugin" | sed 's~/~_~')"
+    local dir="$habitat_plugins/$plugin"
 
-    local author="$1"; shift
-    local plugin="$1"; shift
-    mkdir -p "$habitat_plugins/$author/$plugin"
+    if [ -d "$dir" ]; then
+        habitat_error "$plugin already exists!!"
+    fi
 
+    mkdir -p "$dir"
 
     echo "#!/bin/sh
-function habitat_${author}_${plugin}_setup() {
+function habitat_${name}_setup() {
     :
 }
 
-function habitat_${author}_${plugin}_run() {
+function habitat_${name}_run() {
     :
 }
 
-function habitat_${author}_${plugin}_usage() {
+function habitat_${name}_usage() {
     :
 }
-" > "$habitat_plugins/$author/$plugin"
+" > "$dir/habit"
 
 }
 
 
 
-# show usage
+##
+# habitat_usage(plugin)
+# show usage information
+#
+# plugin - 'author/repo' of plugin tp show usage for
+##
 function habitat_usage() {
     if [ -z "$1" ]; then
         echo
@@ -140,44 +181,132 @@ function habitat_usage() {
     #    echo "  debug     verbose with debug statements"
         echo
     else
-        local author="$1"; shift
         local plugin="$1"; shift
-        if type -t "habitat_${author}_${plugin}_usage"; then
-            habitat_${author}_${plugin}_usage
+        local name="$(echo "$plugin" | sed 's~/~_~')"
+        if type -t "habitat_${name}_usage"; then
+            habitat_${name}_usage
         else
-            habitat_error "$author/$plugin is not installed or has no usage"
+            habitat_error "$plugin is not installed or has no usage"
         fi
     fi
 }
 
 
+# TODO check git return codes
+##
+# habitat_add(plugin*)
+# add plugins, pass --save as plugin variable to save additions to config
+#
+# plugin - any number of 'author/repo' to add
+##
+function habitat_add() {
+    local plugin="$1"; shift
 
+    local dir="$habitat_plugins/$plugin"
+    if [ -d "$dir"  ]; then
+        habitat_error "Plugin $plugin appears to already be installed"
+        return 1
+    fi
 
-# read config
+    git clone "https://github.com/$plugin" "$dir"
+    if [ ! -f "$habitat_plugins/$plugin/habit" ]; then
+        habitat_error "Plugin $plugin does not contain a habit file removing"
+        if [ -d "$dir" ]; then
+            rm -rf "$dir"
+        fi
+        return 1
+    else
+        echo "Plugin $plugin installed successfully"
+    fi
+
+    if [ -n "$save" ]; then
+        local plugins="$(habitat_get_config "habitat_plugins")"
+        if [ -n "$plugins" ]; then
+            plugins="$plugins "
+        fi
+        habitat_write_config "habitat_plugins" "${plugins}${plugin}"
+    fi
+}
+
+##
+# habitat_rm(plugin*)
+# remove plugins, pass --save as plugin variable to save removals to config
+#
+# plugin - any number of 'author/repo' to remove
+##
+function habitat_rm() {
+    local plugin="$1"; shift;
+
+    local dir="$habitat_plugins/$plugin"
+    if [ -d "$dir" ]; then
+        echo "Removing plugin $plugin"
+        rm -rf "$dir"
+    else
+        habitat_error "Plugin $plugin does not exist"
+        return 1
+    fi
+}
+
+##
+# habitat_read_config(key)
+# read a value from the config given its key
+#
+# key - key to grab the value of
+##
 function habitat_read_config() {
+    local key="$1"; shift
     echo ""
 }
 
-# write to config, when doing rm or add
+##
+# habitat_write_config(key, val)
+# write a key value pair to the config file
+#
+# key - key to set
+# val - value to set the key to
+##
 function habitat_write_config() {
+    local key="$1"; shift
+    local val="$1"; shift
     echo ""
-
 }
 
 
-# manage plugins based on config file
-# source newly installed
-# unset newly erased
+##
+# habitat_manage()
+# add plugins based on config file, and source them
+##
 function habitat_manage() {
     :
 }
 
-function habitat_ls() {
 
+##
+# habitat_update()
+# update all installed plugins with .git directories
+##
+function habitat_update() {
+    local author
+    local plugin
+    for author in "$habitat_plugins/"*; do
+        for plugin in "$author/"*; do
+            if [ -d "$plugin/.git" ]; then
+                habitat_debug "Going to update $plugin"
+                # git pull "$plugin"
+                # . $plugin/habit
+            fi
+        done
+    done
 }
 
+
+##
+# habitat_update()
+# check if the user wants certain first_time functionality
+##
 function habitat_first_time_setup() {
     # create config and default values
+    :
 }
 
 
@@ -191,7 +320,7 @@ function habitat_first_time_setup() {
 
 if [ -z "$HOME" ]; then
     habitat_error "HOME must be defined in your environment to use habitat"
-    exit 1
+    return 1
 fi
 
 # From Configuration
@@ -225,10 +354,13 @@ if [ -n "$1" ]; then
         habitat_rm "$@"
     elif [ "$action" = "stub" ]; then
         habitat_stub "$@"
+    elif [ "$action" = "update" ]; then
+        habitat_update"$@"
     else
         habitat_error "Unknown action ${action}. Use help for usage"
     fi
 else
+    habitat_update
     habitat_manage
     habitat_run
 fi
