@@ -1,13 +1,8 @@
-/storage/backup/*
-!/storage/backup/.gitkeep
+/plugins/*
+!/plugins/.gitkeep
 
-/storage/tmp/*
-!/storage/tmp/.gitkeep
+/dotfiles/*
+!/dotfiles/.gitkeep
 
-/storage/logs/*
-!/storage/logs/.gitkeep
-
-/settings
-
-/extensions/*
-!/extensions/.gitkeep
+/backup/*
+!/backup/.gitkeep
