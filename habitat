@@ -335,10 +335,18 @@ function habitat_first_time_setup() {
 #
 #
 
+
+# Requirements
 if [ -z "$HOME" ]; then
     habitat_error "HOME must be defined in your environment to use habitat"
     return 1
 fi
+
+if ! command -v git > /dev/null; then
+    habitat_error "git must be installed to use habitat!!"
+    return 1
+fi
+
 
 # From Configuration
 habitat_debug="1"
@@ -354,12 +362,6 @@ habitat_config="$habitat_base/habitatrc"
 habitat_start_seconds="$(date +%s)"
 habitat_save_to_config=""
 habitat_version="1.0.0"
-
-if ! command -v git > /dev/null; then
-    habitat_error "git must be installed to use habitat!!"
-    return 1
-fi
-
 
 alias habitat=". $habitat_cli"
 if [ ! -f "$habitat_config" ]; then
