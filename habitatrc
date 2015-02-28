@@ -1,4 +1,5 @@
 habitat_auto_update=FALSE
 habitat_tell_update=FALSE
 habitat_ask_backup=FALSE
+habitat_print_level="debug"
 habitat_plugins=brandonocasey/cows brandonocasey/nope brandonocasey/flerp

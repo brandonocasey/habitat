@@ -29,6 +29,7 @@ function habitat_error() {
 # message - any number of messages to print
 ##
 function habitat_debug() {
+    habitat_print_level="$(habitat_read_config "habitat_print_level")"
     if [ "$habitat_print_level" = "debug" ]; then
         while [ $# -gt 0 ]; do
             local message="$1"; shift
@@ -44,6 +45,7 @@ function habitat_debug() {
 # message - any number of messages to print
 ##
 function habitat_debug() {
+    habitat_print_level="$(habitat_read_config "habitat_print_level")"
     if [ "$habitat_print_level" = "verbose" ] || [ "$habitat_print_level" = "debug" ]; then
         while [ $# -gt 0 ]; do
             local message="$1"; shift
@@ -216,6 +218,9 @@ function habitat_usage() {
 function habitat_add() {
     while [ $# -gt 0 ] ; do
         local plugin="$1"; shift
+        if [ -z "$plugin" ]; then
+            continue
+        fi
         local dir="$habitat_plugins/$plugin"
         if [ -d "$dir"  ]; then
             habitat_error "Plugin $plugin appears to already be installed"
@@ -250,6 +255,9 @@ function habitat_add() {
 function habitat_rm() {
     while [ $# -gt 0 ] ; do
         local plugin="$1"; shift;
+        if [ -z "$plugin" ]; then
+            continue
+        fi
         local dir="$habitat_plugins/$plugin"
         if [ ! -d "$dir" ]; then
             habitat_error "Plugin $plugin does not exist"
@@ -272,7 +280,11 @@ function habitat_rm() {
 ##
 function habitat_read_config() {
     local key="$1"; shift
-    cat "$habitat_config" | grep "$key" | sed "s~$key=~~"
+    result="$(cat "$habitat_config" | grep "$key" | sed "s~$key=~~")"
+    if [ -z "$result" ]; then
+        result="$(echo "")"
+    fi
+    echo "$result"
 }
 
 ##
@@ -282,10 +294,18 @@ function habitat_read_config() {
 # key - key to set
 # val - value to set the key to
 ##
+# TODO: throw error on undef key??
 function habitat_write_config() {
     local key="$1"; shift
     local val="$1"; shift
-    cat "$habitat_config" | sed "s~$key=.*~$key=$val" > "$habitat_config"
+    if [ -z "$key" ]; then
+        return 1
+    fi
+    if [ -n "$( echo "$habitat_config" | grep "$key=")" ]; then
+        cat "$habitat_config" | sed "s~$key=.*~$key=$val" > "$habitat_config"
+    else
+        echo "$key=$val" > $habitat_config
+    fi
 }
 
 
@@ -349,7 +369,6 @@ fi
 
 
 # From Configuration
-habitat_debug="1"
 habitat_base="$HOME/.habitat"
 habitat_plugins="$habitat_base/plugins"
 habitat_cli="$habitat_base/habitat"
