@@ -2,12 +2,12 @@
 
 
 # TODO:
-# * comment all functions
 # * write unit tests
 # * add debug/verbose statements
-# * write/read config
-# * add/rm plugins once with --save
 # * habitat_manage
+# * warn about updates
+# * plugin specific args
+# * plugin specific config settings
 
 ##
 # habitat_error(message*)
@@ -155,10 +155,24 @@ function habitat_${name}_run() {
 function habitat_${name}_usage() {
     :
 }
+
+function habitat_${name}_version() {
+    echo '1.0.0'
+}
+
 " > "$dir/habit"
 
 }
 
+
+
+##
+# habitat_check_update(plugin)
+# check wether their are updates for the habitat cli or plugins
+##
+function habitat_check_update() {
+    :
+}
 
 
 ##
@@ -200,32 +214,31 @@ function habitat_usage() {
 # plugin - any number of 'author/repo' to add
 ##
 function habitat_add() {
-    local plugin="$1"; shift
-
-    local dir="$habitat_plugins/$plugin"
-    if [ -d "$dir"  ]; then
-        habitat_error "Plugin $plugin appears to already be installed"
-        return 1
-    fi
-
-    git clone "https://github.com/$plugin" "$dir"
-    if [ ! -f "$habitat_plugins/$plugin/habit" ]; then
-        habitat_error "Plugin $plugin does not contain a habit file removing"
-        if [ -d "$dir" ]; then
-            rm -rf "$dir"
+    while [ $# -gt 0 ] ; do
+        local plugin="$1"; shift
+        local dir="$habitat_plugins/$plugin"
+        if [ -d "$dir"  ]; then
+            habitat_error "Plugin $plugin appears to already be installed"
+            continue
         fi
-        return 1
-    else
+
+        git clone "https://github.com/$plugin" "$dir"
+        if [ ! -f "$habitat_plugins/$plugin/habit" ]; then
+            habitat_error "Plugin $plugin does not contain a habit file removing"
+            if [ -d "$dir" ]; then
+                rm -rf "$dir"
+            fi
+            continue;
+        fi
         echo "Plugin $plugin installed successfully"
-    fi
-
-    if [ -n "$save" ]; then
-        local plugins="$(habitat_get_config "habitat_plugins")"
-        if [ -n "$plugins" ]; then
-            plugins="$plugins "
+        if [ -n "$habitat_save_to_config" ]; then
+            local plugins="$(habitat_get_config "habitat_plugins")"
+            if [ -n "$plugins" ]; then
+                plugins="$plugins "
+            fi
+            habitat_write_config "habitat_plugins" "${plugins}${plugin}"
         fi
-        habitat_write_config "habitat_plugins" "${plugins}${plugin}"
-    fi
+    done
 }
 
 ##
@@ -235,16 +248,20 @@ function habitat_add() {
 # plugin - any number of 'author/repo' to remove
 ##
 function habitat_rm() {
-    local plugin="$1"; shift;
-
-    local dir="$habitat_plugins/$plugin"
-    if [ -d "$dir" ]; then
-        echo "Removing plugin $plugin"
+    while [ $# -gt 0 ] ; do
+        local plugin="$1"; shift;
+        local dir="$habitat_plugins/$plugin"
+        if [ ! -d "$dir" ]; then
+            habitat_error "Plugin $plugin does not exist"
+            continue
+        fi
         rm -rf "$dir"
-    else
-        habitat_error "Plugin $plugin does not exist"
-        return 1
-    fi
+        echo "Successfully Removed plugin $plugin"
+        if [ -n "$habitat_save_to_config" ]; then
+            local plugins="$(habitat_get_config "habitat_plugins" | sed "s~$plugin~~")"
+            habitat_write_config "habitat_plugins" "${plugins}${plugin}"
+        fi
+    done
 }
 
 ##
@@ -255,7 +272,7 @@ function habitat_rm() {
 ##
 function habitat_read_config() {
     local key="$1"; shift
-    echo ""
+    cat "$habitat_config" | grep "$key" | sed "s~$key=~~"
 }
 
 ##
@@ -268,7 +285,7 @@ function habitat_read_config() {
 function habitat_write_config() {
     local key="$1"; shift
     local val="$1"; shift
-    echo ""
+    cat "$habitat_config" | sed "s~$key=.*~$key=$val" > "$habitat_config"
 }
 
 
@@ -333,8 +350,15 @@ habitat_dotfiles="$habitat_base/dotfiles"
 # Specific Files
 habitat_config="$habitat_base/habitatrc"
 
-# The date
+# Ever Changing Data
 habitat_start_seconds="$(date +%s)"
+habitat_save_to_config=""
+habitat_version="1.0.0"
+
+if ! command -v git > /dev/null; then
+    habitat_error "git must be installed to use habitat!!"
+    return 1
+fi
 
 
 alias habitat=". $habitat_cli"
@@ -346,6 +370,11 @@ habitat_setup
 # user passed in args
 if [ -n "$1" ]; then
     action="$1"; shift
+    if [ "$1" = "--save" ]; then
+        echo "Will write changes to config file where possible"
+        habitat_save_to_config="TRUE"
+        shift;
+    fi
     if [ "$action" = "help" ]; then
         habitat_usage "$@"
     elif [ "$action" = "add" ]; then
