@@ -1,13 +1,27 @@
 #!/bin/sh
 
-
 # TODO:
+
+# To Brainstorm
+# * Can we pull down a single file for plugins rather than a folder
+#
+
+# MUST DO:
 # * write unit tests
-# * add debug/verbose statements
 # * habitat_manage
-# * warn about updates
+# * habitat_update
+# * habitat_first_time_setup
+# * exit on error and run cleanup
+# * check git return codes
+
+# CAN DO:
 # * plugin specific args
 # * plugin specific config settings
+# * warn about updates
+# * ask user if they want to update and show code
+# * support quotes variables in config?
+# * allow --save from any arg
+# * allow --debug from any arg
 
 ##
 # habitat_error(message*)
@@ -24,33 +38,20 @@ function habitat_error() {
 
 ##
 # habitat_debug(message*)
-# print to STDOUT when print level is >= 2
+# print file descriptor 3 when debug is set. We print to
+# and create a thrird file descriptor so that we wont interfere
+# with stdout capture of other functions while we are here.
 #
 # message - any number of messages to print
 ##
 function habitat_debug() {
-    habitat_print_level="$(habitat_read_config "habitat_print_level")"
-    if [ "$habitat_print_level" = "debug" ]; then
+    if [ -n "$habitat_debug_output" ]; then
+        exec 3>&1
         while [ $# -gt 0 ]; do
             local message="$1"; shift
-            echo "$message"
+            echo "Debug: $message" 1>&3
         done
-    fi
-}
-
-##
-# habitat_verbose(message*)
-# print to STDOUT when print level is >= 1
-#
-# message - any number of messages to print
-##
-function habitat_debug() {
-    habitat_print_level="$(habitat_read_config "habitat_print_level")"
-    if [ "$habitat_print_level" = "verbose" ] || [ "$habitat_print_level" = "debug" ]; then
-        while [ $# -gt 0 ]; do
-            local message="$1"; shift
-            echo "$message"
-        done
+        exec 3>&-
     fi
 }
 
@@ -60,25 +61,24 @@ function habitat_debug() {
 ##
 function habitat_cleanup() {
     local func
-    (while read -r func; do
+    while read -r func; do
         habitat_debug "Unsetting function $func"
         if [ "$func" != "habitat_cleanup" ] &&  [ "$func" != "habitat_debug" ]; then
             unset -f "$func"
         fi
-    done <<< "$(declare -F | sed -e 's~declare -f ~~g' | grep -E "^habitat_")")
+    done <<< "$(declare -F | sed -e 's~declare -f ~~g' | grep -E "^habitat_")"
 
     local var
-    (while read -r var; do
+    while read -r var; do
         habitat_debug "Unsetting variable $var"
         unset "$var"
-    done <<< "$((set -o posix ; set) | sed -e 's~=.*~~' | grep -E "^habitat_")")
+    done <<< "$((set -o posix ; set) | sed -e 's~=.*~~' | grep -E "^habitat_")"
 
     unset -f "habitat_cleanup"
     unset -f "habitat_debug"
 }
 
 
-# TODO: only source functions and nothing else
 ##
 # habitat_setup()
 # source run, setup, and usage functions from plugins
@@ -86,10 +86,28 @@ function habitat_cleanup() {
 function habitat_setup() {
     local author
     local plugin
-    for author in "$habitat_plugins/"*; do
-        for plugin in "$author/"*; do
-            habitat_debug "Going to source $plugin"
-            #. "$plugin/habit"
+    for author in "$habitat_plugins_dir/"*; do
+        # as this would normally be a long dir rather than just the author name
+        author="$(basename "$author")"
+        if [ "$author" = "*"  ]; then
+            habitat_debug "Found no authors in plugins"
+            break
+        fi
+        for plugin in "$habitat_plugins_dir/$author/"*; do
+            plugin="$(basename "$plugin")"
+            if [ "$plugin" = "*"  ]; then
+                habitat_debug "Found no plugins for author $author"
+                break
+            elif [ ! -f "$habitat_plugins_dir/$author/$plugin/habit" ]; then
+                habitat_error "Found no habit file for plugin $author/$plugin"
+                break
+            fi
+            habitat_debug "Going to source plugin $author/$plugin"
+            . "$habitat_plugins_dir/$author/$plugin/habit"
+            if [ -n "$habitat_plugin_list" ]; then
+                habitat_plugin_list="$habitat_plugin_list "
+            fi
+            habitat_plugin_list="${habitat_plugin_list}${author}/${plugin}"
         done
     done
 }
@@ -100,26 +118,27 @@ function habitat_setup() {
 # run plugin setup and run functions
 ##
 function habitat_run() {
-    local author
     local plugin
-    for author in "$habitat_plugins/"*; do
-        for plugin in "$author/"*; do
-            habitat_debug "Going to run habitat_${author}_${plugin}_setup()"
-            if type -t "habitat_${author}_${plugin}_setup"; then
-                :
-                #habitat_${author}_${plugin}_setup
-            fi
-        done
+    local plugin_underscore
+    for plugin in $habitat_plugin_list; do
+        plugin_underscore="$(echo "$plugin" | sed 's~/~_~')"
+        habitat_debug "Going to run habitat_${plugin_underscore}_setup()"
+        if type -t "habitat_${plugin_underscore}_setup"; then
+            :
+            #habitat_${plugin_underscore}_setup
+        else
+            habitat_error "$plugin does not have a setup function!!"
+        fi
     done
-
-    for author in "$habitat_plugins/"*; do
-        for plugin in "$author/"*; do
-            habitat_debug "Going to run habitat_${author}_${plugin}_run()"
-            if type -t "habitat_${author}_${plugin}_run"; then
-                :
-                #habitat_${author}_${plugin}_run
-            fi
-        done
+    for plugin in $habitat_plugin_list; do
+        plugin_underscore="$(echo "$plugin" | sed 's~/~_~')"
+        habitat_debug "Going to run habitat_${plugin_underscore}_setup()"
+        if type -t "habitat_${plugin_underscore}_run"; then
+            :
+            #habitat_${plugin_underscore}_run
+        else
+            habitat_error "$plugin does not have a run function"
+        fi
     done
 }
 
@@ -137,7 +156,7 @@ function habitat_stub() {
     fi
     local plugin="$1"
     local name="$(echo "$plugin" | sed 's~/~_~')"
-    local dir="$habitat_plugins/$plugin"
+    local dir="$habitat_plugins_dir/$plugin"
 
     if [ -d "$dir" ]; then
         habitat_error "$plugin already exists!!"
@@ -145,7 +164,7 @@ function habitat_stub() {
 
     mkdir -p "$dir"
 
-    echo "#!/bin/sh
+    local stub_contents="#!/bin/sh
 function habitat_${name}_setup() {
     :
 }
@@ -162,7 +181,11 @@ function habitat_${name}_version() {
     echo '1.0.0'
 }
 
-" > "$dir/habit"
+"
+
+    habitat_debug "Creating stub in $dir/habit"
+    habitat_debug "With Contents" "$stub_contents"
+    echo "$stub_contents" > "$dir/habit"
 
 }
 
@@ -190,11 +213,12 @@ function habitat_usage() {
         echo
         echo "  add       add (a) plugin(s). use --save write a config change"
         echo "  rm        remove (a) plugin(s). use --save to write a config change"
-        echo "  stub      stub a plugin in ${habitat_plugins}. ex: stub author/plugin_name"
+        echo "  stub      stub a plugin in ${habitat_plugins_dir}. ex: stub author/plugin_name"
         echo "  help      show this help menu or plugin help. ex: help author/plugin_name"
     #    echo "  ls        show installed plugins"
-    #    echo "  verbose   print everything that habitat does"
-    #    echo "  debug     verbose with debug statements"
+    #    echo "  update    go through a plugin update progress"
+    #    echo "  install   install plugins based upon config file"
+    #    echo "  --debug   use with any other command to turn on debug output"
         echo
     else
         local plugin="$1"; shift
@@ -208,7 +232,6 @@ function habitat_usage() {
 }
 
 
-# TODO check git return codes
 ##
 # habitat_add(plugin*)
 # add plugins, pass --save as plugin variable to save additions to config
@@ -221,14 +244,14 @@ function habitat_add() {
         if [ -z "$plugin" ]; then
             continue
         fi
-        local dir="$habitat_plugins/$plugin"
+        local dir="$habitat_plugins_dir/$plugin"
         if [ -d "$dir"  ]; then
             habitat_error "Plugin $plugin appears to already be installed"
             continue
         fi
 
         git clone "https://github.com/$plugin" "$dir"
-        if [ ! -f "$habitat_plugins/$plugin/habit" ]; then
+        if [ ! -f "$habitat_plugins_dir/$plugin/habit" ]; then
             habitat_error "Plugin $plugin does not contain a habit file removing"
             if [ -d "$dir" ]; then
                 rm -rf "$dir"
@@ -237,11 +260,11 @@ function habitat_add() {
         fi
         echo "Plugin $plugin installed successfully"
         if [ -n "$habitat_save_to_config" ]; then
-            local plugins="$(habitat_get_config "habitat_plugins")"
+            local plugins="$(habitat_get_config "habitat_plugins_dir")"
             if [ -n "$plugins" ]; then
                 plugins="$plugins "
             fi
-            habitat_write_config "habitat_plugins" "${plugins}${plugin}"
+            habitat_write_config "habitat_plugins_dir" "${plugins}${plugin}"
         fi
     done
 }
@@ -258,7 +281,7 @@ function habitat_rm() {
         if [ -z "$plugin" ]; then
             continue
         fi
-        local dir="$habitat_plugins/$plugin"
+        local dir="$habitat_plugins_dir/$plugin"
         if [ ! -d "$dir" ]; then
             habitat_error "Plugin $plugin does not exist"
             continue
@@ -266,8 +289,8 @@ function habitat_rm() {
         rm -rf "$dir"
         echo "Successfully Removed plugin $plugin"
         if [ -n "$habitat_save_to_config" ]; then
-            local plugins="$(habitat_get_config "habitat_plugins" | sed "s~$plugin~~")"
-            habitat_write_config "habitat_plugins" "${plugins}${plugin}"
+            local plugins="$(habitat_get_config "habitat_plugins_dir" | sed "s~$plugin~~")"
+            habitat_write_config "habitat_plugins_dir" "${plugins}${plugin}"
         fi
     done
 }
@@ -280,11 +303,12 @@ function habitat_rm() {
 ##
 function habitat_read_config() {
     local key="$1"; shift
-    result="$(cat "$habitat_config" | grep "$key" | sed "s~$key=~~")"
+    result="$(cat "$habitat_config_file" | grep "$key" | sed "s~$key=~~")"
     if [ -z "$result" ]; then
         result="$(echo "")"
     fi
     echo "$result"
+    habitat_debug "Found that $key was $result in config file"
 }
 
 ##
@@ -294,17 +318,18 @@ function habitat_read_config() {
 # key - key to set
 # val - value to set the key to
 ##
-# TODO: throw error on undef key??
 function habitat_write_config() {
     local key="$1"; shift
     local val="$1"; shift
     if [ -z "$key" ]; then
         return 1
     fi
-    if [ -n "$( echo "$habitat_config" | grep "$key=")" ]; then
-        cat "$habitat_config" | sed "s~$key=.*~$key=$val" > "$habitat_config"
+    if [ -n "$( echo "$habitat_config_file" | grep "$key=")" ]; then
+        habitat_debug "Found that $key already exists going to set to $val"
+        cat "$habitat_config_file" | sed "s~$key=.*~$key=$val" > "$habitat_config_file"
     else
-        echo "$key=$val" > $habitat_config
+        habitat_debug "Found that $key does not exist appending to config as $val"
+        echo "$key=$val" > $habitat_config_file
     fi
 }
 
@@ -325,7 +350,7 @@ function habitat_manage() {
 function habitat_update() {
     local author
     local plugin
-    for author in "$habitat_plugins/"*; do
+    for author in "$habitat_plugins_dir/"*; do
         for plugin in "$author/"*; do
             if [ -d "$plugin/.git" ]; then
                 habitat_debug "Going to update $plugin"
@@ -368,24 +393,27 @@ if ! command -v git > /dev/null; then
 fi
 
 
-# From Configuration
-habitat_base="$HOME/.habitat"
-habitat_plugins="$habitat_base/plugins"
-habitat_cli="$habitat_base/habitat"
-habitat_dotfiles="$habitat_base/dotfiles"
-
-# Specific Files
-habitat_config="$habitat_base/habitatrc"
+# defines
+habitat_base_dir="$HOME/Projects/.habitat"
+habitat_plugins_dir="$habitat_base_dir/plugins"
+habitat_cli_file="$habitat_base_dir/habitat"
+habitat_dotfiles_dir="$habitat_base_dir/dotfiles"
+habitat_config_file="$habitat_base_dir/habitatrc"
 
 # Ever Changing Data
 habitat_start_seconds="$(date +%s)"
 habitat_save_to_config=""
 habitat_version="1.0.0"
+habitat_plugin_list=""
 
-alias habitat=". $habitat_cli"
-if [ ! -f "$habitat_config" ]; then
+alias habitat=". $habitat_cli_file"
+
+if [ ! -f "$habitat_config_file" ]; then
     habitat_first_time_setup
 fi
+
+habitat_debug_output="$(habitat_read_config "habitat_debug_output")"
+habitat_debug "habitat debug output is on!"
 habitat_setup
 
 # user passed in args
