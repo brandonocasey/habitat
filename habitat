@@ -11,8 +11,7 @@
 # * habitat_manage
 # * habitat_update
 # * habitat_first_time_setup
-# * exit on error and run cleanup
-# * check git return codes
+# * trap on error and run cleanup, as well as printing
 
 # CAN DO:
 # * plugin specific args
@@ -22,6 +21,7 @@
 # * support quotes variables in config?
 # * allow --save from any arg
 # * allow --debug from any arg
+
 
 ##
 # habitat_error(message*)
@@ -250,7 +250,14 @@ function habitat_add() {
             continue
         fi
 
-        git clone "https://github.com/$plugin" "$dir"
+        # need to decalre local variables before capture
+        # or else we won't correctly grab the result code
+        local output=""
+        output="$(git clone "https://github.com/$plugin" "$dir")"
+        if [ "$?" -ne "0" ]; then
+            habitat_error "Git Failed" "$output"
+            continue
+        fi
         if [ ! -f "$habitat_plugins_dir/$plugin/habit" ]; then
             habitat_error "Plugin $plugin does not contain a habit file removing"
             if [ -d "$dir" ]; then
@@ -379,6 +386,34 @@ function habitat_first_time_setup() {
 #
 #
 #
+
+
+# code taken from stackoverflow stackoverflow.com/questions/64786/error-handling-in-bash
+
+# trace ERR through pipes
+set -o pipefail
+# trace ERR through 'time command' and other functions
+set -o errtrace
+## set -u : exit the script if you try to use an uninitialised variable
+set -o nounset
+## set -e : exit the script if any statement returns a non-true return value
+set -o errexit
+
+
+habitat_trap_error() {
+    local parent_lineno="$1"
+    local message="$2"
+    local code="${3:-1}"
+
+    if [ -z "$message" ]; then
+        message=""
+    fi
+    habitat_error "Error on or near line ${parent_lineno}: ${message}; exiting with status ${code}"
+    habitat_clean
+    return "${code}"
+}
+trap 'habitat_trap_error ${LINENO}' ERR SIGTERM SIGINT SIGFPE
+
 
 
 # Requirements
