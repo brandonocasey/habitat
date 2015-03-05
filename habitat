@@ -11,16 +11,12 @@
 # * habitat_manage
 # * habitat_update
 # * habitat_first_time_setup
-# * trap on error and run cleanup, as well as printing
 
 # CAN DO:
-# * plugin specific args
 # * plugin specific config settings
 # * warn about updates
 # * ask user if they want to update and show code
 # * support quotes variables in config?
-# * allow --save from any arg
-# * allow --debug from any arg
 
 
 ##
@@ -45,7 +41,7 @@ function habitat_error() {
 # message - any number of messages to print
 ##
 function habitat_debug() {
-    if [ -n "$habitat_debug_output" ]; then
+    if [ -n "${habitat_debug_output:-}" ]; then
         exec 3>&1
         while [ $# -gt 0 ]; do
             local message="$1"; shift
@@ -63,7 +59,7 @@ function habitat_cleanup() {
     local func
     while read -r func; do
         habitat_debug "Unsetting function $func"
-        if [ "$func" != "habitat_cleanup" ] &&  [ "$func" != "habitat_debug" ]; then
+        if [ "$func" != "habitat_cleanup" ] && [ "$func" != "habitat_debug" ]; then
             unset -f "$func"
         fi
     done <<< "$(declare -F | sed -e 's~declare -f ~~g' | grep -E "^habitat_")"
@@ -71,11 +67,14 @@ function habitat_cleanup() {
     local var
     while read -r var; do
         habitat_debug "Unsetting variable $var"
-        unset "$var"
+        if [ "$var" != "habitat_debug_output" ]; then
+            unset "$var"
+        fi
     done <<< "$((set -o posix ; set) | sed -e 's~=.*~~' | grep -E "^habitat_")"
 
     unset -f "habitat_cleanup"
     unset -f "habitat_debug"
+    unset "habitat_debug_output"
 }
 
 
@@ -102,7 +101,7 @@ function habitat_setup() {
                 habitat_error "Found no habit file for plugin $author/$plugin"
                 break
             fi
-            habitat_debug "Going to source plugin $author/$plugin"
+            habitat_debug "Sourcing plugin $author/$plugin in environment"
             . "$habitat_plugins_dir/$author/$plugin/habit"
             if [ -n "$habitat_plugin_list" ]; then
                 habitat_plugin_list="$habitat_plugin_list "
@@ -124,8 +123,7 @@ function habitat_run() {
         plugin_underscore="$(echo "$plugin" | sed 's~/~_~')"
         habitat_debug "Going to run habitat_${plugin_underscore}_setup()"
         if type -t "habitat_${plugin_underscore}_setup"; then
-            :
-            #habitat_${plugin_underscore}_setup
+            habitat_${plugin_underscore}_setup
         else
             habitat_error "$plugin does not have a setup function!!"
         fi
@@ -134,8 +132,7 @@ function habitat_run() {
         plugin_underscore="$(echo "$plugin" | sed 's~/~_~')"
         habitat_debug "Going to run habitat_${plugin_underscore}_setup()"
         if type -t "habitat_${plugin_underscore}_run"; then
-            :
-            #habitat_${plugin_underscore}_run
+            habitat_${plugin_underscore}_run
         else
             habitat_error "$plugin does not have a run function"
         fi
@@ -173,12 +170,8 @@ function habitat_${name}_run() {
     :
 }
 
-function habitat_${name}_usage() {
+function habitat_${name}_options() {
     :
-}
-
-function habitat_${name}_version() {
-    echo '1.0.0'
 }
 
 "
@@ -191,13 +184,6 @@ function habitat_${name}_version() {
 
 
 
-##
-# habitat_check_update(plugin)
-# check wether their are updates for the habitat cli or plugins
-##
-function habitat_check_update() {
-    :
-}
 
 
 ##
@@ -207,28 +193,18 @@ function habitat_check_update() {
 # plugin - 'author/repo' of plugin tp show usage for
 ##
 function habitat_usage() {
-    if [ -z "$1" ]; then
         echo
-        echo "  . habitat <args>"
+        echo "  . habitat <options>"
         echo
         echo "  add       add (a) plugin(s). use --save write a config change"
         echo "  rm        remove (a) plugin(s). use --save to write a config change"
         echo "  stub      stub a plugin in ${habitat_plugins_dir}. ex: stub author/plugin_name"
         echo "  help      show this help menu or plugin help. ex: help author/plugin_name"
+        echo "  --debug   show debug statements to stdout"
     #    echo "  ls        show installed plugins"
     #    echo "  update    go through a plugin update progress"
     #    echo "  install   install plugins based upon config file"
-    #    echo "  --debug   use with any other command to turn on debug output"
         echo
-    else
-        local plugin="$1"; shift
-        local name="$(echo "$plugin" | sed 's~/~_~')"
-        if type -t "habitat_${name}_usage"; then
-            habitat_${name}_usage
-        else
-            habitat_error "$plugin is not installed or has no usage"
-        fi
-    fi
 }
 
 
@@ -341,13 +317,6 @@ function habitat_write_config() {
 }
 
 
-##
-# habitat_manage()
-# add plugins based on config file, and source them
-##
-function habitat_manage() {
-    :
-}
 
 
 ##
@@ -361,8 +330,10 @@ function habitat_update() {
         for plugin in "$author/"*; do
             if [ -d "$plugin/.git" ]; then
                 habitat_debug "Going to update $plugin"
-                # git pull "$plugin"
-                # . $plugin/habit
+                "$(cd $plugin && git pull "$plugin")"
+                . $plugin/habit
+            else
+                habitat_debug "Cannot update $plugin as it is not in git"
             fi
         done
     done
@@ -378,32 +349,35 @@ function habitat_first_time_setup() {
     :
 }
 
+##
+# habitat_check_update()
+# check wether their are updates for the habitat cli or plugins
+##
+function habitat_check_update() {
+    :
+}
 
-#
-#
-#
-# MAIN
-#
-#
-#
-
-
-# code taken from stackoverflow stackoverflow.com/questions/64786/error-handling-in-bash
-
-# trace ERR through pipes
-set -o pipefail
-# trace ERR through 'time command' and other functions
-set -o errtrace
-## set -u : exit the script if you try to use an uninitialised variable
-set -o nounset
-## set -e : exit the script if any statement returns a non-true return value
-set -o errexit
+##
+# habitat_manage()
+# add plugins based on config file, and source them
+##
+function habitat_manage() {
+    :
+}
 
 
-habitat_trap_error() {
-    local parent_lineno="$1"
-    local message="$2"
-    local code="${3:-1}"
+
+
+##
+# habitat_main(parent_lineno, message, code)
+# parent_lineno - line number reported by the trap
+# message       - error message
+# code          - code to exit with
+##
+function _habitat_trap_error() {
+    local parent_lineno="${1:-}"; shift
+    local message="${1:-}"; shift
+    local code="${1:-1}"; shift
 
     if [ -z "$message" ]; then
         message=""
@@ -412,18 +386,86 @@ habitat_trap_error() {
     habitat_clean
     return "${code}"
 }
-trap 'habitat_trap_error ${LINENO}' ERR SIGTERM SIGINT SIGFPE
 
 
+##
+# habitat_main($@)
+# $@ - all args that have been passed to the script
+##
+function habitat_main() {
+    # grab out --save and --debug
+    habitat_argument_count="${#:0}"
+    while [ $habitat_argument_count -gt 0 ]; do
+        habitat_argument="$1"; shift
+        if [ "$habitat_argument" = "--save" ]; then
+            habitat_save_to_config="1"
+        elif [ "$habitat_argument" = "--debug" ]; then
+            habitat_debug_output="1"
+        else
+            set -- "$@" "$habitat_argument"
+        fi
+        habitat_argument_count=$((habitat_argument_count-1))
+    done
 
+    # throw errors if --save is passed in a bad way
+    if [ -n "${habitat_save_to_config:-}" ] && [ -z "${1:-}" ]; then
+        habitat_error "--save will do nothing without being used with add or rm"
+        return 1
+    elif [ -n "${habitat_save_to_config:-}" ] && [ -n "${1:-}" ]; then
+        if [ "$1" != 'add' ] || [ "$1" != "rm" ]; then
+            habitat_error "--save will do nothing with action $1"
+        fi
+    fi
+
+
+    if [ -n "${1:-}" ]; then
+        habitat_option="$1"; shift
+        if [ "$habitat_option" = "help" ]; then
+            habitat_usage "$@"
+        elif [ "$habitat_option" = "add" ]; then
+            habitat_add "$@"
+        elif [ "$habitat_option" = "rm" ]; then
+            habitat_rm "$@"
+        elif [ "$habitat_option" = "stub" ]; then
+            habitat_stub "$@"
+        elif [ "$habitat_option" = "update" ]; then
+            habitat_update"$@"
+        elif type -t habitat_"$(echo "$habitat_option" | sed 's~/~_~')"_options; then
+            habitat_"$(echo "$habitat_option" | sed 's~/~_~')"_options "$@"
+        else
+            habitat_error "Unknown option ${habitat_option}. Use help for usage"
+            return 1
+        fi
+    else
+        habitat_update
+        habitat_manage
+        habitat_run
+    fi
+}
+
+
+# Error Handling!
+# trace ERR through pipes
+set -o pipefail
+# trace ERR through 'time command' and other functions
+set -o errtrace
+## set -u : exit the script if you try to use an uninitialised variable
+set -o nounset
+## set -e : exit the script if any statement returns a non-true return value
+set -o errexit
+# run in posix mode
+set -o posix
+trap 'habitat_trap_error ${LINENO}' ERR SIGTERM SIGINT SIGHUP SIGQUIT
+
+# TODO: more dynamic way to get habitat_base
 # Requirements
 if [ -z "$HOME" ]; then
-    habitat_error "HOME must be defined in your environment to use habitat"
+    habitat_error "habitat_base must be defined in your environment to use habitat"
     return 1
 fi
 
 if ! command -v git > /dev/null; then
-    habitat_error "git must be installed to use habitat!!"
+    habitat_error "git must be installed to use habitat!"
     return 1
 fi
 
@@ -440,7 +482,6 @@ habitat_start_seconds="$(date +%s)"
 habitat_save_to_config=""
 habitat_version="1.0.0"
 habitat_plugin_list=""
-
 alias habitat=". $habitat_cli_file"
 
 if [ ! -f "$habitat_config_file" ]; then
@@ -448,35 +489,11 @@ if [ ! -f "$habitat_config_file" ]; then
 fi
 
 habitat_debug_output="$(habitat_read_config "habitat_debug_output")"
-habitat_debug "habitat debug output is on!"
 habitat_setup
 
-# user passed in args
-if [ -n "$1" ]; then
-    action="$1"; shift
-    if [ "$1" = "--save" ]; then
-        echo "Will write changes to config file where possible"
-        habitat_save_to_config="TRUE"
-        shift;
-    fi
-    if [ "$action" = "help" ]; then
-        habitat_usage "$@"
-    elif [ "$action" = "add" ]; then
-        habitat_add "$@"
-    elif [ "$action" = "rm" ]; then
-        habitat_rm "$@"
-    elif [ "$action" = "stub" ]; then
-        habitat_stub "$@"
-    elif [ "$action" = "update" ]; then
-        habitat_update"$@"
-    else
-        habitat_error "Unknown action ${action}. Use help for usage"
-    fi
-else
-    habitat_update
-    habitat_manage
-    habitat_run
-fi
+
+habitat_main "$@"
 
 # Cleanup our internal functions
 habitat_cleanup
+
