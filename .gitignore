@@ -6,3 +6,6 @@
 
 /backup/*
 !/backup/.gitkeep
+
+stub.sh
+assert.sh
