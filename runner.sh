@@ -1,66 +1,41 @@
-#! /bin/sh
+#! /usr/bin/env bash
 # Run all of the unit tests, and make sure the assert/stub environment is ready to go
 # implement getopts
 # subset, search, etc
-
-
 script_dir="$( cd "$( dirname "$0" )" && pwd )"
-test_dir="$script_dir/t"
-tmp_dir="$script_dir/storage/tmp"
-test_tmp_dir="$script_dir/storage/tmp/test"
-
-assert_script="$tmp_dir/assert.sh"
-stub_script="$tmp_dir/stub.sh"
+unit_test_dir="$script_dir/t"
+assert_script="$script_dir/assert.sh"
+stub_script="$script_dir/stub.sh"
+habitat_cli="$script_dir/habitat"
+tmp="/tmp/habitat_unit_tests"
 
 
 if [ ! -f "$assert_script" ] || [ ! -f "$stub_script" ]; then
-    download.sh "https://raw.githubusercontent.com/lehmannro/assert.sh/master/assert.sh" "$assert_script"
-    # https://raw.githubusercontent.com/jimeh/stub.sh/master/stub.sh
-    download.sh  "https://raw.githubusercontent.com/BrandonOCasey/stub.sh/master/stub.sh" "$stub_script"
+    wget "https://raw.githubusercontent.com/lehmannro/assert.sh/master/assert.sh" "$assert_script"
+    wget  "https://raw.githubusercontent.com/jimeh/stub.sh/master/stub.sh" "$stub_script"
 fi
 
-unset -f download
+for unit_test_file in "$(find "$unit_test_dir" -name "*.t")"; do
+    unit_test="$(basename "$unit_test_file")"
+    echo "*** Running Test $unit_test ***"
 
-subset=()
+    (
+        # trace ERR through pipes
+        #set -o pipefail
+        # trace ERR through 'time command' and other functions
+        #set -o errtrace
+        ## set -u : exit the script if you try to use an uninitialised variable
+        #set -o nounset
+        ## set -e : exit the script if any statement returns a non-true return value
+        #set -o errexit
+        # run in posix mode
+        #set -o posix
 
-for i in $(find "$test_dir" -not -path '../bin' -name '*.t'); do
-    match="0"
-    if [ "$#" -gt "0" ]; then
-        match="1"
-        for subset_match in "$@"; do
-            if [ -n "$(echo "$i" | grep "$subset_match")" ]; then
-                match="0"
-            fi
-        done
-    fi
-    if [ "$match" -eq "0" ]; then
-        subset+=("$i")
-    fi
-done
-
-
-for FILE in "${subset[@]}"; do
-    if [ -d "$test_tmp_dir" ]; then
-        rm -rf "$test_tmp_dir"
-    fi
-    mkdir -p "$test_tmp_dir"
-
-    file_path="$( echo "$(dirname "$FILE")" | sed -e "s~$test_dir/~~" )"
-    file="$(basename "${FILE%.*}")"
-    script_file="$( echo "$script_dir/$file_path/$file."* )"
-    if [ -f "$script_file" ]; then
-        echo "*** Running Test $file_path/$file ***"
-        (
-            source "$stub_script"
-            source "$assert_script"
-            if [ -f "$(dirname "$FILE")/base" ]; then
-                source "$(dirname "$FILE")/base" "$script_file"
-            fi
-            source "$FILE" "$script_file"
-            assert_end "$file_path/$file"
-        )
-        echo
-    else
-        echo "$FILE does not have a script file at $script_file"
-    fi
+        source "$assert_script"
+        source "$stub_script"
+        stub unset
+        source "$habitat_cli" 2>&1 > /dev/null
+        source "$unit_test_file"
+        assert_end "$unit_test"
+    )
 done
