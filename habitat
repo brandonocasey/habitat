@@ -56,12 +56,10 @@ function habitat_debug() {
 }
 
 ##
-# habitat_cleanup($skip_self)
+# habitat_cleanup()
 # remove all function/variables from the environment that start with habitat_
-# skip_self  - skip cleaning up the cleanup function, for unit testing
 ##
 function habitat_cleanup() {
-    local skip_self="${1:-}"
     local function
     while read -r function; do
         if [ "$function" != "habitat_cleanup" ] && [ "$function" != "habitat_debug" ]; then
@@ -85,9 +83,7 @@ function habitat_cleanup() {
 
     unset -f "habitat_debug"
     unset "habitat_debug_output"
-    if [ -z "${skip_self:-}" ]; then
-        unset -f "habitat_cleanup"
-    fi
+    unset -f "habitat_cleanup"
 
 }
 
