@@ -83,34 +83,30 @@ function habitat_cleanup() {
 
 
 ##
-# habitat_setup()
+# habitat_source_installed_plugins()
 # source run, setup, and usage functions from plugins
 ##
-function habitat_setup() {
+function habitat_source_installed_plugins() {
     local author
     local plugin
-    for author in "$habitat_plugins_dir/"*; do
+    local author_dir
+    local plugin_dir
+    for author_dir in "$habitat_installed_plugins_dir/"*; do
         # as this would normally be a long dir rather than just the author name
-        author="$(basename "$author")"
+        author="$(basename "$author_dir")"
         if [ "$author" = "*"  ]; then
-            habitat_debug "Found no authors in plugins"
+            habitat_debug "Found no authors in installed plugins"
             break
         fi
-        for plugin in "$habitat_plugins_dir/$author/"*; do
-            plugin="$(basename "$plugin")"
+        for plugin_dir in "$author_dir/"*; do
+            plugin="$(basename "$plugin_dir")"
             if [ "$plugin" = "*"  ]; then
                 habitat_debug "Found no plugins for author $author"
                 break
-            elif [ ! -f "$habitat_plugins_dir/$author/$plugin/habit" ]; then
-                habitat_error "Found no habit file for plugin $author/$plugin"
-                break
             fi
             habitat_debug "Sourcing plugin $author/$plugin in environment"
-            . "$habitat_plugins_dir/$author/$plugin/habit"
-            if [ -n "$habitat_plugin_list" ]; then
-                habitat_plugin_list="$habitat_plugin_list "
-            fi
-            habitat_plugin_list="${habitat_plugin_list}${author}/${plugin}"
+            . "$plugin_dir"
+            echo "$author/$plugin"
         done
     done
 }
@@ -157,13 +153,13 @@ function habitat_stub() {
     fi
     local plugin="$1"
     local name="$(echo "$plugin" | sed 's~/~_~')"
-    local dir="$habitat_plugins_dir/$plugin"
+    local plugin_file="$habitat_plugins_dir/$plugin"
 
-    if [ -d "$dir" ]; then
+    if [ -f "$plugin_file" ]; then
         habitat_error "$plugin already exists!!"
     fi
 
-    mkdir -p "$dir"
+    mkdir -p "$(dirname "$plugin_file")"
 
     local stub_contents="#!/bin/sh
 function habitat_${name}_setup() {
@@ -180,9 +176,9 @@ function habitat_${name}_options() {
 
 "
 
-    habitat_debug "Creating stub in $dir/habit"
+    habitat_debug "Creating stub for $plugin in $plugin_file"
     habitat_debug "With Contents" "$stub_contents"
-    echo "$stub_contents" > "$dir/habit"
+    echo "$stub_contents" > "$plugin_file"
 
 }
 
@@ -466,7 +462,8 @@ fi
 
 # defines
 habitat_base_dir="$HOME/Projects/.habitat"
-habitat_plugins_dir="$habitat_base_dir/plugins"
+habitat_installed_plugins_dir="$habitat_base_dir/plugins/installed"
+habitat_git_plugins_dir="$habitat_base_dir/plugins/git"
 habitat_cli_file="$habitat_base_dir/habitat"
 habitat_dotfiles_dir="$habitat_base_dir/dotfiles"
 habitat_config_file="$habitat_base_dir/habitatrc"
@@ -475,7 +472,6 @@ habitat_config_file="$habitat_base_dir/habitatrc"
 habitat_start_seconds="$(date +%s)"
 habitat_save_to_config=""
 habitat_version="1.0.0"
-habitat_plugin_list=""
 alias habitat=". $habitat_cli_file"
 
 if [ ! -f "$habitat_config_file" ]; then
@@ -483,7 +479,7 @@ if [ ! -f "$habitat_config_file" ]; then
 fi
 
 habitat_debug_output=""
-habitat_setup
+habitat_source_installed_plugins
 
 
 habitat_main "$@"
