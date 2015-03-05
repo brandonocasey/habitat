@@ -28,7 +28,9 @@
 function habitat_error() {
     while [ $# -gt 0 ]; do
         local message="$1"; shift
-        echo "Error: $message" 1>&2
+        if [ -n "${message:-}" ]; then
+            echo "Error: $message" 1>&2
+        fi
     done
 }
 
@@ -45,7 +47,9 @@ function habitat_debug() {
         exec 3>&1
         while [ $# -gt 0 ]; do
             local message="$1"; shift
-            echo "Debug: $message" 1>&3
+            if [ -n "${message:-}" ]; then
+                echo "Debug: $message" 1>&3
+            fi
         done
         exec 3>&-
     fi
@@ -387,6 +391,8 @@ function _habitat_trap_error() {
     return "${code}"
 }
 
+trap '_habitat_trap_error ${LINENO}' ERR SIGTERM SIGINT SIGHUP SIGQUIT
+
 
 ##
 # habitat_main($@)
@@ -444,18 +450,6 @@ function habitat_main() {
 }
 
 
-# Error Handling!
-# trace ERR through pipes
-set -o pipefail
-# trace ERR through 'time command' and other functions
-set -o errtrace
-## set -u : exit the script if you try to use an uninitialised variable
-set -o nounset
-## set -e : exit the script if any statement returns a non-true return value
-set -o errexit
-# run in posix mode
-set -o posix
-trap 'habitat_trap_error ${LINENO}' ERR SIGTERM SIGINT SIGHUP SIGQUIT
 
 # TODO: more dynamic way to get habitat_base
 # Requirements
@@ -488,7 +482,7 @@ if [ ! -f "$habitat_config_file" ]; then
     habitat_first_time_setup
 fi
 
-habitat_debug_output="$(habitat_read_config "habitat_debug_output")"
+habitat_debug_output=""
 habitat_setup
 
 
