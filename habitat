@@ -56,29 +56,39 @@ function habitat_debug() {
 }
 
 ##
-# habitat_cleanup()
+# habitat_cleanup($skip_self)
 # remove all function/variables from the environment that start with habitat_
+# skip_self  - skip cleaning up the cleanup function, for unit testing
 ##
 function habitat_cleanup() {
-    local func
-    while read -r func; do
-        habitat_debug "Unsetting function $func"
-        if [ "$func" != "habitat_cleanup" ] && [ "$func" != "habitat_debug" ]; then
-            unset -f "$func"
+    local skip_self="${1:-}"
+    local function
+    while read -r function; do
+        if [ "$function" != "habitat_cleanup" ] && [ "$function" != "habitat_debug" ]; then
+            habitat_debug "Unsetting function $function"
+            unset -f "$function"
         fi
     done <<< "$(declare -F | sed -e 's~declare -f ~~g' | grep -E "^habitat_")"
 
-    local var
-    while read -r var; do
-        habitat_debug "Unsetting variable $var"
-        if [ "$var" != "habitat_debug_output" ]; then
-            unset "$var"
+    local variable
+    while read -r variable; do
+        habitat_debug "Unsetting variable $variable"
+        if [ "$variable" != "habitat_debug_output" ]; then
+            unset "$variable"
         fi
     done <<< "$((set -o posix ; set) | sed -e 's~=.*~~' | grep -E "^habitat_")"
 
-    unset -f "habitat_cleanup"
+
+    habitat_debug "Unsetting function habitat_debug"
+    habitat_debug "Unsetting variable habitat_debug_output"
+    habitat_debug "Unsetting function habitat_cleanup"
+
     unset -f "habitat_debug"
     unset "habitat_debug_output"
+    if [ -z "${skip_self:-}" ]; then
+        unset -f "habitat_cleanup"
+    fi
+
 }
 
 
@@ -383,7 +393,7 @@ function _habitat_trap_error() {
         message=""
     fi
     habitat_error "Error on or near line ${parent_lineno}: ${message}; exiting with status ${code}"
-    habitat_clean
+    habitat_cleanup
     return "${code}"
 }
 
