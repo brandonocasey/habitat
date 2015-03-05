@@ -15,10 +15,13 @@ if [ ! -f "$assert_script" ] || [ ! -f "$stub_script" ]; then
     wget  "https://raw.githubusercontent.com/jimeh/stub.sh/master/stub.sh" "$stub_script"
 fi
 
-for unit_test_file in "$(find "$unit_test_dir" -name "*.t")"; do
+old_ifs="$IFS"
+IFS="
+"
+for unit_test_file in $(find "$unit_test_dir" -name "*.t"); do
     unit_test="$(basename "$unit_test_file")"
     echo "*** Running Test $unit_test ***"
-
+    IFS="$old_ifs"
     (
         # trace ERR through pipes
         #set -o pipefail
@@ -31,11 +34,20 @@ for unit_test_file in "$(find "$unit_test_dir" -name "*.t")"; do
         # run in posix mode
         #set -o posix
 
+
         source "$assert_script"
         source "$stub_script"
         stub unset
         source "$habitat_cli" 2>&1 > /dev/null
+        while read -r function; do
+            stub "$function"
+        done <<< "$(declare -F | sed -e 's~declare -f ~~g' | grep -E "^habitat_")"
+        restore unset
+
         source "$unit_test_file"
         assert_end "$unit_test"
     )
+    IFS="
+    "
 done
+IFS="$old_ifs"
