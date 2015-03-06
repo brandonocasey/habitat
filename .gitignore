@@ -7,5 +7,5 @@
 /backup/*
 !/backup/.gitkeep
 
-stub.sh
-assert.sh
+t/stub.sh
+t/assert.sh

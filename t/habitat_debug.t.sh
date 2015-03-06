@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+source "test-helper.sh" "$0"
 function="habitat_debug"
 restore "$function"
 
@@ -12,3 +14,5 @@ habitat_debug_output=1
 assert "$function 'hello'" "Debug: hello"
 assert_raises "$function 'hello'" "0"
 assert "$function '' ''"
+
+assert_end "$function"

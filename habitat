@@ -18,6 +18,14 @@
 # * ask user if they want to update and show code
 # * support quotes variables in config?
 
+function habitat_unset_function() {
+    unset -f "$1"
+}
+
+function habitat_unset_variable() {
+    unset "$1"
+}
+
 
 ##
 # habitat_error(message*)
@@ -60,30 +68,44 @@ function habitat_debug() {
 # remove all function/variables from the environment that start with habitat_
 ##
 function habitat_cleanup() {
-    local function
-    while read -r function; do
-        if [ "$function" != "habitat_cleanup" ] && [ "$function" != "habitat_debug" ]; then
-            habitat_debug "Unsetting function $function"
-            unset -f "$function"
+    local func
+    while read -r func; do
+        if [ "$func" = "habitat_cleanup" ]; then
+            continue
+        elif  [ "$func" = "habitat_debug" ]; then
+            continue
+        elif [ "$func" = "habitat_unset" ]; then
+            continue
+        elif [ "$func" = "habitat_unset_function" ]; then
+            continue
+        elif [ "$func" = "habitat_unset_variable" ]; then
+            continue
         fi
-    done <<< "$(declare -F | sed -e 's~declare -f ~~g' | grep -E "^habitat_")"
+        habitat_debug "Unsetting function $func"
+        habitat_unset_function "$func"
+    done <<< "$(declare -F | grep "habitat_" | sed 's~declare -f ~~g' )"
 
-    local variable
-    while read -r variable; do
-        habitat_debug "Unsetting variable $variable"
-        if [ "$variable" != "habitat_debug_output" ]; then
-            unset "$variable"
+    local var
+    while read -r var; do
+        if [ "$var" != "habitat_debug_output" ]; then
+            continue
         fi
+        habitat_debug "Unsetting variable $var"
+        habitat_unset_variable "$var"
     done <<< "$((set -o posix ; set) | sed -e 's~=.*~~' | grep -E "^habitat_")"
 
 
     habitat_debug "Unsetting function habitat_debug"
     habitat_debug "Unsetting variable habitat_debug_output"
     habitat_debug "Unsetting function habitat_cleanup"
+    habitat_debug "Unsetting function habitat_unset_function"
+    habitat_debug "Unsetting function habitat_unset_variable"
 
-    unset -f "habitat_debug"
-    unset "habitat_debug_output"
-    unset -f "habitat_cleanup"
+    habitat_unset_function "habitat_debug"
+    habitat_unset_variable "habitat_debug_output"
+    habitat_unset_function "habitat_cleanup"
+    habitat_unset_function "habitat_unset_variable"
+    habitat_unset_function "habitat_unset_function"
 
 }
 
@@ -473,6 +495,7 @@ habitat_git_plugins_dir="$habitat_base_dir/plugins/git"
 habitat_cli_file="$habitat_base_dir/habitat"
 habitat_dotfiles_dir="$habitat_base_dir/dotfiles"
 habitat_config_file="$habitat_base_dir/habitatrc"
+habitat_run_unit_test=""
 
 # Ever Changing Data
 habitat_start_seconds="$(date +%s)"
@@ -480,16 +503,22 @@ habitat_save_to_config=""
 habitat_version="1.0.0"
 alias habitat=". $habitat_cli_file"
 
-if [ ! -f "$habitat_config_file" ]; then
-    habitat_first_time_setup
+if [ -n "${1:-}" ] && [ "$1" = "--unit_testing" ]; then
+    habitat_run_unit_test="1"
 fi
 
-habitat_debug_output=""
-habitat_source_installed_plugins
+# if unit testing dont automatically run anything
+if [ -z "$habitat_run_unit_test" ]; then
+    if [ ! -f "$habitat_config_file" ]; then
+        habitat_first_time_setup
+    fi
+
+    habitat_debug_output=""
+    habitat_source_installed_plugins
 
 
-habitat_main "$@"
+    habitat_main "$@"
 
-# Cleanup our internal functions
-habitat_cleanup
-
+    # Cleanup our internal functions
+    habitat_cleanup
+fi
