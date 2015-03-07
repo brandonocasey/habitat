@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source "test-helper.sh" "$0"
+source "$(dirname "$0")/test-helper.sh" "$0" "$@"
 func="habitat_cleanup"
 
 
@@ -7,7 +7,6 @@ function setup() {
   stub 'habitat_unset_function'
   stub 'habitat_unset_variable'
   $func
-  assert "echo '$?'" "0"
 }
 function clean() {
   restore 'habitat_unset_function'
@@ -15,14 +14,11 @@ function clean() {
 }
 
 
-#
-#
-# Make sure we cleanup habitat_
-#
-#
 setup
-# check if the number doubled
+test_name "habitat_unset_function is called"
 assert_raises "stub_called 'habitat_unset_function'" "0"
+
+test_name "habitat_unset_variable is called"
 assert_raises "stub_called 'habitat_unset_variable'" "0"
 
 # now we have the functions/variables that will be unset every time
@@ -34,31 +30,29 @@ clean
 
 
 
-#
-#
-# Make sure we cleanup the same amount twice
-#
-#
 setup
+test_name "habitat_unset_function has the same number of calls each time"
 assert "stub_called_times 'habitat_unset_function'" "$function_start"
+
+test_name "habitat_unset_variable has the same number of calls each time"
 assert "stub_called_times 'habitat_unset_variable'" "$variable_start"
 clean
 
 
 
 
-#
-#
-# Make sure we cleanup an extra function/variable
-#
-#
 habitat_unset_me_one() {
   :
 }
 habitat_var_unset_me_one=""
 setup
+test_name "habitat_unset_function has one more call if another function is added"
 assert "stub_called_times 'habitat_unset_function'" "$((function_start+1))"
+
+test_name "habitat_unset_variable has one more call if another variable is added"
 assert "stub_called_times 'habitat_unset_variable'" "$((variable_start+1))"
+unset -f habitat_unset_me_one
+unset habitat_var_unset_me_one
 clean
 
 
@@ -76,8 +70,15 @@ habitat_unset_me_three() {
 habitat_var_unset_me_two=""
 habitat_var_unset_me_three=""
 setup
-assert "stub_called_times 'habitat_unset_function'" "$((function_start+3))"
-assert "stub_called_times 'habitat_unset_variable'" "$((variable_start+3))"
+test_name "habitat_unset_function has two more calls if two functions are added"
+assert "stub_called_times 'habitat_unset_function'" "$((function_start+2))"
+
+test_name "habitat_unset_function has two more calls if two functions are added"
+assert "stub_called_times 'habitat_unset_variable'" "$((variable_start+2))"
+unset -f habitat_unset_me_two
+unset -f habitat_unset_me_three
+unset habitat_var_unset_me_two
+unset habitat_var_unset_me_three
 clean
 
 
