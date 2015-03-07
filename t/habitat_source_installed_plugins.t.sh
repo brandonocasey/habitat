@@ -33,66 +33,40 @@ function clean() {
   fi
 }
 
-#
-#
-# no authors no plugins
-#
-#
 setup
+test_name "No Authors/Plugins - No STDOUT"
 assert "$func '$tmp'" ""
+
+test_name "No Authors/Plugins - Failure"
 assert_raises "$func '$tmp'" "1"
+
+test_name "No Authors/Plugins - source not called"
+assert "stub_called_times 'habitat_source'" "0"
 clean
 
 
-#
-#
-# one author with no plugins
-#
-#
+
 setup "author"
+test_name "1 Authors 0 Plugins - No STDOUT"
 assert "$func '$tmp'" ""
+
+test_name "1 Authors 0 Plugins - Success"
 assert_raises "$func '$tmp'" "0"
-clean
 
-#
-#
-# one author one plugins
-#
-#
-setup "author" "plugin" "author2" "plugin"
-$func "$tmp"
-assert "stub_called_times 'habitat_source'" "1"
+test_name "1 Authors 0 Plugins - source not called"
+assert "stub_called_times 'habitat_source'" "0"
 clean
 
 
-#
-#
-# one author with two plugins
-#
-#
-setup "author" "plugin" "author" "plugin2"
-$func "$tmp"
-assert "stub_called_times 'habitat_source'" "2"
-clean
+setup "author" "plugin"
+test_name "1 Authors 1 Plugins - STDOUT"
+assert "$func '$tmp'" "author_plugin"
 
-#
-#
-# two author with one plugins each
-#
-#
-setup "author" "plugin" "author2" "plugin"
-$func "$tmp"
-assert "stub_called_times 'habitat_source'" "2"
-clean
+test_name "1 Authors 1 Plugins - Success"
+assert_raises "$func '$tmp'" "0"
 
 
-#
-#
-# two author with only one has a plugin
-#
-#
-setup "author" "plugin" "author2"
-$func "$tmp"
+test_name "1 Authors 1 Plugins - source not called"
 assert "stub_called_times 'habitat_source'" "1"
 clean
 
