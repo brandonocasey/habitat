@@ -77,8 +77,6 @@ function habitat_cleanup() {
             continue
         elif  [ "$func" = "habitat_debug" ]; then
             continue
-        elif [ "$func" = "habitat_unset" ]; then
-            continue
         elif [ "$func" = "habitat_unset_function" ]; then
             continue
         elif [ "$func" = "habitat_unset_variable" ]; then
@@ -86,7 +84,7 @@ function habitat_cleanup() {
         fi
         habitat_debug "Unsetting function $func"
         habitat_unset_function "$func"
-    done <<< "$(declare -F | grep "^habitat_" | sed 's~declare -f ~~g' )"
+    done <<< "$(declare -F | grep "^declare -f habitat_" | sed 's~declare -f ~~g' )"
 
     local var
     while read -r var; do
@@ -109,6 +107,7 @@ function habitat_cleanup() {
     habitat_unset_function "habitat_cleanup"
     habitat_unset_function "habitat_unset_variable"
     habitat_unset_function "habitat_unset_function"
+    return 0
 }
 
 
@@ -121,25 +120,25 @@ function habitat_source_installed_plugins() {
     local author
     local plugin
     local author_dir
-    local plugin_dir
-    for author_dir in "$habitat_installed_plugins_dir/"*; do
+    local plugin_file
+    for author_dir in "$base_dir/"*; do
         # as this would normally be a long dir rather than just the author name
         author="$(basename "$author_dir")"
         if [ "$author" = "*"  ]; then
             habitat_debug "Found no authors in installed plugins"
-            break
+            return 1
         fi
-        for plugin_dir in "$author_dir/"*; do
-            plugin="$(basename "$plugin_dir")"
+        for plugin_file in "$author_dir/"*; do
+            plugin="$(basename "$plugin_file")"
             if [ "$plugin" = "*"  ]; then
-                habitat_debug "Found no plugins for author $author"
+                habitat_error "Found no plugins for author $author"
                 break
             fi
             habitat_debug "Sourcing plugin $author/$plugin in environment"
-            habitat_source "$plugin_dir"
-            echo "$author/$plugin"
+            habitat_source "$plugin_file"
         done
     done
+    return 0
 }
 
 
@@ -418,7 +417,6 @@ function habitat_trap_error() {
     return "${code}"
 }
 
-trap 'habitat_trap_error ${LINENO}' ERR SIGTERM SIGINT SIGHUP SIGQUIT
 
 
 ##
@@ -512,6 +510,8 @@ fi
 
 # if unit testing dont automatically run anything
 if [ -z "$habitat_run_unit_test" ]; then
+
+    trap -- 'habitat_trap_error ${LINENO}' ERR SIGTERM SIGINT SIGHUP SIGQUIT
     if [ ! -f "$habitat_config_file" ]; then
         habitat_first_time_setup
     fi
@@ -524,4 +524,5 @@ if [ -z "$habitat_run_unit_test" ]; then
 
     # Cleanup our internal functions
     habitat_cleanup
+    trap --
 fi
