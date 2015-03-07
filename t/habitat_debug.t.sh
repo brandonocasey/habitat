@@ -4,7 +4,7 @@ func="habitat_debug"
 restore "$func"
 
 
-test_name "Blank input does nothing with debug off"
+test_name "Blank input is successful with debug off"
 assert_raises "$func '' '' ''" "0"
 
 test_name "Blank input prints nothing with debug off"
