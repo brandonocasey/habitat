@@ -1,4 +1,8 @@
 test_dir="$( cd "$( dirname "$1" )" && pwd )"; shift
+if [ -n "${1:-}" ]; then
+     output="1"
+fi
+
 assert_script="$test_dir/assert.sh"
 stub_script="$test_dir/stub.sh"
 script_under_test="$test_dir/../habitat"
@@ -28,9 +32,22 @@ mkdir -p "$tmp"
 # run in posix mode
 #set -o posix
 
+test_index=1
+function test_name() {
+     if [ -n "${output:-}" ]; then
+          echo "*** Test $test_index $1"
+     fi
+     test_index=$((test_index+1))
+}
+
 
 source "$assert_script"
 source "$stub_script"
 source "$script_under_test" --unit_testing
-stub_and_eval 'habitat_error' 'echo "$@"'
-stub_and_eval 'habitat_debug' 'echo "$@"'
+if [ -n "${output:-}" ]; then
+     stub_and_eval 'habitat_error' 'echo "$@" 1>&2'
+     stub_and_eval 'habitat_debug' 'echo "$@" 1>&2'
+else
+     stub 'habitat_error'
+     stub 'habitat_debug'
+fi
