@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-source "test-helper.sh" "$0"
+source "$(dirname "$0")/test-helper.sh" "$0"
+restore habitat_debug
 function="habitat_debug"
 restore "$function"
 
