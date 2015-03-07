@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source "$(dirname "$0")/test-helper.sh" "$0"
+source "$(dirname "$0")/test-helper.sh" "$0" "$@"
 func="habitat_source_installed_plugins"
 
 
@@ -39,8 +39,8 @@ function clean() {
 #
 #
 setup
-$func "$tmp"
-assert "echo '$?'" "1"
+assert "$func '$tmp'" ""
+assert_raises "$func '$tmp'" "1"
 clean
 
 
@@ -50,8 +50,8 @@ clean
 #
 #
 setup "author"
-$func "$tmp"
-assert "stub_called_times 'habitat_error'" "1"
+assert "$func '$tmp'" ""
+assert_raises "$func '$tmp'" "0"
 clean
 
 #
@@ -59,7 +59,7 @@ clean
 # one author one plugins
 #
 #
-setup "author" "plugin"
+setup "author" "plugin" "author2" "plugin"
 $func "$tmp"
 assert "stub_called_times 'habitat_source'" "1"
 clean
