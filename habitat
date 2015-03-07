@@ -87,7 +87,7 @@ function habitat_cleanup() {
 
     local var
     while read -r var; do
-        if [ "$var" != "habitat_debug_output" ]; then
+        if [ "$var" = "habitat_debug_output" ]; then
             continue
         fi
         habitat_debug "Unsetting variable $var"
@@ -402,7 +402,7 @@ function habitat_manage() {
 # message       - error message
 # code          - code to exit with
 ##
-function _habitat_trap_error() {
+function habitat_trap_error() {
     local parent_lineno="${1:-}"; shift
     local message="${1:-}"; shift
     local code="${1:-1}"; shift
@@ -415,7 +415,7 @@ function _habitat_trap_error() {
     return "${code}"
 }
 
-trap '_habitat_trap_error ${LINENO}' ERR SIGTERM SIGINT SIGHUP SIGQUIT
+trap 'habitat_trap_error ${LINENO}' ERR SIGTERM SIGINT SIGHUP SIGQUIT
 
 
 ##
