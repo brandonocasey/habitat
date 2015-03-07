@@ -25,6 +25,9 @@ function habitat_unset_function() {
 function habitat_unset_variable() {
     unset "$1"
 }
+function habitat_source() {
+    . "$1"
+}
 
 
 ##
@@ -83,7 +86,7 @@ function habitat_cleanup() {
         fi
         habitat_debug "Unsetting function $func"
         habitat_unset_function "$func"
-    done <<< "$(declare -F | grep "habitat_" | sed 's~declare -f ~~g' )"
+    done <<< "$(declare -F | grep "^habitat_" | sed 's~declare -f ~~g' )"
 
     local var
     while read -r var; do
@@ -106,7 +109,6 @@ function habitat_cleanup() {
     habitat_unset_function "habitat_cleanup"
     habitat_unset_function "habitat_unset_variable"
     habitat_unset_function "habitat_unset_function"
-
 }
 
 
@@ -115,6 +117,7 @@ function habitat_cleanup() {
 # source run, setup, and usage functions from plugins
 ##
 function habitat_source_installed_plugins() {
+    local base_dir="$1"
     local author
     local plugin
     local author_dir
@@ -133,7 +136,7 @@ function habitat_source_installed_plugins() {
                 break
             fi
             habitat_debug "Sourcing plugin $author/$plugin in environment"
-            . "$plugin_dir"
+            habitat_source "$plugin_dir"
             echo "$author/$plugin"
         done
     done
@@ -514,7 +517,7 @@ if [ -z "$habitat_run_unit_test" ]; then
     fi
 
     habitat_debug_output=""
-    habitat_source_installed_plugins
+    habitat_source_installed_plugins "$habitat_installed_plugins_dir"
 
 
     habitat_main "$@"
