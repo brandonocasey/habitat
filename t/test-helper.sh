@@ -13,8 +13,8 @@ mkdir -p "$tmp"
 
 
  if [ ! -f "$assert_script" ] || [ ! -f "$stub_script" ]; then
-     wget "https://raw.githubusercontent.com/lehmannro/assert.sh/master/assert.sh" "$assert_script"
-     wget  "https://raw.githubusercontent.com/jimeh/stub.sh/master/stub.sh" "$stub_script"
+     wget --quiet "https://raw.github.com/lehmannro/assert.sh/master/assert.sh" "$assert_script"
+     wget --quiet "https://raw.github.com/jimeh/stub.sh/master/stub.sh" "$stub_script"
  fi
 
 # trace ERR through pipes
@@ -31,4 +31,6 @@ mkdir -p "$tmp"
 
 source "$assert_script"
 source "$stub_script"
-source "$script_under_test" --unit_testing 2>&1 > /dev/null
+source "$script_under_test" --unit_testing
+stub_and_eval 'habitat_error' 'echo "$@"'
+stub_and_eval 'habitat_debug' 'echo "$@"'
