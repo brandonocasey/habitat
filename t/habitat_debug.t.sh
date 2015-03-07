@@ -8,10 +8,10 @@ test_name "Blank input is successful with debug off"
 assert_raises "$func '' '' ''" "0"
 
 test_name "Blank input prints nothing with debug off"
-assert "$func '' ''"
+assert "$func '' ''" ""
 
 test_name "input with debug off prints nothing"
-assert "$func 'hello'"
+assert "$func 'hello'" ""
 
 test_name "input with debug off is successful"
 assert_raises "$func 'hello'" "0"
@@ -28,6 +28,6 @@ test_name "input with multi line input and debug is prints"
 assert "$func 'hello' 'hello'" "Debug: hello\nDebug: hello"
 
 test_name "Blank input with debug does nothing"
-assert "$func '' ''"
+assert "$func '' ''" ""
 
 assert_end "$func"
