@@ -3,31 +3,55 @@ source "$(dirname "$0")/test-helper.sh" "$0" "$@"
 func="habitat_debug"
 restore "$func"
 
+test_name "Debug OFF: Blank input is successful"
+assert_raises "$func ''" "0"
 
-test_name "Blank input is successful with debug off"
-assert_raises "$func '' '' ''" "0"
+test_name "Debug OFF: Blank input doesn't print"
+assert "$func ''" ""
 
-test_name "Blank input prints nothing with debug off"
+test_name "Debug OFF: Blank multiline is successful"
+assert_raises "$func '' ''" "0"
+
+test_name "Debug OFF: Blank multiline doesn't print"
 assert "$func '' ''" ""
 
-test_name "input with debug off prints nothing"
+test_name "Debug OFF: input doesn't print"
 assert "$func 'hello'" ""
 
-test_name "input with debug off is successful"
+test_name "Debug OFF: input is successful"
 assert_raises "$func 'hello'" "0"
+
+test_name "Debug OFF: multiline input doesn't print"
+assert "$func 'hello' 'hello2'" ""
+
+test_name "Debug OFF: multiline input is successful"
+assert_raises "$func 'hello' 'hello2'" "0"
+
 
 # with debug on
 habitat_debug_output=1
-test_name "input with debug on prints"
+test_name "Debug ON: Blank input is successful"
+assert_raises "$func ''" "0"
+
+test_name "Debug ON: Blank input doesn't print"
+assert "$func ''" ""
+
+test_name "Debug ON: Blank multiline is successful"
+assert_raises "$func '' ''" "0"
+
+test_name "Debug ON: Blank multiline doesn't print"
+assert "$func '' ''" ""
+
+test_name "Debug ON: input prints"
 assert "$func 'hello'" "Debug: hello"
 
-test_name "input with debug is successful"
+test_name "Debug ON: input is successful"
 assert_raises "$func 'hello'" "0"
 
-test_name "input with multi line input and debug is prints"
-assert "$func 'hello' 'hello'" "Debug: hello\nDebug: hello"
+test_name "Debug ON: multiline input prints"
+assert "$func 'hello' 'hello2'" "Debug: hello\nDebug: hello2"
 
-test_name "Blank input with debug does nothing"
-assert "$func '' ''" ""
+test_name "Debug OFF: multiline input is successful"
+assert_raises "$func 'hello' 'hello2'" "0"
 
 assert_end "$func"
