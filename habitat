@@ -8,6 +8,14 @@
 
 # MUST DO:
 # * write unit tests
+# * seperate plugin and git repos
+#   * stuff git repos somewhere
+#   * ln -s habit file to plugins/author/plugin
+#   * this will make checking for updates easier
+#   * will also make sourcing and info on plugins easier
+
+
+# Would Like
 # * habitat_manage
 # * habitat_update
 # * habitat_first_time_setup
@@ -15,8 +23,10 @@
 # CAN DO:
 # * plugin specific config settings
 # * warn about updates
-# * ask user if they want to update and show code
 # * support quotes variables in config?
+# * namespace and eval plugins automatically
+# * ignore everything but functions i plugins
+
 
 function habitat_unset_function() {
     unset -f "$1"
