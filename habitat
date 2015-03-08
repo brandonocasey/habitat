@@ -184,8 +184,7 @@ function habitat_run() {
 # plugin - 'author/repo' of the github url
 ##
 function habitat_stub() {
-
-    if [ -z "$1" ]; then
+    if [ -z "${1:-}" ]; then
         habitat_error "Please pass in author/repo"
         return 1
     fi
