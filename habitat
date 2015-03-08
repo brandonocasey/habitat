@@ -28,6 +28,9 @@ function habitat_unset_variable() {
 function habitat_source() {
     . "$1"
 }
+function habitat_call_function() {
+    $1
+}
 
 
 ##
@@ -148,14 +151,17 @@ function habitat_source_installed_plugins() {
 # run plugin setup and run functions
 ##
 function habitat_run() {
-    local plugin_list="$1"
+    local plugin_list="${1-}"
     local plugin
     local plugin_underscore
+    if [ -z "${plugin_list:-}" ]; then
+        return 1
+    fi
     for plugin in $plugin_list; do
         plugin_underscore="$(echo "$plugin" | sed 's~/~_~')"
         habitat_debug "Going to run habitat_${plugin_underscore}_setup()"
-        if type -t "habitat_${plugin_underscore}_setup"; then
-            habitat_${plugin_underscore}_setup
+        if type -t "habitat_${plugin_underscore}_setup" 2>&1 > /dev/null; then
+            habitat_call_function "habitat_${plugin_underscore}_setup"
         else
             habitat_error "$plugin does not have a setup function!!"
         fi
@@ -163,8 +169,8 @@ function habitat_run() {
     for plugin in $plugin_list; do
         plugin_underscore="$(echo "$plugin" | sed 's~/~_~')"
         habitat_debug "Going to run habitat_${plugin_underscore}_setup()"
-        if type -t "habitat_${plugin_underscore}_run"; then
-            habitat_${plugin_underscore}_run
+        if type -t "habitat_${plugin_underscore}_run" 2>&1 > /dev/null; then
+            habitat_call_function "habitat_${plugin_underscore}_run"
         else
             habitat_error "$plugin does not have a run function"
         fi
