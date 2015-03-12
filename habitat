@@ -54,7 +54,7 @@ function habitat_is_valid_plugin_name() {
         return 1
     fi
     local plugin_name="$1"
-    if [ -z "$(echo "$plugin_name" | grep "^[a-z0-9]+/[a-z0-9]+$")" ]; then
+    if [ -z "$(echo "$plugin_name" | grep -i "^[a-z0-9]\{1,\}/[a-z0-9]\{1,\}$")" ]; then
         return 1
     fi
     return 0
