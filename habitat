@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # TODO:
 
@@ -8,6 +8,7 @@
 
 # MUST DO:
 # * write unit tests
+#   * verify debug/error lines in unit tests
 # * seperate plugin and git repos
 #   * stuff git repos somewhere
 #   * ln -s habit file to plugins/author/plugin
@@ -42,6 +43,22 @@ function habitat_call_function() {
     $1
 }
 
+##
+# habitat_is_valid_plugin_name(plugin)
+# check if a plugin name is valid through regex/grep. Used internally only
+#
+# plugin - 'author/repo' of the github url
+##
+function habitat_is_valid_plugin_name() {
+    if [ -z "${1:-}" ]; then
+        return 1
+    fi
+    local plugin_name="$1"
+    if [ -z "$(echo "$plugin_name" | grep "^[a-z0-9]+/[a-z0-9]+$")" ]; then
+        return 1
+    fi
+    return 0
+}
 
 ##
 # habitat_error(message*)
@@ -130,23 +147,26 @@ function habitat_cleanup() {
 ##
 function habitat_source_installed_plugins() {
     local base_dir="$1"
-    local author
-    local plugin
     local author_dir
     local plugin_file
     for author_dir in "$base_dir/"*; do
         # as this would normally be a long dir rather than just the author name
-        author="$(basename "$author_dir")"
+        local author="$(basename "$author_dir")"
         if [ "$author" = "*"  ]; then
             habitat_debug "Found no authors in installed plugins"
             return 1
         fi
         for plugin_file in "$author_dir/"*; do
-            plugin="$(basename "$plugin_file")"
+            local plugin="$(basename "$plugin_file")"
             if [ "$plugin" = "*"  ]; then
                 habitat_error "Found no plugins for author $author"
                 break
             fi
+            if ! habitat_is_valid_plugin_name "$author/$plugin"; then
+                habitat_error "it appears there is an invalid plugin named $author/$plugin, skipping"
+                continue
+            fi
+
             habitat_debug "Sourcing plugin $author/$plugin in environment"
             habitat_source "$plugin_file"
             echo "${author}_${plugin}"
@@ -162,21 +182,29 @@ function habitat_source_installed_plugins() {
 ##
 function habitat_run() {
     local plugin_list="${1-}"
-    local plugin
-    local plugin_underscore
+    local plugin_name
+    local plugin_name_underscore
     if [ -z "${plugin_list:-}" ]; then
         return 1
     fi
-    for plugin in $plugin_list; do
-        plugin_underscore="$(echo "$plugin" | sed 's~/~_~')"
-        habitat_debug "Going to run habitat_${plugin_underscore}_setup()"
-        if type -t "habitat_${plugin_underscore}_run" 2>&1 > /dev/null; then
-            habitat_call_function "habitat_${plugin_underscore}_run"
+    for plugin_name in $plugin_list; do
+        if ! habitat_is_valid_plugin_name "$plugin_name"; then
+            habitat_error "it appears there is an invalid plugin named $plugin_name"
+            continue
+        fi
+
+        plugin_name_underscore="$(echo "$plugin_name" | sed 's~/~_~')"
+        habitat_debug "Going to run habitat_${plugin_name_underscore}_run()"
+        if type -t "habitat_${plugin_name_underscore}_run" 2>&1 > /dev/null; then
+            habitat_call_function "habitat_${plugin_name_underscore}_run"
         else
-            habitat_error "$plugin does not have a run function"
+            habitat_error "$plugin_name does not have a run function"
         fi
     done
 }
+
+
+
 
 ##
 # habitat_stub(plugin)
@@ -185,37 +213,53 @@ function habitat_run() {
 # plugin - 'author/repo' of the github url
 ##
 function habitat_stub() {
+    if  [ -z "${1:-}" ]; then
+        habitat_error "There is a problem with habitat_stub it is not being passed the installation dir"
+        return  1
+    fi
+    local installation_dir="$1"; shift
     if [ -z "${1:-}" ]; then
         habitat_error "Please pass in author/repo"
         return 1
     fi
-    local plugin_dir="$1"
-    local plugin_name="$(echo "$plugin_dir" | sed 's~/~_~')"
-    local plugin_file="$habitat_plugins_dir/$plugin"
+    local plugin_name="$1"
 
-    if [ -f "$plugin_file" ]; then
-        habitat_error "$plugin already exists!!"
+    # verify plugin name
+    if ! habitat_is_valid_plugin_name "$plugin_name"; then
+        habitat_error "Please pass in a valid plugin name and not $plugin_name"
+        return 1
     fi
 
-    mkdir -p "$(dirname "$plugin_file")"
 
-    local stub_contents="#!/bin/sh
-function habitat_${plugin_name}_run() {
+    local plugin_underscore_name="$(echo "$plugin_name" | sed 's~/~_~')"
+    local plugin_file="$installation_dir/$plugin_name"
+
+    if [ -f "$plugin_file" ]; then
+        habitat_error "$plugin_name already exists!!"
+    fi
+
+    local author_dir="$(dirname "$plugin_file")"
+    if [ ! -d "$author_dir" ]; then
+        mkdir -p "$author_dir"
+    fi
+
+    local stub_contents="#!/usr/bin/env bash
+function habitat_${plugin_underscore_name}_run() {
     # This is where you do the main thing that your plugin does
     :
 }
 
-function habitat_${plugin_name}_options() {
+function habitat_${plugin_underscore_name}_options() {
     # Arguments can be passed to your plugin from here
     :
 }
 
 "
 
-    habitat_debug "Creating stub for $plugin in $plugin_file"
+    habitat_debug "Creating stub for $plugin_name in $plugin_file"
     habitat_debug "With Contents" "$stub_contents"
     echo "$stub_contents" > "$plugin_file"
-
+    return 0
 }
 
 
@@ -464,7 +508,7 @@ function habitat_main() {
         elif [ "$habitat_option" = "rm" ]; then
             habitat_rm "$@"
         elif [ "$habitat_option" = "stub" ]; then
-            habitat_stub "$@"
+            habitat_stub "$habitat_installed_plugins_dir" "$@"
         elif [ "$habitat_option" = "update" ]; then
             habitat_update"$@"
         elif type -t habitat_"$(echo "$habitat_option" | sed 's~/~_~')"_options; then

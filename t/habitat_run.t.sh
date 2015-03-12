@@ -5,9 +5,11 @@ func="habitat_run"
 
 function setup() {
   stub 'habitat_call_function'
+  stub 'habitat_is_valid_plugin_name'
 }
 function clean() {
   restore 'habitat_call_function'
+  restore 'habitat_is_valid_plugin_name'
 }
 
 
@@ -25,6 +27,9 @@ assert_raises "$func '$plugins'" "1"
 test_name "no plugins - no functions called"
 $func "$plugins" 2>&1 > /dev/null
 assert "stub_called_times 'habitat_call_function'" "0"
+
+test_name "no plugins - no plugin name validation called"
+assert "stub_called_times 'habitat_is_valid_plugin_name'" "0"
 clean
 
 
@@ -42,6 +47,9 @@ assert_raises "$func '$plugins'" "0"
 test_name "1 plugins no functions - no functions called"
 $func "$plugins" 2>&1 > /dev/null
 assert "stub_called_times 'habitat_call_function'" "0"
+
+test_name "1 plugin - plugin name validation called"
+assert "stub_called_times 'habitat_is_valid_plugin_name'" "1"
 clean
 
 
@@ -62,6 +70,10 @@ assert_raises "$func '$plugins'" "0"
 test_name "1 plugins run function - 1 function called"
 $func "$plugins" 2>&1 > /dev/null
 assert "stub_called_times 'habitat_call_function'" "1"
+
+test_name "1 plugin - plugin name validation called"
+assert "stub_called_times 'habitat_is_valid_plugin_name'" "1"
+
 unset -f habitat_thing_thing_run
 clean
 
@@ -85,6 +97,10 @@ assert_raises "$func '$plugins'" "0"
 test_name "2 plugins 1 with run function - 1 function called"
 $func "$plugins" 2>&1 > /dev/null
 assert "stub_called_times 'habitat_call_function'" "1"
+
+test_name "2 plugins - plugin name validation called twice"
+assert "stub_called_times 'habitat_is_valid_plugin_name'" "2"
+
 unset -f habitat_thing_wings_run
 clean
 
@@ -111,11 +127,44 @@ assert_raises "$func '$plugins'" "0"
 test_name "2 plugins both with a run function - 2 function called"
 $func "$plugins" 2>&1 > /dev/null
 assert "stub_called_times 'habitat_call_function'" "2"
+
+test_name "2 plugins - plugin name validation called twice"
+assert "stub_called_times 'habitat_is_valid_plugin_name'" "2"
+
 unset -f habitat_thing_wings_run
 unset -f habitat_thing_thing_run
 clean
 
 
+
+#
+#
+#
+setup
+plugins="thing/thing"
+function habitat_thing_thing_run() {
+  :
+}
+
+# need to make it return false for these tests
+restore 'habitat_is_valid_plugin_name'
+stub_and_eval 'habitat_is_valid_plugin_name' "return 1"
+
+test_name "1 plugins run function, invalid plugin name - no output"
+assert "$func '$plugins'" ""
+
+test_name "1 plugins run function, invalid plugin name - success"
+assert_raises "$func '$plugins'" "0"
+
+test_name "1 plugins run function, all invalid - 0 functions called"
+$func "$plugins" 2>&1 > /dev/null
+assert "stub_called_times 'habitat_call_function'" "0"
+
+test_name "1 plugin - plugin name validation called"
+assert "stub_called_times 'habitat_is_valid_plugin_name'" "1"
+
+unset -f habitat_thing_thing_run
+clean
 
 
 
