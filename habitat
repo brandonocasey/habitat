@@ -407,12 +407,12 @@ function habitat_write_config() {
         val="$1"; shift
     fi
 
-    if [ -n "$( echo "$config" | grep "$key=")" ]; then
+    if [ -n "$(echo "$config" | grep "$key=")" ]; then
         habitat_debug "Found that $key already exists going to set to $val"
         cat "$config" | sed "s~$key=.*~$key=$val" > "$config"
     else
         habitat_debug "Found that $key does not exist appending to config as $val"
-        echo "$key=$val" > $config
+        echo "$key=$val" >> $config
     fi
 }
 
