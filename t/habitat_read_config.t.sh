@@ -3,6 +3,8 @@ source "$(dirname "$0")/test-helper.sh" "$0" "$@"
 func="habitat_read_config"
 config="$tmp/things.cfg"
 
+# TODO: Multiple same lines
+
 
 function setup() {
   if [ -d "$tmp" ]; then
