@@ -236,6 +236,7 @@ function habitat_stub() {
 
     if [ -f "$plugin_file" ]; then
         habitat_error "$plugin_name already exists!!"
+        return 1
     fi
 
     local author_dir="$(dirname "$plugin_file")"
