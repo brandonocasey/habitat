@@ -50,47 +50,21 @@ clean
 #
 setup
 plugins="thing/thing"
-function habitat_thing_thing_setup() {
+function habitat_thing_thing_run() {
   :
 }
-test_name "1 plugins setup function - no output"
+test_name "1 plugins run function - no output"
 assert "$func '$plugins'" ""
 
-test_name "1 plugins setup function - success"
+test_name "1 plugins run function - success"
 assert_raises "$func '$plugins'" "0"
 
-test_name "1 plugins setup function - 1 function called"
+test_name "1 plugins run function - 1 function called"
 $func "$plugins" 2>&1 > /dev/null
 assert "stub_called_times 'habitat_call_function'" "1"
-unset -f habitat_thing_thing_setup
-clean
-
-
-
-#
-#
-#
-setup
-plugins="thing/thing"
-function habitat_thing_thing_setup() {
-  :
-}
-function habitat_thing_thing_run() {
-  :
-}
-
-test_name "1 plugins setup/run function - no output"
-assert "$func '$plugins'" ""
-
-test_name "1 plugins setup/run function - success"
-assert_raises "$func '$plugins'" "0"
-
-test_name "1 plugins setup/run function - 2 function called"
-$func "$plugins" 2>&1 > /dev/null
-assert "stub_called_times 'habitat_call_function'" "2"
-unset -f habitat_thing_thing_setup
 unset -f habitat_thing_thing_run
 clean
+
 
 
 #
@@ -98,56 +72,46 @@ clean
 #
 setup
 plugins="thing/thing thing/wings"
-function habitat_thing_thing_setup() {
-  :
-}
-function habitat_thing_thing_run() {
-  :
-}
-
-test_name "2 plugins 1 with setup/run function - no output"
-assert "$func '$plugins'" ""
-
-test_name "2 plugins 1 with setup/run function - success"
-assert_raises "$func '$plugins'" "0"
-
-test_name "2 plugins 1 with setup/run function - 2 function called"
-$func "$plugins" 2>&1 > /dev/null
-assert "stub_called_times 'habitat_call_function'" "2"
-unset -f habitat_thing_thing_setup
-unset -f habitat_thing_thing_run
-clean
-
-
-#
-#
-#
-setup
-plugins="thing/thing thing/wings"
-function habitat_thing_thing_setup() {
-  :
-}
-function habitat_thing_thing_run() {
-  :
-}
-
-function habitat_thing_wings_setup() {
-  :
-}
 function habitat_thing_wings_run() {
   :
 }
 
-test_name "2 plugins both with setup/run function - no output"
+test_name "2 plugins 1 with run function - no output"
 assert "$func '$plugins'" ""
 
-test_name "2 plugins both with setup/run function - success"
+test_name "2 plugins 1 with run function - success"
 assert_raises "$func '$plugins'" "0"
 
-test_name "2 plugins both with setup/run function - 4 function called"
+test_name "2 plugins 1 with run function - 1 function called"
 $func "$plugins" 2>&1 > /dev/null
-assert "stub_called_times 'habitat_call_function'" "4"
-unset -f habitat_thing_thing_setup
+assert "stub_called_times 'habitat_call_function'" "1"
+unset -f habitat_thing_wings_run
+clean
+
+
+#
+#
+#
+setup
+plugins="thing/thing thing/wings"
+function habitat_thing_thing_run() {
+  :
+}
+
+function habitat_thing_wings_run() {
+  :
+}
+
+test_name "2 plugins both with a run function - no output"
+assert "$func '$plugins'" ""
+
+test_name "2 plugins both with a run function - success"
+assert_raises "$func '$plugins'" "0"
+
+test_name "2 plugins both with a run function - 2 function called"
+$func "$plugins" 2>&1 > /dev/null
+assert "stub_called_times 'habitat_call_function'" "2"
+unset -f habitat_thing_wings_run
 unset -f habitat_thing_thing_run
 clean
 

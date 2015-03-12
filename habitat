@@ -170,15 +170,6 @@ function habitat_run() {
     for plugin in $plugin_list; do
         plugin_underscore="$(echo "$plugin" | sed 's~/~_~')"
         habitat_debug "Going to run habitat_${plugin_underscore}_setup()"
-        if type -t "habitat_${plugin_underscore}_setup" 2>&1 > /dev/null; then
-            habitat_call_function "habitat_${plugin_underscore}_setup"
-        else
-            habitat_error "$plugin does not have a setup function!!"
-        fi
-    done
-    for plugin in $plugin_list; do
-        plugin_underscore="$(echo "$plugin" | sed 's~/~_~')"
-        habitat_debug "Going to run habitat_${plugin_underscore}_setup()"
         if type -t "habitat_${plugin_underscore}_run" 2>&1 > /dev/null; then
             habitat_call_function "habitat_${plugin_underscore}_run"
         else
@@ -198,8 +189,8 @@ function habitat_stub() {
         habitat_error "Please pass in author/repo"
         return 1
     fi
-    local plugin="$1"
-    local name="$(echo "$plugin" | sed 's~/~_~')"
+    local plugin_dir="$1"
+    local plugin_name="$(echo "$plugin_dir" | sed 's~/~_~')"
     local plugin_file="$habitat_plugins_dir/$plugin"
 
     if [ -f "$plugin_file" ]; then
@@ -209,15 +200,13 @@ function habitat_stub() {
     mkdir -p "$(dirname "$plugin_file")"
 
     local stub_contents="#!/bin/sh
-function habitat_${name}_setup() {
+function habitat_${plugin_name}_run() {
+    # This is where you do the main thing that your plugin does
     :
 }
 
-function habitat_${name}_run() {
-    :
-}
-
-function habitat_${name}_options() {
+function habitat_${plugin_name}_options() {
+    # Arguments can be passed to your plugin from here
     :
 }
 
