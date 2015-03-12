@@ -366,8 +366,19 @@ function habitat_rm() {
 # key - key to grab the value of
 ##
 function habitat_read_config() {
+    if [ -z "${1:-}" ]; then
+        return 1
+    fi
+    local config="$1"; shift
+    if [ -z "${1:-}" ]; then
+        return 1
+    fi
     local key="$1"; shift
-    result="$(cat "$habitat_config_file" | grep "$key" | sed "s~$key=~~")"
+    if [ ! -f "$config" ]; then
+        mkdir -p "$(dirname "$config")"
+        touch "$config"
+    fi
+    result="$(cat "$config" | grep "$key" | sed "s~$key=~~")"
     if [ -z "$result" ]; then
         result="$(echo "")"
     fi
@@ -383,17 +394,18 @@ function habitat_read_config() {
 # val - value to set the key to
 ##
 function habitat_write_config() {
+    local config="$1"; shift
     local key="$1"; shift
     local val="$1"; shift
     if [ -z "$key" ]; then
         return 1
     fi
-    if [ -n "$( echo "$habitat_config_file" | grep "$key=")" ]; then
+    if [ -n "$( echo "$config" | grep "$key=")" ]; then
         habitat_debug "Found that $key already exists going to set to $val"
-        cat "$habitat_config_file" | sed "s~$key=.*~$key=$val" > "$habitat_config_file"
+        cat "$config" | sed "s~$key=.*~$key=$val" > "$config"
     else
         habitat_debug "Found that $key does not exist appending to config as $val"
-        echo "$key=$val" > $habitat_config_file
+        echo "$key=$val" > $config
     fi
 }
 
