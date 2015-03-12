@@ -394,12 +394,19 @@ function habitat_read_config() {
 # val - value to set the key to
 ##
 function habitat_write_config() {
-    local config="$1"; shift
-    local key="$1"; shift
-    local val="$1"; shift
-    if [ -z "$key" ]; then
+    if [ -z "${1:-}" ]; then
         return 1
     fi
+    local config="$1"; shift
+    if [ -z "${1:-}" ]; then
+        return 1
+    fi
+    local key="$1"; shift
+    local val=""
+    if [ -n "${1:-}" ]; then
+        val="$1"; shift
+    fi
+
     if [ -n "$( echo "$config" | grep "$key=")" ]; then
         habitat_debug "Found that $key already exists going to set to $val"
         cat "$config" | sed "s~$key=.*~$key=$val" > "$config"
