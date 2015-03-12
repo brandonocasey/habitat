@@ -234,7 +234,7 @@ function habitat_stub() {
     local plugin_underscore_name="$(echo "$plugin_name" | sed 's~/~_~')"
     local plugin_file="$installation_dir/$plugin_name"
 
-    if [ -f "$plugin_file" ]; then
+    if [ -s "$plugin_file" ]; then
         habitat_error "$plugin_name already exists!!"
         return 1
     fi

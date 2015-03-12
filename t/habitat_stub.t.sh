@@ -74,9 +74,9 @@ clean
 setup
 plugin="nope/nope"
 installation_dir="$tmp"
-test_name "installation/plugin but already exists - failure"
+test_name "installation/plugin but already exists with content - failure"
 mkdir "$tmp/$(dirname "$plugin")"
-touch "$installation_dir/$plugin"
+echo "Content" > "$installation_dir/$plugin"
 $func "$installation_dir" "$plugin"
 code="$?"
 assert "echo '$code'" "1"
@@ -85,6 +85,25 @@ test_name "plugin/install - plugin name validation called"
 assert "stub_called_times 'habitat_is_valid_plugin_name'" "1"
 
 clean
+
+#
+#
+#
+setup
+plugin="nope/nope"
+installation_dir="$tmp"
+test_name "installation/plugin but already exists without content - success"
+mkdir "$tmp/$(dirname "$plugin")"
+touch "$installation_dir/$plugin"
+$func "$installation_dir" "$plugin"
+code="$?"
+assert "echo '$code'" "0"
+
+test_name "plugin/install - plugin name validation called"
+assert "stub_called_times 'habitat_is_valid_plugin_name'" "1"
+
+clean
+
 
 
 #
