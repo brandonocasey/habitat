@@ -17,12 +17,18 @@ function habitat_unset_variable() {
     if [ -z "${1:-}" ]; then
         return 1
     fi
+
+
+    eval "if [ -z \"\${$1+x}\" ]; then
+        return 1
+    fi"
     unset "$1"
 }
-function habitat_source() {
+function habitat_source_file() {
     if [ -z "${1:-}" ]; then
         return 1
     fi
+
     if [ ! -f "$1" ]; then
         return 1
     fi
@@ -164,7 +170,7 @@ function habitat_source_installed_plugins() {
             fi
 
             habitat_debug "Sourcing plugin $author/$plugin in environment"
-            habitat_source "$plugin_file"
+            habitat_source_file "$plugin_file"
             echo "${author}_${plugin}"
         done
     done
