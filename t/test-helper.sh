@@ -2,6 +2,9 @@ test_dir="$( cd "$( dirname "$1" )" && pwd )"; shift
 if [ -n "${1:-}" ]; then
      output="1"; shift
 fi
+if [ -n "${1:-}" ]; then
+     debug="1"; shift
+fi
 
 assert_script="$test_dir/assert.sh"
 stub_script="$test_dir/stub.sh"
@@ -44,7 +47,7 @@ function test_name() {
 source "$assert_script"
 source "$stub_script"
 source "$script_under_test" --unit_testing
-if [ -n "${1:-}" ]; then
+if [ -n "${debug:-}" ]; then
      stub_and_eval 'habitat_error' 'exec 3>&1; echo "Error: $@" 1>&3; 3>&-'
      stub_and_eval 'habitat_debug' 'exec 3>&1; echo "Debug: $@" 1>&3; 3>&-'
 else
