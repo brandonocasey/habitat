@@ -3,7 +3,6 @@ source "$(dirname "$0")/test-helper.sh" "$0" "$@"
 func="habitat_write_config"
 config="$tmp/things.cfg"
 
-# TODO: multiple same config lines
 
 function setup() {
   if [ -d "$tmp" ]; then
@@ -51,24 +50,59 @@ setup
 test_name "Config/Key/Val passed success - Success"
 assert_raises "$func '$config' 'key' 'val'" "0"
 
-test_name "Config contains correct value"
+test_name "Config/Key/Val added"
 assert "cat '$config'" "key=val"
-
-
-test_name "Change config value"
-assert_raises "$func '$config' 'key' 'val2'" "0"
-
-test_name "Config Value was changed"
-assert "cat '$config'" "key=val2"
-
-test_name "Add config value"
-assert_raises "$func '$config' 'key2' 'val2'" "0"
-
-test_name "Config Value was added"
-assert "cat '$config'" "key=val2\nkey2=val2"
-
-
 clean
+
+
+#
+#
+#
+setup "key" "val2"
+test_name "Change Exisiting key value - Success"
+assert_raises "$func '$config' 'key' 'val'" "0"
+
+test_name "Existing key value has changed - Success"
+assert "cat '$config'" "key=val"
+clean
+
+
+#
+#
+#
+setup "key"
+test_name "Change key with no previous value - Success"
+assert_raises "$func '$config' 'key' 'val'" "0"
+
+test_name "Existing key now has value - Success"
+assert "cat '$config'" "key=val"
+clean
+
+
+#
+#
+#
+setup "key" "things"
+test_name "Change key with previous value to none- Success"
+assert_raises "$func '$config' 'key' " "0"
+
+test_name "Existing key now has value - Success"
+assert "cat '$config'" "key="
+clean
+
+#
+#
+#
+setup "things" "hello" "things2" "goodbye"
+test_name "add key with other existing keys- Success"
+assert_raises "$func '$config' 'key' 'val'" "0"
+
+test_name "Existing key now has value - Success"
+assert "cat '$config'" "things=hello\nthings2=goodbye\nkey=val"
+clean
+
+
+
 
 
 
