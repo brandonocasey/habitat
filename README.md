@@ -7,9 +7,6 @@ So far this is a just a proof of concept, when everything is up and working this
 	* verify debug/error lines in unit tests
 * seperate plugin and git repos
 	* stuff git repos somewhere
-	* ln -s habit file to plugins/author/plugin
-	* this will make checking for updates easier
-	* will also make sourcing and info on plugins easier
 
 
 # Would Like
