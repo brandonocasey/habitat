@@ -36,7 +36,7 @@ clean
 #
 setup
 test_name "Non-Existant function to unset"
-assert_raises "$func '$tmp/nope'" '1'
+assert_raises "$func 'nope'" '1'
 clean
 
 #
@@ -45,9 +45,10 @@ clean
 setup 'function_name'
 test_name "Unset Existing Function - Success"
 assert_raises "$func 'function_name'" '0'
+$func 'function_name'
 
 test_name "Existing Function is unset"
-assert_raises "type -t 'function_name'" '0'
+assert_raises "type -t 'function_name'" '1'
 
 clean
 
