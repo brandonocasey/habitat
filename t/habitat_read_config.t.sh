@@ -3,9 +3,6 @@ source "$(dirname "$0")/test-helper.sh" "$0" "$@"
 func="habitat_read_config"
 config="$tmp/things.cfg"
 
-# TODO: Multiple same lines
-
-
 function setup() {
   if [ -d "$tmp" ]; then
     rm -rf "$tmp"/*
@@ -97,6 +94,18 @@ assert_raises "$func '$config' 'sucks'" "0"
 test_name "Config key we want with value - Output"
 assert "$func '$config' 'sucks'" "stuff"
 clean
+
+#
+#
+#
+setup "sucks" "stuff" "sucks" "cows"
+test_name "Config with two of the same keys that we want - Success"
+assert_raises "$func '$config' 'sucks'" "0"
+
+test_name "Config with two of the same keys, first is used - Output"
+assert "$func '$config' 'sucks'" "stuff"
+clean
+
 
 
 
