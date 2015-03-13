@@ -1,9 +1,9 @@
 test_dir="$( cd "$( dirname "$1" )" && pwd )"; shift
 if [ -n "${1:-}" ]; then
-     output="1"; shift
+    output="1"; shift
 fi
 if [ -n "${1:-}" ]; then
-     debug="1"; shift
+    debug="1"; shift
 fi
 
 assert_script="$test_dir/assert.sh"
@@ -14,15 +14,17 @@ habitat_debug_output=""
 
 # clean temp files
 if [ -d "$tmp" ]; then
-     rm -rf "$tmp"
+    rm -rf "$tmp"
 fi
 mkdir -p "$tmp"
 
 
- if [ ! -f "$assert_script" ] || [ ! -f "$stub_script" ]; then
-     wget --quiet "https://raw.github.com/lehmannro/assert.sh/master/assert.sh" "$assert_script"
-     wget --quiet "https://raw.github.com/jimeh/stub.sh/master/stub.sh" "$stub_script"
- fi
+if [ ! -f "$assert_script" ]; then
+    wget --quiet "https://raw.github.com/lehmannro/assert.sh/master/assert.sh" -P "$test_dir"
+fi
+if [ ! -f "$stub_script" ]; then
+    wget --quiet "https://raw.github.com/jimeh/stub.sh/master/stub.sh" -P "$test_dir"
+fi
 
 # trace ERR through pipes
 #set -o pipefail
@@ -37,10 +39,10 @@ mkdir -p "$tmp"
 
 test_index=1
 function test_name() {
-     if [ -n "${output:-}" ]; then
-          echo "*** Test $test_index: $1"
-     fi
-     test_index=$((test_index+1))
+    if [ -n "${output:-}" ]; then
+        echo "*** Test $test_index: $1"
+    fi
+    test_index=$((test_index+1))
 }
 
 
@@ -48,9 +50,9 @@ source "$assert_script"
 source "$stub_script"
 source "$script_under_test" --unit_testing
 if [ -n "${debug:-}" ]; then
-     stub_and_eval 'habitat_error' 'exec 3>&1; echo "Error: $@" 1>&3; 3>&-'
-     stub_and_eval 'habitat_debug' 'exec 3>&1; echo "Debug: $@" 1>&3; 3>&-'
+    stub_and_eval 'habitat_error' 'echo "Error: $@" 1>&2'
+    stub_and_eval 'habitat_debug' 'echo "Debug: $@" 1>&2'
 else
-     stub 'habitat_error'
-     stub 'habitat_debug'
+    stub 'habitat_error'
+    stub 'habitat_debug'
 fi
