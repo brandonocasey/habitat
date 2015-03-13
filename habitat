@@ -518,7 +518,7 @@ function habitat_manage() {
 function habitat_trap_error() {
     local parent_lineno="${1:-}"; shift
     local message="${1:-}"; shift
-    local code="${1:-1}"; shift
+    local code="${1:-5}"; shift
 
     if [ -z "$message" ]; then
         message=""
