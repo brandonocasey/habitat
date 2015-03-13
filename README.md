@@ -1,6 +1,32 @@
 # WARNING!
 So far this is a just a proof of concept, when everything is up and working this warning will be removed. Right now the design is being hashed out, feel free to create tickets or submit ideas, but I would not use this in the wild just yet.
 
+
+# TODO
+* write unit tests
+	* verify debug/error lines in unit tests
+* seperate plugin and git repos
+	* stuff git repos somewhere
+	* ln -s habit file to plugins/author/plugin
+	* this will make checking for updates easier
+	* will also make sourcing and info on plugins easier
+
+
+# Would Like
+* verify config function
+* habitat_manage
+* habitat_update
+* habitat_first_time_setup
+
+# CAN DO/BrainStorm
+* plugin specific config settings
+* warn about updates
+* support quotes variables in config?
+* namespace and eval plugins automatically
+* ignore everything but functions in plugin
+
+
+
 # What is Habitat?
 habitat provides a framework for keeping your settings in order, through the use of plugins, without doing a lot of the grunt work yourself. (unless you want to!)
 
