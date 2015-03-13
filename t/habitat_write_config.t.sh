@@ -101,8 +101,38 @@ test_name "Existing key now has value - Success"
 assert "cat '$config'" "things=hello\nthings2=goodbye\nkey=val"
 clean
 
+#
+#
+#
+setup "things" "hello" "things" "goodbye"
+test_name "Config file with two of the same keys, change value- Success"
+assert_raises "$func '$config' 'things' 'nope'" "0"
 
+test_name "Config should have both keys to the new value - Success"
+assert "cat '$config'" "things=nope\nthings=nope"
+clean
 
+#
+#
+#
+setup "things" "hello" "things" "goodbye" "things" "yarr"
+test_name "Config file with three of the same keys, change value- Success"
+assert_raises "$func '$config' 'things' 'nope'" "0"
+
+test_name "Config should have all keys to the new value - Success"
+assert "cat '$config'" "things=nope\nthings=nope\nthings=nope"
+clean
+
+#
+#
+#
+setup "one" "hello" "two" "goodbye" "three" "yarr"
+test_name "Change config value in the center of config - Success"
+assert_raises "$func '$config' 'two' 'nope'" "0"
+
+test_name "Config Center key should remain center with new val - Success"
+assert "cat '$config'" "one=hello\ntwo=nope\nthree=yarr"
+clean
 
 
 

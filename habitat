@@ -374,7 +374,7 @@ function habitat_write_config() {
     if [ -z "${1:-}" ]; then
         return 1
     fi
-    local config="$1"; shift
+    local file="$1"; shift
     if [ -z "${1:-}" ]; then
         return 1
     fi
@@ -383,13 +383,20 @@ function habitat_write_config() {
     if [ -n "${1:-}" ]; then
         val="$1"; shift
     fi
+    local contents=""
+    if [ -f "$file" ]; then
+        contents="$(cat "$file")"
+    fi
 
-    if [ -n "$(echo "$config" | grep "$key=")" ]; then
-        habitat_debug "Found that $key already exists going to set to $val"
-        cat "$config" | sed "s~$key=.*~$key=$val" > "$config"
+    local matches="$(echo "$contents" | grep "$key=" | wc -l)"
+    if [ "$matches" -gt 1 ]; then
+        habitat_error "Found $matches duplicate keys of $key in config file going to change all"
+    fi
+
+    if [ "$matches" -gt 0 ]; then
+        echo "$contents" | sed "s~$key=.*~$key=$val~g" > $file
     else
-        habitat_debug "Found that $key does not exist appending to config as $val"
-        echo "$key=$val" >> $config
+        echo "${key}=${val}" >> "$file"
     fi
 }
 
