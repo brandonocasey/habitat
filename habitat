@@ -1,32 +1,5 @@
 #!/usr/bin/env bash
 
-# TODO:
-
-# To Brainstorm
-# * Can we pull down a single file for plugins rather than a folder
-#
-
-# MUST DO:
-# * write unit tests
-#   * verify debug/error lines in unit tests
-# * seperate plugin and git repos
-#   * stuff git repos somewhere
-#   * ln -s habit file to plugins/author/plugin
-#   * this will make checking for updates easier
-#   * will also make sourcing and info on plugins easier
-
-
-# Would Like
-# * habitat_manage
-# * habitat_update
-# * habitat_first_time_setup
-
-# CAN DO:
-# * plugin specific config settings
-# * warn about updates
-# * support quotes variables in config?
-# * namespace and eval plugins automatically
-# * ignore everything but functions i plugins
 
 
 function habitat_unset_function() {
@@ -381,6 +354,10 @@ function habitat_read_config() {
     result="$(cat "$config" | grep "$key" | sed "s~$key=~~")"
     if [ -z "$result" ]; then
         result="$(echo "")"
+    fi
+    if [ "$(echo "$result" | wc -l)" -gt 1 ]; then
+        habitat_error "Duplicate key for $key going to use first. Has values $result"
+        result="$(echo "$result" | head -n 1)"
     fi
     echo "$result"
     habitat_debug "Found that $key was $result in config file"
