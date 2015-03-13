@@ -3,16 +3,39 @@
 
 
 function habitat_unset_function() {
+    if [ -z "${1:-}" ]; then
+        return 1
+    fi
+    if ! type -t "$1" 2>&1 > /dev/null; then
+        return 1
+    fi
+
     unset -f "$1"
 }
 
 function habitat_unset_variable() {
+    if [ -z "${1:-}" ]; then
+        return 1
+    fi
     unset "$1"
 }
 function habitat_source() {
+    if [ -z "${1:-}" ]; then
+        return 1
+    fi
+    if [ ! -f "$1" ]; then
+        return 1
+    fi
+
     . "$1"
 }
 function habitat_call_function() {
+    if [ -z "${1:-}" ]; then
+        return 1
+    fi
+    if ! type -t "$1" 2>&1 > /dev/null; then
+        return 1
+    fi
     $1
 }
 
@@ -156,7 +179,6 @@ function habitat_source_installed_plugins() {
 function habitat_run() {
     local plugin_list="${1-}"
     local plugin_name
-    local plugin_name_underscore
     if [ -z "${plugin_list:-}" ]; then
         return 1
     fi
@@ -166,11 +188,10 @@ function habitat_run() {
             continue
         fi
 
-        plugin_name_underscore="$(echo "$plugin_name" | sed 's~/~_~')"
-        habitat_debug "Going to run habitat_${plugin_name_underscore}_run()"
-        if type -t "habitat_${plugin_name_underscore}_run" 2>&1 > /dev/null; then
-            habitat_call_function "habitat_${plugin_name_underscore}_run"
-        else
+        local plugin_name_underscore="$(echo "$plugin_name" | sed 's~/~_~')"
+        local function_name="habitat_${plugin_name_underscore}_run"
+        habitat_debug "Going to run $function_name"
+        if ! habitat_call_function "$function_name"; then
             habitat_error "$plugin_name does not have a run function"
         fi
     done
