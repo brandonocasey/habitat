@@ -5,6 +5,7 @@ So far this is a just a proof of concept, when everything is up and working this
 # TODO
 * write unit tests
 	* verify debug/error lines in unit tests
+	* verify that the environment has not changed when running the script
 * seperate plugin and git repos
 	* stuff git repos somewhere
 
@@ -14,6 +15,9 @@ So far this is a just a proof of concept, when everything is up and working this
 * habitat_manage
 * habitat_update
 * habitat_first_time_setup
+* better function comments
+* get the return value in habitat_call_function
+* check the return code of unset in unset functions and sqwelch errors?
 
 # CAN DO/BrainStorm
 * plugin specific config settings

@@ -2,6 +2,12 @@
 
 
 
+##
+# habitat_unset_function(function_name)
+# unset a function name, basically a wrapper around unset -f
+#
+# function_name - name of the function you want to try to unset
+##
 function habitat_unset_function() {
     if [ -z "${1:-}" ]; then
         return 1
@@ -13,6 +19,12 @@ function habitat_unset_function() {
     unset -f "$1"
 }
 
+##
+# habitat_unset_variable(variable_name)
+# unset a variable, basically a wrapper around unset with error checking
+#
+# variable_name - name of the variable you want to unset
+##
 function habitat_unset_variable() {
     if [ -z "${1:-}" ]; then
         return 1
@@ -24,6 +36,13 @@ function habitat_unset_variable() {
     fi"
     unset "$1"
 }
+
+##
+# habitat_source_file(file_location)
+# source a file into the current environment
+#
+# file_location - location of the file to source into the environment
+##
 function habitat_source_file() {
     if [ -z "${1:-}" ]; then
         return 1
@@ -35,6 +54,13 @@ function habitat_source_file() {
 
     . "$1"
 }
+
+##
+# habitat_call_function(function_name)
+# call a function name with some error checking
+#
+# function_name - name of the function you want to try to call
+##
 function habitat_call_function() {
     if [ -z "${1:-}" ]; then
         return 1
