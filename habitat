@@ -290,6 +290,10 @@ function habitat_usage() {
 # plugin - any number of 'author/repo' to add
 ##
 function habitat_add() {
+    local save_to_config=""
+    if [ -n "${1:-}" ]; then
+        save_to_config="$1"; shift
+    fi
     while [ $# -gt 0 ] ; do
         local plugin="$1"; shift
         if [ -z "$plugin" ]; then
@@ -529,9 +533,9 @@ function habitat_main() {
         if [ "$habitat_option" = "help" ]; then
             habitat_usage "$@"
         elif [ "$habitat_option" = "add" ]; then
-            habitat_add "$@"
+            habitat_add "$habitat_save_to_config" "$@"
         elif [ "$habitat_option" = "rm" ]; then
-            habitat_rm "$@"
+            habitat_rm "$habitat_save_to_config" "$@"
         elif [ "$habitat_option" = "stub" ]; then
             habitat_stub "$habitat_installed_plugins_dir" "$@"
         elif [ "$habitat_option" = "update" ]; then
