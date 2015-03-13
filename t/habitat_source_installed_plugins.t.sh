@@ -4,7 +4,7 @@ func="habitat_source_installed_plugins"
 
 
 function setup() {
-  stub 'habitat_source'
+  stub 'habitat_source_file'
   stub 'habitat_is_valid_plugin_name'
   if [ -d "$tmp" ]; then
     rm -rf "$tmp"/*
@@ -28,7 +28,7 @@ function setup() {
   done
 }
 function clean() {
-  restore 'habitat_source'
+  restore 'habitat_source_file'
   restore 'habitat_is_valid_plugin_name'
   if [ -d "$tmp" ]; then
     rm -rf "$tmp"/*
@@ -48,7 +48,7 @@ assert_raises "$func '$tmp'" "1"
 
 test_name "No Authors/Plugins - source not called"
 $func "$tmp" 2>&1 > /dev/null
-assert "stub_called_times 'habitat_source'" "0"
+assert "stub_called_times 'habitat_source_file'" "0"
 
 test_name "No Authors/Plugins - plugin validation not called"
 assert "stub_called_times 'habitat_is_valid_plugin_name'" "0"
@@ -69,7 +69,7 @@ assert_raises "$func '$tmp'" "0"
 
 test_name "1 Authors 0 Plugins - source not called"
 $func "$tmp" 2>&1 > /dev/null
-assert "stub_called_times 'habitat_source'" "0"
+assert "stub_called_times 'habitat_source_file'" "0"
 
 test_name "1 Author 0 Plugins - plugin validation not called"
 assert "stub_called_times 'habitat_is_valid_plugin_name'" "0"
@@ -90,7 +90,7 @@ assert_raises "$func '$tmp'" "0"
 
 test_name "1 Authors 1 Plugins - source called"
 $func "$tmp" 2>&1 > /dev/null
-assert "stub_called_times 'habitat_source'" "1"
+assert "stub_called_times 'habitat_source_file'" "1"
 
 test_name "1 Author 1 Plugin - plugin validation called"
 assert "stub_called_times 'habitat_is_valid_plugin_name'" "1"
@@ -110,7 +110,7 @@ assert_raises "$func '$tmp'" "0"
 
 test_name "1 Authors 2 Plugins - source called"
 $func "$tmp" 2>&1 > /dev/null
-assert "stub_called_times 'habitat_source'" "2"
+assert "stub_called_times 'habitat_source_file'" "2"
 
 test_name "1 Author 2 Plugin - plugin validation called twice"
 assert "stub_called_times 'habitat_is_valid_plugin_name'" "2"
@@ -132,7 +132,7 @@ assert_raises "$func '$tmp'" "0"
 
 test_name "2 Authors 1 Plugin - source called"
 $func "$tmp" 2>&1 > /dev/null
-assert "stub_called_times 'habitat_source'" "1"
+assert "stub_called_times 'habitat_source_file'" "1"
 
 test_name "2 Author 1 Plugin - plugin validation called once"
 assert "stub_called_times 'habitat_is_valid_plugin_name'" "1"
@@ -153,7 +153,7 @@ assert_raises "$func '$tmp'" "0"
 
 test_name "2 Authors 1 Plugin Each - source called"
 $func "$tmp" 2>&1 > /dev/null
-assert "stub_called_times 'habitat_source'" "2"
+assert "stub_called_times 'habitat_source_file'" "2"
 
 test_name "2 Author 1 Plugin Each - plugin validation called twice"
 assert "stub_called_times 'habitat_is_valid_plugin_name'" "2"
@@ -173,7 +173,7 @@ assert_raises "$func '$tmp'" "0"
 
 test_name "2 Authors 2 Plugin Each - source called"
 $func "$tmp" 2>&1 > /dev/null
-assert "stub_called_times 'habitat_source'" "4"
+assert "stub_called_times 'habitat_source_file'" "4"
 
 test_name "2 Author 2 Plugin Each - plugin validation called 4 times"
 assert "stub_called_times 'habitat_is_valid_plugin_name'" "4"
@@ -196,7 +196,7 @@ assert_raises "$func '$tmp'" "0"
 
 test_name "1 Authors 2 Plugins, all invalid - source not called"
 $func "$tmp" 2>&1 > /dev/null
-assert "stub_called_times 'habitat_source'" "0"
+assert "stub_called_times 'habitat_source_file'" "0"
 
 test_name "1 Author 2 Plugin, all invalid - plugin validation called twice"
 assert "stub_called_times 'habitat_is_valid_plugin_name'" "2"
