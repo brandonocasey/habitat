@@ -316,77 +316,85 @@ function habitat_usage() {
 
 
 ##
-# habitat_add(plugin*)
+# habitat_add_plugin(plugin*)
 # add plugins, pass --save as plugin variable to save additions to config
 #
 # plugin - any number of 'author/repo' to add
 ##
-function habitat_add() {
+function habitat_add_plugin() {
+
+    # need to decalre local variables before capture
+    # or else we won't correctly grab the result code
+    local output=""
+    output="$(git clone "https://github.com/$plugin" "$dir")"
+    if [ "$?" -ne "0" ]; then
+        habitat_error "Git Failed" "$output"
+        return 1
+    fi
+    if [ ! -f "$habitat_plugins_dir/$plugin/habit" ]; then
+        habitat_error "Plugin $plugin does not contain a habit file removing"
+        if [ -d "$dir" ]; then
+            rm -rf "$dir"
+        fi
+        return 1
+    fi
+    echo "Plugin $plugin installed successfully"
+    if [ -n "$habitat_save_to_config" ]; then
+        local plugins="$(habitat_get_config "habitat_plugins_dir")"
+        if [ -n "$plugins" ]; then
+            plugins="$plugins "
+        fi
+        habitat_write_config "habitat_plugins_dir" "${plugins}${plugin}"
+    fi
+}
+
+# habitat_action_on_plugin(action, plugin_repo_dir, save_to_config, plugin*)
+# add plugins, pass --save as plugin variable to save additions to config
+#
+# plugin - any number of 'author/repo' to add
+##
+function habitat_action_on_plugins() {
+    if [ -z "${1:-}" ]; then
+        return 1
+    fi
+    local action="$1"; shift
+    if [ -z "${1:-}" ]; then
+        return 1
+    fi
+    local plugin_repo_dir="$1"; shift
+
     local save_to_config=""
     if [ -n "${1:-}" ]; then
         save_to_config="$1"; shift
     fi
-    while [ $# -gt 0 ] ; do
+
+    while [ $# -gt 0 ]; do
+        if [ -z "${1:-}" ]; then
+            continue
+        fi
         local plugin="$1"; shift
-        if [ -z "$plugin" ]; then
+        if ! habitat_is_valid_plugin_name "$plugin"; then
             continue
         fi
-        local dir="$habitat_plugins_dir/$plugin"
-        if [ -d "$dir"  ]; then
-            habitat_error "Plugin $plugin appears to already be installed"
-            continue
-        fi
+        local plugin_dir="$plugin_repo_dir/$plugin"
+        if [ "$action" = 'rm' ]; then
+            if [ -d "$plugin_dir" ]; then
+                rm -rf "$plugin_dir"
+                if [ -n "$save_to_config" ]; then
+                    local plugins="$(habitat_get_config "habitat_plugins_dir" | sed "s~$plugin~~")"
+                    habitat_write_config "habitat_plugins_dir" "${plugins}${plugin}"
+                fi
 
-        # need to decalre local variables before capture
-        # or else we won't correctly grab the result code
-        local output=""
-        output="$(git clone "https://github.com/$plugin" "$dir")"
-        if [ "$?" -ne "0" ]; then
-            habitat_error "Git Failed" "$output"
-            continue
-        fi
-        if [ ! -f "$habitat_plugins_dir/$plugin/habit" ]; then
-            habitat_error "Plugin $plugin does not contain a habit file removing"
-            if [ -d "$dir" ]; then
-                rm -rf "$dir"
+            else
+                habitat_error "Cannot rm plugin $plugin as it is not installed!"
             fi
-            continue;
-        fi
-        echo "Plugin $plugin installed successfully"
-        if [ -n "$habitat_save_to_config" ]; then
-            local plugins="$(habitat_get_config "habitat_plugins_dir")"
-            if [ -n "$plugins" ]; then
-                plugins="$plugins "
-            fi
-            habitat_write_config "habitat_plugins_dir" "${plugins}${plugin}"
+
+        elif [ "$action" = "add" ]; then
+            habitat_add_plugin "$plugin_dir"
         fi
     done
-}
 
-##
-# habitat_rm(plugin*)
-# remove plugins, pass --save as plugin variable to save removals to config
-#
-# plugin - any number of 'author/repo' to remove
-##
-function habitat_rm() {
-    while [ $# -gt 0 ] ; do
-        local plugin="$1"; shift;
-        if [ -z "$plugin" ]; then
-            continue
-        fi
-        local dir="$habitat_plugins_dir/$plugin"
-        if [ ! -d "$dir" ]; then
-            habitat_error "Plugin $plugin does not exist"
-            continue
-        fi
-        rm -rf "$dir"
-        echo "Successfully Removed plugin $plugin"
-        if [ -n "$habitat_save_to_config" ]; then
-            local plugins="$(habitat_get_config "habitat_plugins_dir" | sed "s~$plugin~~")"
-            habitat_write_config "habitat_plugins_dir" "${plugins}${plugin}"
-        fi
-    done
+
 }
 
 ##
@@ -565,13 +573,17 @@ function habitat_main() {
         if [ "$habitat_option" = "help" ]; then
             habitat_usage "$@"
         elif [ "$habitat_option" = "add" ]; then
-            habitat_add "$habitat_save_to_config" "$@"
+            while [ $# -gt 0 ]; do
+                habitat_add_plugin "$habitat_save_to_config" "$1"; shift
+            done
         elif [ "$habitat_option" = "rm" ]; then
-            habitat_rm "$habitat_save_to_config" "$@"
+            while [ $# -gt 0 ]; do
+                habitat_rm_plugin "$habitat_save_to_config" "$1"; shift
+            done
         elif [ "$habitat_option" = "stub" ]; then
             habitat_stub "$habitat_installed_plugins_dir" "$@"
         elif [ "$habitat_option" = "update" ]; then
-            habitat_update"$@"
+            habitat_update "$@"
         elif type -t habitat_"$(echo "$habitat_option" | sed 's~/~_~')"_options; then
             habitat_"$(echo "$habitat_option" | sed 's~/~_~')"_options "$@"
         else
