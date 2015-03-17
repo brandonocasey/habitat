@@ -388,13 +388,13 @@ function habitat_action_on_plugins() {
 }
 
 function habitat_rm_plugin() {
-    local plugin_repo_dir="$1"; shift
     local save_to_config="$1"; shift
+    local plugin_repo_dir="$1"; shift
     local plugin="$1"; shift
     local code=0
 
-    if [ -d "$plugin_dir" ]; then
-        rm -rf "$plugin_dir"
+    if [ -f "$plugin_repo_dir/$plugin" ]; then
+        rm -rf "$plugin_repo_dir/$plugin"
     else
         code=1
     fi
@@ -402,6 +402,14 @@ function habitat_rm_plugin() {
         local plugins="$(habitat_get_config "habitat_plugins" | sed "s~$plugin~~")"
         habitat_write_config "habitat_plugins" "${plugins}${plugin}"
     fi
+
+    local author_dir="$plugin_repo_dir/$(dirname "$plugin")"
+    if [ -d "$author_dir" ]; then
+        if [ -z "$(ls "$author_dir")" ]; then
+            rm -rf "$author_dir"
+        fi
+    fi
+
     return $code
 }
 

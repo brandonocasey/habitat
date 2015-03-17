@@ -7,23 +7,30 @@ function setup() {
     rm -rf "$tmp"/*
   fi
   while [ $# -gt 0 ]; do
-    if [ -z "${1:-}" ]; then
+    local author="${1:-}"; shift
+    local plugin="${1:-}"; shift
+    if [ -z "${author:-}" ]; then
       continue
-      shift
     fi
-    mkdir -p "$tmp/$(dirname "$1")"
-    touch "$(basename "$1")"
-    shift
+    if [ ! -d "$tmp/$author" ]; then
+      mkdir -p "$tmp/$author"
+    fi
+
+    if [ -z "${plugin:-}" ]; then
+      continue
+    fi
+    if [ ! -f "$tmp/$author/$plugin" ];then
+      touch "$tmp/$author/$plugin"
+    fi
   done
+
   stub 'habitat_write_config'
   stub 'habitat_get_config'
-  stub 'rm'
   stub 'sed'
 }
 function clean() {
   restore 'habitat_write_config'
   restore 'habitat_get_config'
-  restore 'rm'
   restore 'sed'
 
   if [ -d "$tmp" ]; then
@@ -34,12 +41,12 @@ function clean() {
 #
 # dont have to test args as we have habitat_action_on_plugins for that
 #
-setup "author/name" "thing/thing"
+setup "author" "name" "thing" "thing"
 test_name 'Remove an exisiting plugin'
-assert_raises "$func '1' '$tmp' 'author/name'" "0"
 
-test_name 'verify that rm was called'
-assert "stub_called_times rm" "1"
+$func '1' "$tmp" 'author/name'
+code="$?"
+assert "echo '$code'" "0"
 
 test_name 'verify the file was deleted'
 assert_raises "test -f '$tmp/author/name'" "1"
@@ -54,13 +61,13 @@ clean
 #
 # verify that the author dir is not deleted if they have more than 1 plugin
 #
-setup "author/name" "author/thing"
-$func '0' "$tmp" 'author/name'
+setup "author" "name" "author" "thing"
+$func '1' "$tmp" 'author/name'
 test_name 'verify that the author was not deleted'
 assert_raises "test -d '$tmp/author'" "0"
 
 test_name 'verify the authors plugin was not deleted'
-assert_raises "test -f '$tmp/author/thing'" "1"
+assert_raises "test -f '$tmp/author/thing'" "0"
 
 clean
 
@@ -68,25 +75,24 @@ clean
 #
 #
 #
-setup "author/test"
+setup "author" "test"
+$func '1' "$tmp" 'author/name'
+code="$?"
 test_name 'Remove a non-existing plugin'
-assert_raises "$func '1' '$tmp' 'author/name'" "1"
+assert "echo '$code'" "1"
 
 test_name 'verify the nothing was deleted'
 assert_raises "test -f '$tmp/author/test'" "0"
 
-test_name 'verify that rm was not called'
-assert "stub_called_times rm" "0"
-
 clean
 
 
 #
 #
 #
-setup "author/name"
+setup "author" "name"
 test_name 'Remove an existing plugin and save to config'
-assert_raises "$func '0' '$tmp' 'author/name'" "0"
+$func '0' "$tmp" 'author/name'
 
 test_name 'verify that write config was called'
 assert "stub_called_times habitat_write_config" "1"
@@ -101,7 +107,7 @@ clean
 #
 #
 #
-setup "author/test"
+setup "author" "test"
 test_name 'Remove an non-existing plugin and save to config'
 assert_raises "$func '0' '$tmp' 'author/name'" "1"
 
