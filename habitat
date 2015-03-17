@@ -388,16 +388,21 @@ function habitat_action_on_plugins() {
 }
 
 function habitat_rm_plugin() {
+    local plugin_repo_dir="$1"; shift
+    local save_to_config="$1"; shift
+    local plugin="$1"; shift
+    local code=0
+
     if [ -d "$plugin_dir" ]; then
         rm -rf "$plugin_dir"
-        if [ -n "$save_to_config" ]; then
-            local plugins="$(habitat_get_config "habitat_plugins_dir" | sed "s~$plugin~~")"
-            habitat_write_config "habitat_plugins_dir" "${plugins}${plugin}"
-        fi
-
     else
-        habitat_error "Cannot rm plugin $plugin as it is not installed!"
+        code=1
     fi
+    if [ "$save_to_config" = "0" ]; then
+        local plugins="$(habitat_get_config "habitat_plugins" | sed "s~$plugin~~")"
+        habitat_write_config "habitat_plugins" "${plugins}${plugin}"
+    fi
+    return $code
 }
 
 ##

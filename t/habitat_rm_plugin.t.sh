@@ -13,6 +13,7 @@ function setup() {
     fi
     mkdir -p "$tmp/$(dirname "$1")"
     touch "$(basename "$1")"
+    shift
   done
   stub 'habitat_write_config'
   stub 'habitat_get_config'
