@@ -499,14 +499,6 @@ function habitat_first_time_setup() {
 }
 
 ##
-# habitat_check_update()
-# check wether their are updates for the habitat cli or plugins
-##
-function habitat_check_update() {
-    :
-}
-
-##
 # habitat_manage()
 # add plugins based on config file, and source them
 ##
