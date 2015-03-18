@@ -25,28 +25,50 @@ function setup() {
   done
 
   stub 'habitat_write_config'
-  stub 'habitat_get_config'
-  stub 'sed'
+  stub 'habitat_read_config'
+  stub 'habitat_is_valid_plugin_name'
 }
 function clean() {
   restore 'habitat_write_config'
-  restore 'habitat_get_config'
-  restore 'sed'
+  restore 'habitat_read_config'
+  restore 'habitat_is_valid_plugin_name'
 
   if [ -d "$tmp" ]; then
     rm -rf "$tmp"/*
   fi
 }
 
+
 #
-# dont have to test args as we have habitat_action_on_plugins for that
+#
+#
+setup
+test_name 'No Args - Failure'
+assert_raises "$func" "1"
+
+test_name 'One Arg - Failure'
+assert_raises "$func '1'" "1"
+
+test_name 'Two Args - Failure'
+assert_raises "$func '1' '$tmp'" "1"
+restore 'habitat_is_valid_plugin_name'
+stub_and_eval 'habitat_is_valid_plugin_name' 'return 1'
+test_name 'Three Args Invalid plugin name - Failure'
+assert_raises "$func '1' '$tmp' 'author/plugin'" "1"
+
+clean
+
+#
+#
 #
 setup "author" "name" "thing" "thing"
-test_name 'Remove an exisiting plugin'
-
 $func '1' "$tmp" 'author/name'
 code="$?"
+test_name 'Remove an exisiting plugin'
 assert "echo '$code'" "0"
+
+test_name 'verify that valid plugin name was called'
+assert "stub_called_times 'habitat_is_valid_plugin_name'" "1"
 
 test_name 'verify the file was deleted'
 assert_raises "test -f '$tmp/author/name'" "1"
@@ -69,6 +91,9 @@ assert_raises "test -d '$tmp/author'" "0"
 test_name 'verify the authors plugin was not deleted'
 assert_raises "test -f '$tmp/author/thing'" "0"
 
+test_name 'verify that valid plugin name was called'
+assert "stub_called_times 'habitat_is_valid_plugin_name'" "1"
+
 clean
 
 
@@ -84,6 +109,10 @@ assert "echo '$code'" "1"
 test_name 'verify the nothing was deleted'
 assert_raises "test -f '$tmp/author/test'" "0"
 
+test_name 'verify that valid plugin name was called'
+assert "stub_called_times 'habitat_is_valid_plugin_name'" "1"
+
+
 clean
 
 
@@ -91,34 +120,43 @@ clean
 #
 #
 setup "author" "name"
+$func 'config_file.cfg' "$tmp" 'author/name'
+code="$?"
 test_name 'Remove an existing plugin and save to config'
-$func '0' "$tmp" 'author/name'
+assert "echo '$code'" "0"
 
 test_name 'verify that write config was called'
-assert "stub_called_times habitat_write_config" "1"
+assert "stub_called_times 'habitat_write_config'" "1"
 
-test_name 'verify that write get config was called'
-assert "stub_valled_times habitat_get_config" "1"
+test_name 'verify that valid plugin name was called'
+assert "stub_called_times 'habitat_is_valid_plugin_name'" "1"
 
-test_name 'verify that sed was called'
-assert "stub_valled_times sed" "1"
+
+# TODO: how to capture a function call through an aubshell output capture $()
+# test_name 'verify that read config was called'
+# assert "stub_called_with habitat_read_config 'config_file.cfg'" "1"
+
 clean
 
 #
 #
 #
 setup "author" "test"
+$func 'config_file.cfg' "$tmp" 'author/name'
+code="$?"
 test_name 'Remove an non-existing plugin and save to config'
-assert_raises "$func '0' '$tmp' 'author/name'" "1"
+assert "echo '$code'" "1"
 
 test_name 'verify that write config was still called'
 assert "stub_called_times habitat_write_config" "1"
 
-test_name 'verify that write get config was still called'
-assert "stub_valled_times habitat_get_config" "1"
+test_name 'verify that valid plugin name was called'
+assert "stub_called_times 'habitat_is_valid_plugin_name'" "1"
 
-test_name 'verify that sed was still called'
-assert "stub_valled_times sed" "1"
+
+# TODO: how to capture a function call through an aubshell output capture $()
+# test_name 'verify that write read config was still called'
+# assert "stub_called_times habitat_read_config" "1"
 
 clean
 

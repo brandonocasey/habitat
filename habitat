@@ -348,59 +348,30 @@ function habitat_add_plugin() {
     fi
 }
 
-# habitat_action_on_plugin(action, plugin_repo_dir, save_to_config, plugin*)
-# add plugins, pass --save as plugin variable to save additions to config
-#
-# plugin - any number of 'author/repo' to add
 ##
-function habitat_action_on_plugins() {
-    if [ -z "${1:-}" ] || [ -z "${2:-}" ] || [ -z "${3:-}" ] || [ -z "${4:-}" ]; then
+# habitat_rm_plugin(config_file, plugin_repo_dir, plugin)
+# remove installed plugins, and save to config if config_file is passed
+#
+# config_file     - config file to save settings to or 1 to not save
+# plugin_repo_dir - The location of all of the git repositories
+# plugin*         - any number of plugins to do an action on
+##
+function habitat_rm_plugin() {
+    if [ -z "${1:-}" ] || [ -z "${2:-}" ] || [ -z "${3:-}" ]; then
         return 1
     fi
-    local action="$1"; shift
-    local plugin_repo_dir="$1"; shift
-    local save_to_config="$1"; shift
-
-    if [ "$action" != 'rm' ] && [ "$action" != "add" ]; then
-        return 2
-    fi
-
-    if [ ! -d "$plugin_repo_dir" ]; then
-        mkdir -p "$plugin_repo_dir"
-    fi
-
-    while [ $# -gt 0 ]; do
-        if [ -z "${1:-}" ]; then
-            shift
-            continue
-        fi
-        local plugin="$1"; shift
-        if ! habitat_is_valid_plugin_name "$plugin"; then
-            continue
-        fi
-        local plugin_dir="$plugin_repo_dir/$plugin"
-        if [ "$action" = 'rm' ]; then
-            habitat_rm_plugin "$save_to_config" "$plugin_repo_dir" "$plugin"
-        elif [ "$action" = "add" ]; then
-            habitat_add_plugin "$save_to_config" "$plugin_repo_dir" "$plugin"
-        fi
-    done
-}
-
-function habitat_rm_plugin() {
-    local save_to_config="$1"; shift
+    local config_file="$1"; shift
     local plugin_repo_dir="$1"; shift
     local plugin="$1"; shift
+    if ! habitat_is_valid_plugin_name "$plugin"; then
+        return 1
+    fi
     local code=0
 
     if [ -f "$plugin_repo_dir/$plugin" ]; then
         rm -rf "$plugin_repo_dir/$plugin"
     else
         code=1
-    fi
-    if [ "$save_to_config" = "0" ]; then
-        local plugins="$(habitat_get_config "habitat_plugins" | sed "s~$plugin~~")"
-        habitat_write_config "habitat_plugins" "${plugins}${plugin}"
     fi
 
     local author_dir="$plugin_repo_dir/$(dirname "$plugin")"
@@ -409,6 +380,16 @@ function habitat_rm_plugin() {
             rm -rf "$author_dir"
         fi
     fi
+
+    if [ "$config_file" = "1" ]; then
+        return $code
+    fi
+
+    local plugins="$(habitat_read_config "$config_file" "habitat_plugins" | sed "s~$plugin~~")"
+    if [ -n "$plugins" ]; then
+        plugins="$plugins "
+    fi
+    habitat_write_config "$config_file" "habitat_plugins" "${plugins}${plugin}"
 
     return $code
 }
@@ -420,13 +401,10 @@ function habitat_rm_plugin() {
 # key - key to grab the value of
 ##
 function habitat_read_config() {
-    if [ -z "${1:-}" ]; then
+    if [ -z "${1:-}" ] || [ -z "${2:-}" ]; then
         return 1
     fi
     local config="$1"; shift
-    if [ -z "${1:-}" ]; then
-        return 1
-    fi
     local key="$1"; shift
     if [ ! -f "$config" ]; then
         mkdir -p "$(dirname "$config")"
@@ -440,7 +418,7 @@ function habitat_read_config() {
         habitat_error "Duplicate key for $key going to use first. Has values $result"
         result="$(echo "$result" | head -n 1)"
     fi
-    echo "$result"
+    printf "$result"
     habitat_debug "Found that $key was $result in config file"
 }
 
@@ -564,7 +542,7 @@ function habitat_main() {
     while [ $habitat_argument_count -gt 0 ]; do
         habitat_argument="$1"; shift
         if [ "$habitat_argument" = "--save" ]; then
-            habitat_save_to_config="1"
+            habitat_save_to_config="$habitat_config_file"
         elif [ "$habitat_argument" = "--debug" ]; then
             habitat_debug_output="1"
         else
@@ -590,11 +568,11 @@ function habitat_main() {
             habitat_usage "$@"
         elif [ "$habitat_option" = "add" ]; then
             while [ $# -gt 0 ]; do
-                habitat_add_plugin "$habitat_save_to_config" "$1"; shift
+                habitat_add_plugin "$habitat_save_to_config" "$habitat_git_plugins_dir"  "$1"; shift
             done
         elif [ "$habitat_option" = "rm" ]; then
             while [ $# -gt 0 ]; do
-                habitat_rm_plugin "$habitat_save_to_config" "$1"; shift
+                habitat_rm_plugin "$habitat_save_to_config" "$habitat_git_plugins_dir"  "$1"; shift
             done
         elif [ "$habitat_option" = "stub" ]; then
             habitat_stub "$habitat_installed_plugins_dir" "$@"
@@ -639,7 +617,7 @@ habitat_run_unit_test=""
 
 # Ever Changing Data
 habitat_start_seconds="$(date +%s)"
-habitat_save_to_config=""
+habitat_save_to_config="1"
 habitat_version="1.0.0"
 alias habitat=". $habitat_cli_file"
 
