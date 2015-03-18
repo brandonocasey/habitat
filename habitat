@@ -316,12 +316,19 @@ function habitat_usage() {
 
 
 ##
-# habitat_add_plugin(plugin*)
+# habitat_add_plugin(config_file, plugin_repo_dir, plugin)
 # add plugins, pass --save as plugin variable to save additions to config
 #
 # plugin - any number of 'author/repo' to add
 ##
 function habitat_add_plugin() {
+    if [ -z "${1:-}" ] || [ -z "${2:-}" ] || [ -z "${3:-}" ]; then
+        return 1
+    fi
+    local config_file="$1"; shift
+    local plugin_repo_dir="$1"; shift
+    local plugin="$1"; shift
+
 
     # need to decalre local variables before capture
     # or else we won't correctly grab the result code
@@ -331,16 +338,15 @@ function habitat_add_plugin() {
         habitat_error "Git Failed" "$output"
         return 1
     fi
-    if [ ! -f "$habitat_plugins_dir/$plugin/habit" ]; then
+    if [ ! -f "$plugin_repo_dir/$plugin/habit" ]; then
         habitat_error "Plugin $plugin does not contain a habit file removing"
         if [ -d "$dir" ]; then
             rm -rf "$dir"
         fi
         return 1
     fi
-    echo "Plugin $plugin installed successfully"
-    if [ -n "$habitat_save_to_config" ]; then
-        local plugins="$(habitat_get_config "habitat_plugins_dir")"
+    if [ -n "$config_file" ]; then
+        local plugins="$(habitat_read_config "habitat_plugins_dir")"
         if [ -n "$plugins" ]; then
             plugins="$plugins "
         fi
