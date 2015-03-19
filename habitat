@@ -494,25 +494,6 @@ function habitat_write_config() {
 
 
 
-##
-# habitat_update()
-# update all installed plugins with .git directories
-##
-function habitat_update() {
-    local author
-    local plugin
-    for author in "$habitat_plugins_dir/"*; do
-        for plugin in "$author/"*; do
-            if [ -d "$plugin/.git" ]; then
-                habitat_debug "Going to update $plugin"
-                "$(cd $plugin && git pull "$plugin")"
-                . $plugin/habit
-            else
-                habitat_debug "Cannot update $plugin as it is not in git"
-            fi
-        done
-    done
-}
 
 
 ##
@@ -556,6 +537,38 @@ function habitat_install() {
     :
 }
 
+function habitat_reload() {
+    habitat_update_self
+    habitat_update_plugins
+    local installed_plugins="$(habitat_source_installed_plugins "$habitat_installed_plugins_dir")"
+    habitat_run "$installed_plugins"
+    habitat_cleanup
+}
+
+
+function habitat_update_self() {
+  :
+}
+##
+# habitat_update_plugins()
+# update all installed plugins with .git directories
+##
+function habitat_update_plugins() {
+    local author
+    local plugin
+    for author in "$habitat_plugins_dir/"*; do
+        for plugin in "$author/"*; do
+            if [ -d "$plugin/.git" ]; then
+                habitat_debug "Going to update $plugin"
+                "$(cd $plugin && git pull "$plugin")"
+                . $plugin/habit
+            else
+                habitat_debug "Cannot update $plugin as it is not in git"
+            fi
+        done
+    done
+}
+
 
 
 
@@ -597,7 +610,6 @@ function habitat_main() {
     habitat_config_file="$habitat_base_dir/habitatrc"
 
     habitat_debug_output=""
-    habitat_installed_plugin_list="$(habitat_source_installed_plugins "$habitat_installed_plugins_dir")"
 
 
     # Ever Changing Data
