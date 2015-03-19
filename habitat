@@ -657,7 +657,7 @@ function habitat_verify_requirements() {
         habitat_error "habitat_base must be defined in your environment to use habitat"
         return 1
     fi
-    if [ -z "${habitat_base:-}" ]; then
+    if [ -z "${habitat_base:-}" ] || [ ! -f "$habitat_base/habitat" ]; then
         habitat_base="$HOME/.habitat"
     fi
 
