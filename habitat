@@ -516,12 +516,18 @@ function habitat_update() {
 
 
 ##
-# habitat_update()
-# check if the user wants certain first_time functionality
+# habitat_one_time_question()
+# ask the user a question if the answer is not in the config
+# then save the answer in the config for next time
 ##
-function habitat_first_time_setup() {
-    # create config and default values
-    :
+function habitat_one_time_question() {
+    if [ -z "${1:-}" ] || [ -z "${2:-}" ] || [ -z "${3:-}" ] || [ -z "${4:-}" ]; then
+        return 1
+    fi
+    local config="$1"; shift
+    local key="$1"; shift
+    local question="$1"; shift
+    local answers="$1"; shift
 }
 
 ##
@@ -553,7 +559,6 @@ function habitat_trap_error() {
     habitat_cleanup
     return "${code}"
 }
-
 
 
 ##
