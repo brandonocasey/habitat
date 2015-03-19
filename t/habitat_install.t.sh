@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 source "$(dirname "$0")/test-helper.sh" "$0" "$@"
-func="habitat_manage"
+func="habitat_install"
 
 function setup() {
   if [ -d "$tmp" ]; then

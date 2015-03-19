@@ -549,10 +549,10 @@ function habitat_one_time_question() {
 }
 
 ##
-# habitat_manage()
-# add plugins based on config file, and source them
+# habitat_install()
+# add plugins based on config file and reload enviornment
 ##
-function habitat_manage() {
+function habitat_install() {
     :
 }
 
