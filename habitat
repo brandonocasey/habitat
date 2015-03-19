@@ -538,10 +538,13 @@ function habitat_one_time_question() {
 
     while [ -z "$answer" ]; do
         echo "$question? [$answers]"
-        if [ -z "$(echo "$answer" | grep -i "$answers")" ]; then
+        read -e answer
+        if [ -z "$(echo "$answer" | grep -i "^[$answers]$")" ]; then
+            echo "invalid please try again"
             answer=""
         fi
     done
+    habitat_write_config "$config" "$key" "$answer"
 
 }
 
