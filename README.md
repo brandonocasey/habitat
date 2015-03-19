@@ -7,11 +7,12 @@ So far this is a just a proof of concept, when everything is up and working this
 	* verify debug/error lines in unit tests
 	* verify that the environment has not changed when running the script
 	* redirect to variables for unit tests. using > or | if possible
+	* better tests for one_time_question
 * seperate plugin and git repos
 	* stuff git repos somewhere
-* habitat_one_time_question
 * habitat_update_self
-* habitat_manage -> habitat_install
+* habitat_install
+* habitat_reload
 * habitat_update_plugins
 
 
