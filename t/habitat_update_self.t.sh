@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 source "$(dirname "$0")/test-helper.sh" "$0" "$@"
-func="habitat_update"
+func="habitat_update_self"
 
 function setup() {
   if [ -d "$tmp" ]; then
