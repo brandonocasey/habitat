@@ -679,4 +679,4 @@ fi
 
 
 trap -- 'habitat_trap_error ${LINENO}' ERR SIGTERM SIGINT SIGHUP SIGQUIT
-habitat_main "$@"
+habitat_main "$habitat_base" "$@"
