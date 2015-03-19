@@ -614,41 +614,33 @@ function habitat_main() {
 }
 
 
+if [ -z "${habitat_unit_testing:-}" ]; then
+    # TODO: more dynamic way to get habitat_base
+    # Requirements
+    if [ -z "$HOME" ]; then
+        habitat_error "habitat_base must be defined in your environment to use habitat"
+        return 1
+    fi
 
-# TODO: more dynamic way to get habitat_base
-# Requirements
-if [ -z "$HOME" ]; then
-    habitat_error "habitat_base must be defined in your environment to use habitat"
-    return 1
-fi
-
-if ! command -v git > /dev/null; then
-    habitat_error "git must be installed to use habitat!"
-    return 1
-fi
+    if ! command -v git > /dev/null; then
+        habitat_error "git must be installed to use habitat!"
+        return 1
+    fi
 
 
-# defines
-habitat_base_dir="$HOME/Projects/.habitat"
-habitat_installed_plugins_dir="$habitat_base_dir/plugins/installed"
-habitat_git_plugins_dir="$habitat_base_dir/plugins/git"
-habitat_cli_file="$habitat_base_dir/habitat"
-habitat_dotfiles_dir="$habitat_base_dir/dotfiles"
-habitat_config_file="$habitat_base_dir/habitatrc"
-habitat_run_unit_test=""
+    # defines
+    habitat_base_dir="$HOME/Projects/.habitat"
+    habitat_installed_plugins_dir="$habitat_base_dir/plugins/installed"
+    habitat_git_plugins_dir="$habitat_base_dir/plugins/git"
+    habitat_cli_file="$habitat_base_dir/habitat"
+    habitat_dotfiles_dir="$habitat_base_dir/dotfiles"
+    habitat_config_file="$habitat_base_dir/habitatrc"
 
-# Ever Changing Data
-habitat_start_seconds="$(date +%s)"
-habitat_save_to_config="1"
-habitat_version="1.0.0"
-alias habitat=". $habitat_cli_file"
-
-if [ -n "${1:-}" ] && [ "$1" = "--unit_testing" ]; then
-    habitat_run_unit_test="1"
-fi
-
-# if unit testing dont automatically run anything
-if [ -z "$habitat_run_unit_test" ]; then
+    # Ever Changing Data
+    habitat_start_seconds="$(date +%s)"
+    habitat_save_to_config="1"
+    habitat_version="1.0.0"
+    alias habitat=". $habitat_cli_file"
 
     trap -- 'habitat_trap_error ${LINENO}' ERR SIGTERM SIGINT SIGHUP SIGQUIT
     if [ ! -f "$habitat_config_file" ]; then
@@ -658,10 +650,11 @@ if [ -z "$habitat_run_unit_test" ]; then
     habitat_debug_output=""
     habitat_installed_plugin_list="$(habitat_source_installed_plugins "$habitat_installed_plugins_dir")"
 
-
     habitat_main "$@"
-
-    # Cleanup our internal functions
     habitat_cleanup
     trap --
 fi
+
+
+
+

@@ -45,10 +45,11 @@ function test_name() {
     test_index=$((test_index+1))
 }
 
+habitat_unit_testing="0"
 
 source "$assert_script"
 source "$stub_script"
-source "$script_under_test" --unit_testing
+source "$script_under_test"
 if [ -n "${debug:-}" ]; then
     stub_and_eval 'habitat_error' 'echo "Error: $@" 1>&2'
     stub_and_eval 'habitat_debug' 'echo "Debug: $@" 1>&2'
