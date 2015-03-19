@@ -6,6 +6,7 @@ So far this is a just a proof of concept, when everything is up and working this
 * write unit tests
 	* verify debug/error lines in unit tests
 	* verify that the environment has not changed when running the script
+	* redirect to variables for unit tests. using > or | if possible
 * seperate plugin and git repos
 	* stuff git repos somewhere
 
