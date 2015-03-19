@@ -528,6 +528,21 @@ function habitat_one_time_question() {
     local key="$1"; shift
     local question="$1"; shift
     local answers="$1"; shift
+    if [ -n "$(habitat_read_config "$config" "skip_all_questions")" ]; then
+        return 1
+    fi
+    if [ -n "$(habitat_read_config "$config" "$key")" ]; then
+        return 1
+    fi
+    local answer=""
+
+    while [ -z "$answer" ]; do
+        echo "$question? [$answers]"
+        if [ -z "$(echo "$answer" | grep -i "$answers")" ]; then
+            answer=""
+        fi
+    done
+
 }
 
 ##
