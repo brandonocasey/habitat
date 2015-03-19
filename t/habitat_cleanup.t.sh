@@ -6,11 +6,13 @@ func="habitat_cleanup"
 function setup() {
   stub 'habitat_unset_function'
   stub 'habitat_unset_variable'
+  stub 'trap'
   $func
 }
 function clean() {
   restore 'habitat_unset_function'
   restore 'habitat_unset_variable'
+  restore 'trap'
 }
 
 
@@ -37,6 +39,14 @@ assert "stub_called_times 'habitat_unset_function'" "$function_start"
 test_name "habitat_unset_variable has the same number of calls each time"
 assert "stub_called_times 'habitat_unset_variable'" "$variable_start"
 clean
+
+setup
+# make sure habitat_base is not unset
+habitat_base="things"
+test_name "habitat_unset_variable has the same number even when habitat_base is added"
+assert "stub_called_times 'habitat_unset_variable'" "$variable_start"
+clean
+
 
 
 

@@ -181,7 +181,7 @@ function habitat_cleanup() {
 
     local var
     while read -r var; do
-        if [ "$var" = "habitat_debug_output" ]; then
+        if [ "$var" = "habitat_debug_output" ] || [ "$var" = "habitat_base" ]; then
             continue
         fi
         habitat_debug "Unsetting variable $var"
@@ -200,6 +200,8 @@ function habitat_cleanup() {
     habitat_unset_function "habitat_cleanup"
     habitat_unset_function "habitat_unset_variable"
     habitat_unset_function "habitat_unset_function"
+
+    trap --
     return 0
 }
 
@@ -534,7 +536,7 @@ function habitat_manage() {
 
 
 ##
-# habitat_main(parent_lineno, message, code)
+# habitat_trap_error(parent_lineno, message, code)
 # parent_lineno - line number reported by the trap
 # message       - error message
 # code          - code to exit with
@@ -559,7 +561,34 @@ function habitat_trap_error() {
 # $@ - all args that have been passed to the script
 ##
 function habitat_main() {
-    # grab out --save and --debug
+    if [ -z "${1:-}" ]; then
+        return 1
+    fi
+
+    # defines
+    habitat_base_dir="$1"; shift
+    habitat_installed_plugins_dir="$habitat_base_dir/plugins/installed"
+    habitat_git_plugins_dir="$habitat_base_dir/plugins/git"
+    habitat_cli_file="$habitat_base_dir/habitat"
+    habitat_dotfiles_dir="$habitat_base_dir/dotfiles"
+    habitat_config_file="$habitat_base_dir/habitatrc"
+
+    habitat_debug_output=""
+    habitat_installed_plugin_list="$(habitat_source_installed_plugins "$habitat_installed_plugins_dir")"
+
+
+    # Ever Changing Data
+    habitat_save_to_config="1"
+    habitat_version="1.0.0"
+    alias habitat=". $habitat_cli_file"
+
+    if [ ! -f "$habitat_config_file" ]; then
+        habitat_first_time_setup
+    fi
+
+
+
+    # grab out --save and --debug but leave everything else intact
     habitat_argument_count="${#:0}"
     while [ $habitat_argument_count -gt 0 ]; do
         habitat_argument="$1"; shift
@@ -611,50 +640,43 @@ function habitat_main() {
         habitat_manage
         habitat_run "$habitat_installed_plugin_list"
     fi
+    habitat_cleanup
 }
 
-
-if [ -z "${habitat_unit_testing:-}" ]; then
-    # TODO: more dynamic way to get habitat_base
-    # Requirements
-    if [ -z "$HOME" ]; then
-        habitat_error "habitat_base must be defined in your environment to use habitat"
-        return 1
-    fi
-
+##
+# habitat_verify_requirements()
+# verify that the user has habitat installed and that git is also installed
+##
+function habitat_verify_requirements() {
     if ! command -v git > /dev/null; then
         habitat_error "git must be installed to use habitat!"
         return 1
     fi
 
-
-    # defines
-    habitat_base_dir="$HOME/Projects/.habitat"
-    habitat_installed_plugins_dir="$habitat_base_dir/plugins/installed"
-    habitat_git_plugins_dir="$habitat_base_dir/plugins/git"
-    habitat_cli_file="$habitat_base_dir/habitat"
-    habitat_dotfiles_dir="$habitat_base_dir/dotfiles"
-    habitat_config_file="$habitat_base_dir/habitatrc"
-
-    # Ever Changing Data
-    habitat_start_seconds="$(date +%s)"
-    habitat_save_to_config="1"
-    habitat_version="1.0.0"
-    alias habitat=". $habitat_cli_file"
-
-    trap -- 'habitat_trap_error ${LINENO}' ERR SIGTERM SIGINT SIGHUP SIGQUIT
-    if [ ! -f "$habitat_config_file" ]; then
-        habitat_first_time_setup
+    if [ -z "${habitat_base:-}" ] && [ -z "${HOME:-}" ]; then
+        habitat_error "habitat_base must be defined in your environment to use habitat"
+        return 1
+    fi
+    if [ -z "${habitat_base:-}" ]; then
+        habitat_base="$HOME/.habitat"
     fi
 
-    habitat_debug_output=""
-    habitat_installed_plugin_list="$(habitat_source_installed_plugins "$habitat_installed_plugins_dir")"
+    if [ ! -f "$habitat_base/habitat" ]; then
+        habitat_error "habitat cli not located in $habitat_base folder. Please fix this issue"
+        return 1
+    fi
+    return 0
+}
 
-    habitat_main "$@"
-    habitat_cleanup
-    trap --
+
+if [ -n "${habitat_unit_testing:-}" ]; then
+    return 1
+fi
+
+if ! habitat_verify_requirements; then
+    return 1
 fi
 
 
-
-
+trap -- 'habitat_trap_error ${LINENO}' ERR SIGTERM SIGINT SIGHUP SIGQUIT
+habitat_main "$@"
