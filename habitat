@@ -1,6 +1,41 @@
 #!/usr/bin/env bash
 
 
+##
+# habitat_git_clone_plugin_repo(base_dir, plugin)
+# use git clone to grab a plugin if possible
+#
+# plugin      - name of the plugin (based on repository) to grab from git
+# base_dir    - where to clone the plugin into
+##
+function habitat_clone_plugin_repo() {
+    if [ -z "${1:-}" ] || [ -z "${2:-}" ]; then
+        return 1
+    fi
+    local base_dir="$1"; shift
+    local plugin="$1"; shift
+    if ! habitat_is_valid_plugin_name "$plugin"; then
+        return 1
+    fi
+    # need to decalre local variables before capture
+    # or else we won't correctly grab the result code
+    local output=""
+    local dir="$base_dir/$(basename "$(dirname "$plugin")")"
+    die="${dir}/$(basename "$plugin")"
+    output="$(git clone "https://github.com/$plugin" "$dir")"
+    if [ "$?" -ne "0" ]; then
+        habitat_error "Git Failed" "$output"
+        return 1
+    fi
+    if [ ! -f "$dir/habit" ]; then
+        habitat_error "Plugin $plugin does not contain a habit file removing"
+        if [ -d "$dir" ]; then
+            rm -rf "$dir"
+        fi
+        return 1
+    fi
+}
+
 
 ##
 # habitat_unset_function(function_name)
@@ -330,22 +365,11 @@ function habitat_add_plugin() {
     local plugin="$1"; shift
 
 
-    # need to decalre local variables before capture
-    # or else we won't correctly grab the result code
-    local output=""
-    output="$(git clone "https://github.com/$plugin" "$dir")"
-    if [ "$?" -ne "0" ]; then
-        habitat_error "Git Failed" "$output"
+    if ! habitat_clone_plugin_repo "$plugin_repo_dir" "$plugin"; then
         return 1
     fi
-    if [ ! -f "$plugin_repo_dir/$plugin/habit" ]; then
-        habitat_error "Plugin $plugin does not contain a habit file removing"
-        if [ -d "$dir" ]; then
-            rm -rf "$dir"
-        fi
-        return 1
-    fi
-    if [ -n "$config_file" ]; then
+
+    if [ "$config_file" != "1" ]; then
         local plugins="$(habitat_read_config "habitat_plugins_dir")"
         if [ -n "$plugins" ]; then
             plugins="$plugins "
