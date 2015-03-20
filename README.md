@@ -8,8 +8,7 @@ So far this is a just a proof of concept, when everything is up and working this
 	* verify that the environment has not changed when running the script
 	* redirect to variables for unit tests. using > or | if possible
 	* better tests for one_time_question
-* habitat_install
-* habitat_reload
+* habitat_version
 
 
 # Would Like
@@ -21,9 +20,13 @@ So far this is a just a proof of concept, when everything is up and working this
 * warn about updates
 	* habitat_update_self
 	* habitat_update_plugins
+* habitat_install
+* habitat_ls
 * support quotes variables in config?
 * namespace and eval plugins automatically?
 * ignore everything but functions in plugin
+* habitat_add_plugin -> habitat_add_plugins
+* habitat_rm_plugin -> habitat_rm_plugins
 
 # Need a better idea
 * seperate plugin and git repos
