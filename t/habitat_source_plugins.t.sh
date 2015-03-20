@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 source "$(dirname "$0")/test-helper.sh" "$0" "$@"
-func="habitat_source_installed_plugins"
+func="habitat_source_plugins"
 
 
 function setup() {
@@ -12,6 +12,7 @@ function setup() {
   while [ $# -gt 0 ]; do
     local author="${1:-}"; shift
     local plugin="${1:-}"; shift
+    local habit_file="${1:-}"; shift
     if [ -z "${author:-}" ]; then
       continue
     fi
@@ -22,8 +23,11 @@ function setup() {
     if [ -z "${plugin:-}" ]; then
       continue
     fi
-    if [ ! -f "$tmp/$author/$plugin" ];then
-      touch "$tmp/$author/$plugin"
+    if [ ! -d "$tmp/$author/$plugin" ];then
+      mkdir -p "$tmp/$author/$plugin"
+    fi
+    if [ "$habit_file" = "0" ]; then
+      touch "$tmp/$author/$plugin/habit"
     fi
   done
 }
@@ -80,7 +84,7 @@ clean
 #
 #
 #
-setup "author" "plugin"
+setup "author" "plugin" "0"
 test_name "1 Authors 1 Plugins - STDOUT"
 assert "$func '$tmp'" "author_plugin"
 
@@ -100,7 +104,7 @@ clean
 #
 #
 #
-setup "author" "plugin" "author" "plugin2"
+setup "author" "plugin" "0" "author" "plugin2" "0"
 test_name "1 Authors 2 Plugins - STDOUT"
 assert "$func '$tmp'" "author_plugin\nauthor_plugin2"
 
@@ -122,7 +126,7 @@ clean
 #
 #
 #
-setup "author" "plugin" "author2"
+setup "author" "plugin" "0" "author2"
 test_name "2 Authors 1 Plugin - STDOUT"
 assert "$func '$tmp'" "author_plugin"
 
@@ -143,7 +147,7 @@ clean
 #
 #
 #
-setup "author" "plugin" "author2" "plugin2"
+setup "author" "plugin" "0" "author2" "plugin2" "0"
 test_name "2 Authors 1 Plugin Each - STDOUT"
 assert "$func '$tmp'" "author_plugin\nauthor2_plugin2"
 
@@ -164,7 +168,7 @@ clean
 #
 #
 #
-setup "author" "plugin" "author" "plugin2" "author2" "plugin" "author2" "plugin2"
+setup "author" "plugin" "0" "author" "plugin2" "0" "author2" "plugin" "0" "author2" "plugin2" "0"
 test_name "2 Authors 2 Plugin Each - STDOUT"
 assert "$func '$tmp'" "author_plugin\nauthor_plugin2\nauthor2_plugin\nauthor2_plugin2"
 
@@ -182,7 +186,7 @@ clean
 
 
 # Verify validation returing false
-setup "author" "plugin" "author" "plugin2"
+setup "author" "plugin" "0" "author" "plugin2" "0"
 # need to make it return false for these tests
 restore 'habitat_is_valid_plugin_name'
 stub_and_eval 'habitat_is_valid_plugin_name' "return 1"
@@ -200,6 +204,20 @@ assert "stub_called_times 'habitat_source_file'" "0"
 
 test_name "1 Author 2 Plugin, all invalid - plugin validation called twice"
 assert "stub_called_times 'habitat_is_valid_plugin_name'" "2"
+
+clean
+
+# Verify no habit file
+setup "author" "plugin" "1"
+test_name "1 Authors 1 Plugins no habit file - STDOUT"
+assert "$func '$tmp'" ""
+
+test_name "1 Authors 1 Plugins no habit file - Success"
+assert_raises "$func '$tmp'" "0"
+
+sest_name "1 Authors 1 Plugins no habit file - source not called"
+$func "$tmp" 2>&1 > /dev/null
+assert "stub_called_times 'habitat_source_file'" "0"
 
 clean
 

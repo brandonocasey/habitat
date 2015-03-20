@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 source "$(dirname "$0")/test-helper.sh" "$0" "$@"
-func="habitat_run"
+func="habitat_run_plugins"
 
 
 function setup() {

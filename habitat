@@ -190,39 +190,37 @@ function habitat_cleanup() {
 
 
     habitat_debug "Unsetting function habitat_debug"
-    habitat_debug "Unsetting variable habitat_debug_output"
     habitat_debug "Unsetting function habitat_cleanup"
     habitat_debug "Unsetting function habitat_unset_function"
     habitat_debug "Unsetting function habitat_unset_variable"
 
     habitat_unset_function "habitat_debug"
-    habitat_unset_variable "habitat_debug_output"
     habitat_unset_function "habitat_cleanup"
     habitat_unset_function "habitat_unset_variable"
     habitat_unset_function "habitat_unset_function"
 
-    trap --
+    trap -- 2>&1 > /dev/null
     return 0
 }
 
-
 ##
-# habitat_source_installed_plugins()
+# habitat_source_plugins($base_dir)
 # source run, setup, and usage functions from plugins
+# base_dir - Where to look for plugins
 ##
-function habitat_source_installed_plugins() {
-    local base_dir="$1"
+function habitat_source_plugins() {
+    local plugin_dir="$1"
     local author_dir
-    local plugin_file
-    for author_dir in "$base_dir/"*; do
+    local plugin_dir
+    for author_dir in "$plugin_dir/"*; do
         # as this would normally be a long dir rather than just the author name
         local author="$(basename "$author_dir")"
         if [ "$author" = "*"  ]; then
             habitat_debug "Found no authors in installed plugins"
             return 1
         fi
-        for plugin_file in "$author_dir/"*; do
-            local plugin="$(basename "$plugin_file")"
+        for plugin_dir in "$author_dir/"*; do
+            local plugin="$(basename "$plugin_dir")"
             if [ "$plugin" = "*"  ]; then
                 habitat_error "Found no plugins for author $author"
                 break
@@ -230,6 +228,10 @@ function habitat_source_installed_plugins() {
             if ! habitat_is_valid_plugin_name "$author/$plugin"; then
                 habitat_error "it appears there is an invalid plugin named $author/$plugin, skipping"
                 continue
+            fi
+            if [ ! -f "$plugin_dir/habit" ]; then
+              habitat_error "It appears that $author/$plugin does not have a habit file!"
+              continue
             fi
 
             habitat_debug "Sourcing plugin $author/$plugin in environment"
@@ -242,10 +244,10 @@ function habitat_source_installed_plugins() {
 
 
 ##
-# habitat_run()
+# habitat_run_plugins()
 # run plugin setup and run functions
 ##
-function habitat_run() {
+function habitat_run_plugins() {
     local plugin_list="${1-}"
     local plugin_name
     if [ -z "${plugin_list:-}" ]; then
@@ -340,13 +342,14 @@ function habitat_usage() {
         echo
         echo "  . habitat <options>"
         echo
-        echo "  add       add (a) plugin(s). use --save write a config change"
-        echo "  rm        remove (a) plugin(s). use --save to write a config change"
-        echo "  stub      stub a plugin in ${habitat_plugins_dir}. ex: stub author/plugin_name"
-        echo "  help      show this help menu or plugin help. ex: help author/plugin_name"
-        echo "  --debug   show debug statements to stdout"
+        echo "  add             add (a) plugin(s). use --save write a config change"
+        echo "  rm              remove (a) plugin(s). use --save to write a config change"
+        echo "  stub            stub a plugin in ${habitat_plugins_dir}. ex: stub author/plugin_name"
+        echo "  help            show this help menu or plugin help. ex: help author/plugin_name"
+        echo "  --debug         show debug statements to stdout"
+        echo "  update-plugins  go through a plugin update progress"
+        echo "  update-self     check/update the habitat cli"
     #    echo "  ls        show installed plugins"
-    #    echo "  update    go through a plugin update progress"
     #    echo "  install   install plugins based upon config file"
         echo
 }
@@ -531,42 +534,41 @@ function habitat_one_time_question() {
 
 ##
 # habitat_install()
-# add plugins based on config file and reload enviornment
+# install plugins based upon config file
 ##
 function habitat_install() {
     :
 }
 
-function habitat_reload() {
-    habitat_update_self
-    habitat_update_plugins
-    local installed_plugins="$(habitat_source_installed_plugins "$habitat_installed_plugins_dir")"
-    habitat_run "$installed_plugins"
-    habitat_cleanup
-}
-
-
 function habitat_update_self() {
-  :
+  if [ -z "${1:-}" ]; then
+    return 2
+  fi
+  local version="$1"; shift
+  # check version versus remote server
 }
 ##
 # habitat_update_plugins()
 # update all installed plugins with .git directories
 ##
 function habitat_update_plugins() {
-    local author
-    local plugin
-    for author in "$habitat_plugins_dir/"*; do
-        for plugin in "$author/"*; do
-            if [ -d "$plugin/.git" ]; then
-                habitat_debug "Going to update $plugin"
-                "$(cd $plugin && git pull "$plugin")"
-                . $plugin/habit
-            else
-                habitat_debug "Cannot update $plugin as it is not in git"
-            fi
-        done
-    done
+  local plugin_dir="${1:-}"; shift
+  local plugin_list="${1:-}"; shift
+  local plugin_name
+  for plugin_name in $plugin_list; do
+    if ! habitat_is_valid_plugin_name "$plugin_name"; then
+      habitat_error "it appears there is an invalid plugin named $plugin_name"
+      continue
+    fi
+    local plugin_dir="$plugin_dir/$plugin_name"
+    if [ -d "$plugin_dir/.git" ]; then
+      habitat_debug "Going to update $plugin_name"
+      "$(cd "$plugin_dir" && git pull "$plugin_dir")"
+      . $plugin_dir/habit
+    else
+      habitat_debug "Cannot update $plugin as it is not in git"
+    fi
+  done
 }
 
 
@@ -602,80 +604,74 @@ function habitat_main() {
     fi
 
     # defines
-    habitat_base_dir="$1"; shift
-    habitat_installed_plugins_dir="$habitat_base_dir/plugins/installed"
-    habitat_git_plugins_dir="$habitat_base_dir/plugins/git"
-    habitat_cli_file="$habitat_base_dir/habitat"
-    habitat_dotfiles_dir="$habitat_base_dir/dotfiles"
-    habitat_config_file="$habitat_base_dir/habitatrc"
+    local install_dir="$1"; shift
+    local plugins_dir="$habitat_base_dir/plugins"
+    local cli_binary="$habitat_base_dir/habitat"
+    local dotfiles_dir="$habitat_base_dir/dotfiles"
+    local config_file="$habitat_base_dir/habitatrc"
 
-    habitat_debug_output=""
-
-
-    # Ever Changing Data
-    habitat_save_to_config="1"
-    habitat_version="1.0.0"
+    local save_to_config="1"
+    local habitat_version="1.0.0"
+    local return_code="0"
     alias habitat=". $habitat_cli_file"
 
-    if [ ! -f "$habitat_config_file" ]; then
-        habitat_first_time_setup
-    fi
-
-
-
     # grab out --save and --debug but leave everything else intact
-    habitat_argument_count="${#:0}"
-    while [ $habitat_argument_count -gt 0 ]; do
-        habitat_argument="$1"; shift
-        if [ "$habitat_argument" = "--save" ]; then
-            habitat_save_to_config="$habitat_config_file"
-        elif [ "$habitat_argument" = "--debug" ]; then
+    local argument_count="${#:0}"
+    while [ $argument_count -gt 0 ]; do
+        local argument="$1"; shift
+        if [ "$argument" = "--save" ]; then
+            save_to_config="$config_file"
+        elif [ "$argument" = "--debug" ]; then
             habitat_debug_output="1"
         else
             set -- "$@" "$habitat_argument"
         fi
-        habitat_argument_count=$((habitat_argument_count-1))
+        argument_count=$((argument_count-1))
     done
 
     # throw errors if --save is passed in a bad way
-    if [ -n "${habitat_save_to_config:-}" ] && [ -z "${1:-}" ]; then
+    if [ "${save_to_config}" != "1" ] && [ -z "${1:-}" ]; then
         habitat_error "--save will do nothing without being used with add or rm"
         return 1
-    elif [ -n "${habitat_save_to_config:-}" ] && [ -n "${1:-}" ]; then
+    elif [ "${save_to_config}" != "1" ] && [ -n "${1:-}" ]; then
         if [ "$1" != 'add' ] || [ "$1" != "rm" ]; then
             habitat_error "--save will do nothing with action $1"
         fi
     fi
 
+    habitat_source_plugins  "$plugins_dir"
+    local installed_plugins=""
 
     if [ -n "${1:-}" ]; then
-        habitat_option="$1"; shift
-        if [ "$habitat_option" = "help" ]; then
+        option="$1"; shift
+        if [ "$option" = "help" ]; then
             habitat_usage "$@"
-        elif [ "$habitat_option" = "add" ]; then
+        elif [ "$option" = "add" ]; then
             while [ $# -gt 0 ]; do
-                habitat_add_plugin "$habitat_save_to_config" "$habitat_git_plugins_dir"  "$1"; shift
+                habitat_add_plugin "$save_to_config" "$plugins_dir"  "$1"; shift
             done
-        elif [ "$habitat_option" = "rm" ]; then
+        elif [ "$option" = "rm" ]; then
             while [ $# -gt 0 ]; do
-                habitat_rm_plugin "$habitat_save_to_config" "$habitat_git_plugins_dir"  "$1"; shift
+                habitat_rm_plugin "$save_to_config" "$plugins_dir"  "$1"; shift
             done
-        elif [ "$habitat_option" = "stub" ]; then
-            habitat_stub "$habitat_installed_plugins_dir" "$@"
-        elif [ "$habitat_option" = "update" ]; then
-            habitat_update "$@"
-        elif type -t habitat_"$(echo "$habitat_option" | sed 's~/~_~')"_options; then
-            habitat_"$(echo "$habitat_option" | sed 's~/~_~')"_options "$@"
+        elif [ "$option" = "stub" ]; then
+            habitat_stub "$plugins_dir" "$@"
+        elif [ "$option" = "update-plugins" ]; then
+            habitat_update_plugins "$plugins_dir"
+        elif [ "$option" = "update-self" ]; then
+            habitat_update_self "$cli_binary" "$current_version"
+        elif type -t habitat_"$(echo "$option" | sed 's~/~_~')"_options; then
+            habitat_"$(echo "$option" | sed 's~/~_~')"_options "$@"
         else
-            habitat_error "Unknown option ${habitat_option}. Use help for usage"
-            return 1
+            habitat_error "Unknown option ${option}. Use help for usage"
+            return_code="1"
         fi
     else
-        habitat_update
-        habitat_manage
-        habitat_run "$habitat_installed_plugin_list"
+        habitat_update_plugins "$plugins_dir" "$installed_plugins"
+        habitat_run_plugins "$installed_plugins"
     fi
     habitat_cleanup
+    return "$return_code"
 }
 
 ##
@@ -697,7 +693,7 @@ function habitat_verify_requirements() {
     fi
 
     if [ ! -f "$habitat_base/habitat" ]; then
-        habitat_error "habitat cli not located in $habitat_base folder. Please fix this issue"
+        habitat_error "habitat not located in $habitat_base folder. Please fix this issue"
         return 1
     fi
     return 0
@@ -709,9 +705,11 @@ if [ -n "${habitat_unit_testing:-}" ]; then
 fi
 
 if ! habitat_verify_requirements; then
+  habitat_cleanup
     return 1
 fi
 
 
-trap -- 'habitat_trap_error ${LINENO}' ERR SIGTERM SIGINT SIGHUP SIGQUIT
+trap -- 'habitat_trap_error ${LINENO}' ERR SIGTERM SIGINT SIGHUP SIGQUIT 2>&1 > /dev/null
 habitat_main "$habitat_base" "$@"
+return "$?"
