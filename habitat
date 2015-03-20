@@ -21,8 +21,8 @@ function habitat_clone_plugin_repo() {
   # or else we won't correctly grab the result code
   local output=""
   local dir="$base_dir/$(basename "$(dirname "$plugin")")"
-  die="${dir}/$(basename "$plugin")"
-  output="$(git clone "https://github.com/$plugin" "$dir")"
+  dir="${dir}/$(basename "$plugin")"
+  output="$(git clone "https://github.com/$plugin" "$dir" 2>&1)"
   if [ "$?" -ne "0" ]; then
     habitat_error "Git Failed" "$output"
     return 1
@@ -117,7 +117,7 @@ function habitat_is_valid_plugin_name() {
     return 1
   fi
   local plugin_name="$1"
-  if [ -z "$(echo "$plugin_name" | grep -i "^[a-z0-9]\{1,\}/[a-z0-9]\{1,\}$")" ]; then
+  if [ -z "$(echo "$plugin_name" | grep -i "^[a-z0-9_\-]\{1,\}/[a-z0-9_\-]\{1,\}$")" ]; then
     return 1
   fi
   return 0
@@ -199,7 +199,8 @@ function habitat_cleanup() {
   habitat_unset_function "habitat_unset_variable"
   habitat_unset_function "habitat_unset_function"
 
-  trap -- 2>&1 > /dev/null
+
+  trap -- ERR SIGTERM SIGINT SIGHUP SIGQUIT 2>&1 > /dev/null
   return 0
 }
 
@@ -235,8 +236,8 @@ function habitat_source_plugins() {
       fi
 
       habitat_debug "Sourcing plugin $author/$plugin in environment"
-      habitat_source_file "$plugin_file"
-      echo "${author}_${plugin}"
+      habitat_source_file "$plugin_dir/habit"
+      echo "${author}/${plugin}"
     done
   done
   return 0
@@ -248,7 +249,7 @@ function habitat_source_plugins() {
 # run plugin setup and run functions
 ##
 function habitat_run_plugins() {
-  local plugin_list="${1-}"
+  local plugin_list="${1:-}"
   local plugin_name
   if [ -z "${plugin_list:-}" ]; then
     return 1
@@ -259,7 +260,7 @@ function habitat_run_plugins() {
       continue
     fi
 
-    local plugin_name_underscore="$(echo "$plugin_name" | sed 's~/~_~')"
+    local plugin_name_underscore="$(echo "$plugin_name" | sed 's~[/\-]~_~g')"
     local function_name="habitat_${plugin_name_underscore}_run"
     habitat_debug "Going to run $function_name"
     if ! habitat_call_function "$function_name"; then
@@ -374,6 +375,7 @@ function habitat_add_plugin() {
     return 1
   fi
 
+  echo "Successfully installed $plugin!"
   if [ "$config_file" != "1" ]; then
     local plugins="$(habitat_read_config "habitat_plugins_dir")"
     if [ -n "$plugins" ]; then
@@ -403,8 +405,9 @@ function habitat_rm_plugin() {
   fi
   local code=0
 
-  if [ -f "$plugin_repo_dir/$plugin" ]; then
+  if [ -d "$plugin_repo_dir/$plugin" ]; then
     rm -rf "$plugin_repo_dir/$plugin"
+    echo "$plugin Succesfully Removed!"
   else
     code=1
   fi
@@ -603,7 +606,7 @@ function habitat_main() {
   fi
 
   # defines
-  local install_dir="$1"; shift
+  export habitat_base_dir="$1"; shift
   local plugins_dir="$habitat_base_dir/plugins"
   local cli_binary="$habitat_base_dir/habitat"
   local dotfiles_dir="$habitat_base_dir/dotfiles"
@@ -638,8 +641,7 @@ function habitat_main() {
     fi
   fi
 
-  habitat_source_plugins  "$plugins_dir"
-  local installed_plugins=""
+  local installed_plugins="$(habitat_source_plugins "$plugins_dir")"
 
   if [ -n "${1:-}" ]; then
     option="$1"; shift
@@ -659,8 +661,8 @@ function habitat_main() {
       habitat_update_plugins "$plugins_dir"
     elif [ "$option" = "update-self" ]; then
       habitat_update_self "$cli_binary" "$current_version"
-    elif type -t habitat_"$(echo "$option" | sed 's~/~_~')"_options; then
-      habitat_"$(echo "$option" | sed 's~/~_~')"_options "$@"
+    elif type -t habitat_"$(echo "$option" | sed 's~[-/]~_~g')"_options; then
+      habitat_"$(echo "$option" | sed 's~[-/]~_~g')"_options "$@"
     else
       habitat_error "Unknown option ${option}. Use help for usage"
       return_code="1"
