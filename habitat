@@ -284,7 +284,7 @@ function habitat_run_plugins() {
       continue
     fi
 
-    local plugin_name_underscore="$(echo "$plugin_name" | sed 's~[/\-]~_~g')"
+    local plugin_name_underscore="$(habitat_plugin_to_underscore "$plugin_name")"
     local function_name="habitat_${plugin_name_underscore}_run"
     habitat_debug "Going to run $function_name"
     if ! habitat_call_function "$function_name" "$plugin_dir/$plugin_name"; then
@@ -293,18 +293,24 @@ function habitat_run_plugins() {
   done
 }
 
+function habitat_plugin_to_underscore() {
+  if [ -z "${1:-}" ]; then
+    return 1
+  fi
+  echo "$plugin_name" | sed 's~[/-]~_~g'
+}
 
 
 
 ##
-# habitat_stub(plugin)
+# habitat_stub_plugin(plugin)
 # stub out a new plugin
 #
 # plugin - 'author/repo' of the github url
 ##
-function habitat_stub() {
+function habitat_stub_plugin() {
   if  [ -z "${1:-}" ]; then
-    habitat_error "There is a problem with habitat_stub it is not being passed the installation dir"
+    habitat_error "There is a problem with habitat_stub_plugin it is not being passed the installation dir"
     return  1
   fi
   local installation_dir="$1"; shift
@@ -321,8 +327,8 @@ function habitat_stub() {
   fi
 
 
-  local plugin_underscore_name="$(echo "$plugin_name" | sed 's~/~_~')"
-  local plugin_file="$installation_dir/$plugin_name"
+  local plugin_underscore_name="$(habitat_plugin_to_underscore "$plugin_name")"
+  local plugin_file="$installation_dir/$plugin_name/habit"
 
   if [ -s "$plugin_file" ]; then
     habitat_error "$plugin_name already exists!!"
@@ -337,9 +343,11 @@ function habitat_stub() {
   local stub_contents="#!/usr/bin/env bash
   function habitat_${plugin_underscore_name}_run() {
     local \$current_plugin_dir=\"\$1\"; shift
+    echo '$plugin_name does not support run'
   }
 
   function habitat_${plugin_underscore_name}_options() {
+    local \$current_plugin_dir=\"\$1\"; shift
     echo '$plugin_name does not support options'
   }
 
@@ -669,7 +677,8 @@ function habitat_main() {
   habitat_source_plugins "$habitat_plugin_dir" "$plugin_list"
 
   if [ -n "${1:-}" ]; then
-    option="$1"; shift
+    local option="$1"; shift
+    local possible_plugin_name="$(habitat_plugin_to_underscore "$option")"
     if [ "$option" = "help" ]; then
       habitat_usage "$@"
     elif [ "$option" = "add" ]; then
@@ -681,7 +690,7 @@ function habitat_main() {
         habitat_rm_plugin "$save_to_config" "$habitat_plugin_dir"  "$1"; shift
       done
     elif [ "$option" = "stub" ]; then
-      habitat_stub "$habitat_plugin_dir" "$@"
+      habitat_stub_plugin "$habitat_plugin_dir" "$@"
     elif [ "$option" = "update-plugins" ]; then
       habitat_update_plugins "$habitat_plugin_dir"
     elif [ "$option" = "update-self" ]; then
@@ -689,8 +698,8 @@ function habitat_main() {
     elif [ "$option" = "ls" ]; then
       echo "Currently Installed:"
       echo "$plugin_list"
-    elif type -t habitat_"$(echo "$option" | sed 's~[-/]~_~g')"_options; then
-      habitat_"$(echo "$option" | sed 's~[-/]~_~g')"_options "$@"
+    elif type -t "habitat_${possible_plugin_name}_options"; then
+      habitat_call_function "habitat_${possible_plugin_name}_options" "$habitat_plugin_dir" "$@"
     else
       habitat_error "Unknown option ${option}. Use help for usage"
       return_code="1"
