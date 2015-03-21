@@ -107,7 +107,7 @@ function habitat_call_function() {
   if ! type -t "$1" 2>&1 > /dev/null; then
     return 1
   fi
-  $1
+  $1 "$@"
   if [ "$?" -ne "0" ]; then
     habitat_debug "Function $1 appears to have failed!"
   fi
@@ -272,6 +272,7 @@ function habitat_get_plugins() {
 # run plugin setup and run functions
 ##
 function habitat_run_plugins() {
+  local plugin_dir="${1:-}"
   local plugin_list="${1:-}"
   local plugin_name
   if [ -z "${plugin_list:-}" ]; then
@@ -286,7 +287,7 @@ function habitat_run_plugins() {
     local plugin_name_underscore="$(echo "$plugin_name" | sed 's~[/\-]~_~g')"
     local function_name="habitat_${plugin_name_underscore}_run"
     habitat_debug "Going to run $function_name"
-    if ! habitat_call_function "$function_name"; then
+    if ! habitat_call_function "$function_name" "$plugin_dir/$plugin_name"; then
       habitat_error "$plugin_name does not have a run function"
     fi
   done
@@ -335,13 +336,11 @@ function habitat_stub() {
 
   local stub_contents="#!/usr/bin/env bash
   function habitat_${plugin_underscore_name}_run() {
-  # This is where you do the main thing that your plugin does
-  :
+    local \$current_plugin_dir=\"\$1\"; shift
   }
 
   function habitat_${plugin_underscore_name}_options() {
-  # Arguments can be passed to your plugin from here
-  :
+    echo '$plugin_name does not support options'
   }
 
   "
@@ -698,7 +697,7 @@ function habitat_main() {
     fi
   else
     habitat_update_plugins "$habitat_plugin_dir" "$plugin_list"
-    habitat_run_plugins "$plugin_list"
+    habitat_run_plugins "$habitat_plugin_dir" "$plugin_list"
   fi
   habitat_cleanup
   return "$return_code"
