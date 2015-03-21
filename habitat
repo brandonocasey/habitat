@@ -375,13 +375,13 @@ function habitat_usage() {
   echo
   echo "  add             add (a) plugin(s). use --save write a config change"
   echo "  rm              remove (a) plugin(s). use --save to write a config change"
-  echo "  stub            stub a plugin in ${habitat_plugins_dir}. ex: stub author/plugin_name"
+  echo "  stub            stub a plugin in the plugins dir ex: stub author/plugin_name"
   echo "  help            show this help menu or plugin help. ex: help author/plugin_name"
   echo "  --debug         show debug statements to stdout"
   echo "  update-plugins  go through a plugin update progress"
   echo "  update-self     check/update the habitat cli"
   echo "  ls              show a list of installed plugins"
-  #    echo "  install   install plugins based upon config file"
+  echo "  install         install plugins based upon config file"
   echo
 }
 
@@ -399,20 +399,25 @@ function habitat_add_plugin() {
   local config_file="$1"; shift
   local plugin_repo_dir="$1"; shift
   local plugin="$1"; shift
+  local code="0"
 
 
   if ! habitat_clone_plugin_repo "$plugin_repo_dir" "$plugin"; then
-    return 1
+    code="1"
+  else
+    echo "Successfully installed $plugin!"
   fi
 
-  echo "Successfully installed $plugin!"
-  if [ "$config_file" != "1" ]; then
-    local plugins="$(habitat_read_config "habitat_plugins_dir")"
-    if [ -n "$plugins" ]; then
-      plugins="$plugins "
-    fi
-    habitat_write_config "habitat_plugins_dir" "${plugins}${plugin}"
+  if [ "$config_file" = "1" ]; then
+    return $code
   fi
+
+  local plugins="$(habitat_read_config "$config_file" "plugins")"
+  if [ -n "$plugins" ]; then
+    plugins="$plugins "
+  fi
+  habitat_write_config "$config_file" "plugins" "${plugins}${plugin}"
+  return "$code"
 }
 
 ##
@@ -453,11 +458,11 @@ function habitat_rm_plugin() {
     return $code
   fi
 
-  local plugins="$(habitat_read_config "$config_file" "habitat_plugins" | sed "s~$plugin~~")"
+  local plugins="$(habitat_read_config "$config_file" "plugins" | sed "s~$plugin~~")"
   if [ -n "$plugins" ]; then
     plugins="$plugins "
   fi
-  habitat_write_config "$config_file" "habitat_plugins" "${plugins}${plugin}"
+  habitat_write_config "$config_file" "plugins" "${plugins}${plugin}"
 
   return $code
 }
@@ -565,11 +570,26 @@ function habitat_one_time_question() {
 }
 
 ##
-# habitat_install()
+# habitat_install_plugins()
 # install plugins based upon config file
 ##
-function habitat_install() {
-:
+function habitat_install_plugins() {
+  if [ -z "${1:-}" ] || [ -z "${2:-}" ]; then
+    return 1
+  fi
+  local config_file="$1"; shift
+  local plugin_dir="$1"; shift
+  local plugins="$(habitat_read_config "$config_file" "plugins")"
+  if [ -z "$plugins" ]; then
+    habitat_error "No plugins to install from config file!"
+    return 1
+  fi
+  local plugin_name
+  while read -r plugin_name; do
+    if [ -n "$plugin_name" ]; then
+      habitat_add_plugin "1" "$plugin_dir" "$plugin_name"
+    fi
+  done <<< "$(echo "$plugins")"
 }
 
 function habitat_update_self() {
@@ -655,7 +675,7 @@ function habitat_main() {
   while [ $argument_count -gt 0 ]; do
     local argument="$1"; shift
     if [ "$argument" = "--save" ]; then
-      save_to_config="$config_file"
+      save_to_config="$habitat_config_file"
     elif [ "$argument" = "--debug" ]; then
       habitat_debug_output="0"
     else
@@ -669,7 +689,7 @@ function habitat_main() {
     habitat_error "--save will do nothing without being used with add or rm"
     return 1
   elif [ "${save_to_config}" != "1" ] && [ -n "${1:-}" ]; then
-    if [ "$1" != 'add' ] || [ "$1" != "rm" ]; then
+    if [ "$1" != 'add' ] && [ "$1" != "rm" ]; then
       habitat_error "--save will do nothing with action $1"
     fi
   fi
@@ -678,6 +698,7 @@ function habitat_main() {
 
   if [ -n "${1:-}" ]; then
     local option="$1"; shift
+    habitat_debug "User passed in option $option and args $@"
     local possible_plugin_name="$(habitat_plugin_to_underscore "$option")"
     if [ "$option" = "help" ]; then
       habitat_usage "$@"
@@ -699,6 +720,8 @@ function habitat_main() {
       if [ -n "${plugin_list:-}" ]; then
         echo "$plugin_list"
       fi
+    elif [ "$option" = "install" ]; then
+      habitat_install_plugins "$habitat_config_file" "$habitat_plugin_dir"
     elif type -t "habitat_${possible_plugin_name}_options"; then
       habitat_call_function "habitat_${possible_plugin_name}_options" "$habitat_plugin_dir" "$@"
     else
