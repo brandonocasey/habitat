@@ -3,34 +3,33 @@ So far this is a just a proof of concept, when everything is up and working this
 
 
 # TODO
-* write unit tests
-	* verify debug/error lines in unit tests
+* Finish/Update unit tests
+	* verify error lines in unit tests
 	* verify that the environment has not changed when running the script
 	* redirect to variables for unit tests. using > or | if possible
 	* better tests for one_time_question
-* habitat_version
-
-
-# Would Like
-* verify config function
-* better function comments
-* get the return value in habitat_call_function
-* check the return code of unset in unset functions and sqwelch errors?
-* plugin specific config settings
-* warn about updates
+* use one_time_question to ask about updates
+	* auto
+	* warn with diff
+	* warn no diff
+	* manual
+* determine the best way to do these
 	* habitat_update_self
 	* habitat_update_plugins
-* habitat_install
-* habitat_ls
-* support quotes variables in config?
+* Ask the user about backup preferences
+* Add a function so that plugin authors can easily backup
+* Add more debug output
+
+# Maybe Someday
+* ignore everything but functions in plugin?
 * namespace and eval plugins automatically?
-* ignore everything but functions in plugin
+* support quotes variables in config?
+* better/consistant function comments
+* get the return value in habitat_call_function
+* check the return code of unset in unset functions and remove errors?
 * habitat_add_plugin -> habitat_add_plugins
 * habitat_rm_plugin -> habitat_rm_plugins
 
-# Need a better idea
-* seperate plugin and git repos
-	* stuff git repos somewhere
 
 
 
