@@ -197,7 +197,9 @@ function habitat_cleanup() {
   habitat_debug "Unsetting function habitat_cleanup"
   habitat_debug "Unsetting function habitat_unset_function"
   habitat_debug "Unsetting function habitat_unset_variable"
+  habitat_debug "Unsetting variable habitat_debug_output"
 
+  habitat_unset_variable "habitat_debug_output"
   habitat_unset_function "habitat_debug"
   habitat_unset_function "habitat_cleanup"
   habitat_unset_function "habitat_unset_variable"
@@ -286,7 +288,7 @@ function habitat_run_plugins() {
 
     local plugin_name_underscore="$(habitat_plugin_to_underscore "$plugin_name")"
     local function_name="habitat_${plugin_name_underscore}_run"
-    habitat_debug "Going to run $function_name"
+    habitat_debug "Running $function_name"
     if ! habitat_call_function "$function_name" "$plugin_dir/$plugin_name"; then
       habitat_error "$plugin_name does not have a run function"
     fi
@@ -598,7 +600,17 @@ function habitat_update_self() {
   fi
   local habitat_cli="$1"; shift
   local branch="$1"; shift
-  output="$(curl https://raw.githubusercontent.com/BrandonOCasey/.habitat/$branch/habitat | diff - "$habitat_cli")"
+  local most_recent="$(curl -s https://raw.githubusercontent.com/BrandonOCasey/.habitat/$branch/habitat)"
+  if [ -z "$most_recent" ]; then
+    habitat_error "Could not update as curl failed"
+    return 1
+  fi
+  if [ "$most_recent" = "$(cat "$habitat_cli")" ]; then
+    echo "Habitat is already up to date"
+  else
+    echo "$most_recent" > "$habitat_cli"
+    echo "Habitat has been updated!"
+  fi
 }
 ##
 # habitat_update_plugins()
@@ -615,7 +627,7 @@ function habitat_update_plugins() {
     fi
     local plugin_dir="$plugin_dir/$plugin_name"
     if [ -d "$plugin_dir/.git" ]; then
-      habitat_debug "Going to update $plugin_name"
+      habitat_debug "Updating $plugin_name"
       local output="$(cd "$plugin_dir" && git pull "$plugin_dir" 2>&1)"
       habitat_source_file "$plugin_dir/habit"
     else
