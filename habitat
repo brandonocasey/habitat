@@ -619,6 +619,7 @@ function habitat_update_self() {
 # update all installed plugins with .git directories
 ##
 function habitat_update_plugins() {
+  local manual="${1:-}"; shift
   local plugin_dir="${1:-}"; shift
   local plugin_list="${1:-}"; shift
   local plugin_name
@@ -629,7 +630,11 @@ function habitat_update_plugins() {
     fi
     local plugin_dir="$plugin_dir/$plugin_name"
     if [ -d "$plugin_dir/.git" ]; then
-      habitat_debug "Updating $plugin_name"
+      if [ "$manual" = "0" ]; then
+        echo "Updating $plugin_name"
+      else
+        habitat_debug "Updating $plugin_name"
+      fi
       local output="$(cd "$plugin_dir" && git pull "$plugin_dir" 2>&1)"
       habitat_source_file "$plugin_dir/habit"
     else
@@ -728,7 +733,7 @@ function habitat_main() {
     elif [ "$option" = "stub" ]; then
       habitat_stub_plugin "$habitat_plugin_dir" "$@"
     elif [ "$option" = "update-plugins" ]; then
-      habitat_update_plugins "$habitat_plugin_dir"
+    habitat_update_plugins "0" "$habitat_plugin_dir" "$plugin_list"
     elif [ "$option" = "update-self" ]; then
       habitat_update_self "$habitat_cli" "$current_branch"
     elif [ "$option" = "ls" ]; then
@@ -744,7 +749,7 @@ function habitat_main() {
       return_code="1"
     fi
   else
-    habitat_update_plugins "$habitat_plugin_dir" "$plugin_list"
+    habitat_update_plugins "1" "$habitat_plugin_dir" "$plugin_list"
     habitat_run_plugins "$habitat_plugin_dir" "$plugin_list"
   fi
   habitat_cleanup
