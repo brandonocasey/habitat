@@ -792,4 +792,3 @@ main_code="$?"
 # Reset trap to the original values
 trap - ERR SIGTERM SIGINT SIGHUP SIGQUIT
 return "$main_code"
-
