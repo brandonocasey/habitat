@@ -163,6 +163,14 @@ function habitat_debug() {
   fi
 }
 
+function habitat_plugin_to_underscore() {
+  if [ -z "${1:-}" ]; then
+    return 1
+  fi
+  echo "$1" | sed 's~[/-]~_~g'
+}
+
+
 ##
 # habitat_cleanup()
 # remove all function/variables from the environment that start with habitat_
@@ -280,22 +288,24 @@ function habitat_get_plugins() {
 
 
 ##
-# habitat_run_plugins()
+# habitat_run_plugins($plugin_dir, $plugin_list)
 # run plugin setup and run functions
+#
+# $plugin_dir  - base dir where plugins are installed
+# $plugin_list - lis tof plugins new line deliminated
 ##
 function habitat_run_plugins() {
+  if [ -z "${1:-}" ] || [ -z "${2:-}" ]; then
+    return 1
+  fi
+
   local plugin_dir="${1:-}"; shift
   local plugin_list="${1:-}"; shift
   local plugin_name
-  if [ -z "${plugin_list:-}" ]; then
-    return 1
-  fi
+  local old_ifs="$IFS"
+  IFS="
+"
   for plugin_name in $plugin_list; do
-    if ! habitat_is_valid_plugin_name "$plugin_name"; then
-      habitat_error "it appears there is an invalid plugin named $plugin_name"
-      continue
-    fi
-
     local plugin_name_underscore="$(habitat_plugin_to_underscore "$plugin_name")"
     local function_name="habitat_${plugin_name_underscore}_run"
     habitat_debug "Running $function_name"
@@ -303,14 +313,9 @@ function habitat_run_plugins() {
       habitat_error "$plugin_name does not have a run function"
     fi
   done
+  IFS="$old_ifs"
 }
 
-function habitat_plugin_to_underscore() {
-  if [ -z "${1:-}" ]; then
-    return 1
-  fi
-  echo "$1" | sed 's~[/-]~_~g'
-}
 
 
 
