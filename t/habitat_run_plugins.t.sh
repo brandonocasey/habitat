@@ -59,6 +59,25 @@ setup
 clean
 
 setup
+  scenario_name "Two Valid Args One Plugin with blank newlines"
+  dir="$tmp"
+  plugin_list="
+one/one
+"
+  expected_code="0"
+  call_function_called_times="1"
+  habitat_run_plugins "$dir" "$plugin_list"
+  code="$?"
+
+  test_name "Function Result Code $expected_code"
+  assert "echo '$code'" "$expected_code"
+
+  test_name "habitat_call_function called $call_function_called_times times"
+  assert "stub_called_times 'habitat_call_function'" "$call_function_called_times"
+clean
+
+
+setup
   scenario_name "Two Valid Args Two Plugin"
   dir="$tmp"
   plugin_list="one/one
