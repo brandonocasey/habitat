@@ -60,7 +60,7 @@ setup
   fi
   restore 'habitat_is_valid_plugin_name'
   stub 'habitat_is_valid_plugin_name'
-  habitat_stub_plugin "$dir" "$plugin"
+  habitat_stub_plugin "$dir" "$plugin" 1> /dev/null
   code="$?"
   test_name "Function Result Code $expected_code"
   assert "echo '$code'" "$expected_code"
