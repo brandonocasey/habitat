@@ -210,9 +210,11 @@ function habitat_cleanup() {
 }
 
 ##
-# habitat_source_plugins($base_dir)
-# source run, setup, and usage functions from plugins
-# base_dir - Where to look for plugins
+# habitat_source_plugins($plugin_dir, $plugin_list)
+# source plugins into the current shell environemnt
+#
+# $plugin_dir  - directory to use as a base when looking for plugins
+# $plugin_list - list of new line deliminated plugins
 ##
 function habitat_source_plugins() {
   if [ -z "${1:-}" ] || [ -z "${2:-}" ]; then
@@ -222,12 +224,16 @@ function habitat_source_plugins() {
   local plugin_dir="$1"; shift
   local plugin_list="$1"; shift
   local full_plugin_name
-  while read -r full_plugin_name; do
+  local old_ifs="$IFS"
+  IFS="
+"
+  for full_plugin_name in $plugin_list; do
     if [ -n "$full_plugin_name" ]; then
       habitat_debug "Sourcing plugin $full_plugin_name into environment"
       habitat_source_file "$plugin_dir/$full_plugin_name/habit"
     fi
-  done <<< "$(echo $plugin_list)"
+  done
+  IFS="$old_ifs"
   return 0
 }
 
