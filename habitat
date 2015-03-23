@@ -332,7 +332,7 @@ function habitat_stub_plugin() {
   local plugin_underscore_name="$(habitat_plugin_to_underscore "$plugin_name")"
   local plugin_file="$installation_dir/$plugin_name/habit"
 
-  if [ -s "$plugin_file" ]; then
+  if [ -f "$plugin_file" ]; then
     habitat_error "$plugin_name already exists!!"
     return 1
   fi

@@ -1,9 +1,9 @@
 test_dir="$( cd "$( dirname "$1" )" && pwd )"; shift
 if [ -n "${1:-}" ]; then
-    output="1"; shift
+    output="0"; shift
 fi
 if [ -n "${1:-}" ]; then
-    debug="1"; shift
+    debug="0"; shift
 fi
 
 assert_script="$test_dir/assert.sh"
@@ -40,10 +40,16 @@ fi
 test_index=1
 function test_name() {
     if [ -n "${output:-}" ]; then
-        echo "*** Test $test_index: $1"
+        printf "\t*** Test $test_index: $1\n"
     fi
     test_index=$((test_index+1))
 }
+function scenario_name() {
+    if [ -n "${output:-}" ]; then
+        echo "*** $1 ***"
+    fi
+}
+
 
 habitat_unit_testing="0"
 
