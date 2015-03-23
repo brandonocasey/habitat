@@ -215,6 +215,10 @@ function habitat_cleanup() {
 # base_dir - Where to look for plugins
 ##
 function habitat_source_plugins() {
+  if [ -z "${1:-}" ] || [ -z "${2:-}" ]; then
+    return 1
+  fi
+
   local plugin_dir="$1"; shift
   local plugin_list="$1"; shift
   local full_plugin_name
@@ -305,22 +309,19 @@ function habitat_plugin_to_underscore() {
 
 
 ##
-# habitat_stub_plugin(plugin)
+# habitat_stub_plugin($install_dir, $plugin)
 # stub out a new plugin
 #
-# plugin - 'author/repo' of the github url
+# $install_dir - directory to place stubbed plugins in
+# $plugin      - author/repo to stub in the install dir
 ##
 function habitat_stub_plugin() {
-  if  [ -z "${1:-}" ]; then
-    habitat_error "There is a problem with habitat_stub_plugin it is not being passed the installation dir"
+  if  [ -z "${1:-}" ] || [ -z "${2:-}" ]; then
+    habitat_error "Please Pass in an author/repo"
     return  1
   fi
-  local installation_dir="$1"; shift
-  if [ -z "${1:-}" ]; then
-    habitat_error "Please pass in author/repo"
-    return 1
-  fi
-  local plugin_name="$1"
+  local install_dir="$1"; shift
+  local plugin_name="$1"; shift
 
   # verify plugin name
   if ! habitat_is_valid_plugin_name "$plugin_name"; then
@@ -330,7 +331,7 @@ function habitat_stub_plugin() {
 
 
   local plugin_underscore_name="$(habitat_plugin_to_underscore "$plugin_name")"
-  local plugin_file="$installation_dir/$plugin_name/habit"
+  local plugin_file="$install_dir/$plugin_name/habit"
 
   if [ -f "$plugin_file" ]; then
     habitat_error "$plugin_name already exists!!"
