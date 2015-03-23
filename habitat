@@ -236,9 +236,13 @@ function habitat_source_plugins() {
   IFS="
 "
   for full_plugin_name in $plugin_list; do
-    if [ -n "$full_plugin_name" ]; then
-      habitat_debug "Sourcing plugin $full_plugin_name into environment"
-      habitat_source_file "$plugin_dir/$full_plugin_name/habit"
+    if [ -z "$full_plugin_name" ]; then
+      continue
+    fi
+    local plugin_file="$plugin_dir/$full_plugin_name/habit"
+    habitat_debug "Sourcing plugin $full_plugin_name into environment"
+    if ! habitat_source_file "$plugin_file"; then
+      habitat_error "Failed to Source $plugin_file"
     fi
   done
   IFS="$old_ifs"
@@ -306,6 +310,10 @@ function habitat_run_plugins() {
   IFS="
 "
   for plugin_name in $plugin_list; do
+    if [ -z "$plugin_name" ]; then
+      continue
+    fi
+
     local plugin_name_underscore="$(habitat_plugin_to_underscore "$plugin_name")"
     local function_name="habitat_${plugin_name_underscore}_run"
     habitat_debug "Running $function_name"
