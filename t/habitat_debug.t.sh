@@ -1,57 +1,68 @@
 #!/usr/bin/env bash
 source "$(dirname "$0")/test-helper.sh" "$0" "$@"
-func="habitat_debug"
-restore "$func"
+restore 'habitat_debug'
 
-test_name "Debug OFF: Blank input is successful"
-assert_raises "$func ''" "0"
+function setup() {
+  :
+}
 
-test_name "Debug OFF: Blank input doesn't print"
-assert "$func ''" ""
+function clean() {
+  :
+}
 
-test_name "Debug OFF: Blank multiline is successful"
-assert_raises "$func '' ''" "0"
+setup
+  scenario_name "Debug OFF"
+  test_name "Blank input return code"
+  assert_raises "habitat_debug '' 2>&1" "0"
 
-test_name "Debug OFF: Blank multiline doesn't print"
-assert "$func '' ''" ""
+  test_name "Blank input stderr"
+  assert "habitat_debug '' 2>&1" ""
 
-test_name "Debug OFF: input doesn't print"
-assert "$func 'hello'" ""
+  test_name "Blank multiline return code"
+  assert_raises "habitat_debug '' '' 2>&1" "0"
 
-test_name "Debug OFF: input is successful"
-assert_raises "$func 'hello'" "0"
+  test_name "Blank multiline stderr"
+  assert "habitat_debug '' '' 2>&1" ""
 
-test_name "Debug OFF: multiline input doesn't print"
-assert "$func 'hello' 'hello2'" ""
+  test_name "one arg return code"
+  assert_raises "habitat_debug 'hello' 2>&1 " "0"
 
-test_name "Debug OFF: multiline input is successful"
-assert_raises "$func 'hello' 'hello2'" "0"
+  test_name "One Arg stderr"
+  assert "habitat_debug 'hello' 2>&1" ""
 
+  test_name "two args return code"
+  assert_raises "habitat_debug 'hello' 'hello2' 2>&1" "0"
 
-# with debug on
-habitat_debug_output=1
-test_name "Debug ON: Blank input is successful"
-assert_raises "$func ''" "0"
+  test_name "two args stderr"
+  assert "habitat_debug 'hello' 'hello2' 2>&1" ""
+clean
 
-test_name "Debug ON: Blank input doesn't print"
-assert "$func ''" ""
+setup
+  scenario_name "Debug ON"
+  habitat_debug_output="0"
+  test_name "Blank input return code"
+  assert_raises "habitat_debug '' 2>&1" "0"
 
-test_name "Debug ON: Blank multiline is successful"
-assert_raises "$func '' ''" "0"
+  test_name "Blank input stderr"
+  assert "habitat_debug '' 2>&1" ""
 
-test_name "Debug ON: Blank multiline doesn't print"
-assert "$func '' ''" ""
+  test_name "Blank multiline return code"
+  assert_raises "habitat_debug '' '' 2>&1" "0"
 
-test_name "Debug ON: input prints"
-assert "$func 'hello'" "Debug: hello"
+  test_name "Blank multiline stderr"
+  assert "habitat_debug '' '' 2>&1" ""
 
-test_name "Debug ON: input is successful"
-assert_raises "$func 'hello'" "0"
+  test_name "one arg return code"
+  assert_raises "habitat_debug 'hello' 2>&1 " "0"
 
-test_name "Debug ON: multiline input prints"
-assert "$func 'hello' 'hello2'" "Debug: hello\nDebug: hello2"
+  test_name "One Arg stderr"
+  assert "habitat_debug 'hello' 2>&1" "Debug: hello"
 
-test_name "Debug OFF: multiline input is successful"
-assert_raises "$func 'hello' 'hello2'" "0"
+  test_name "two args return code"
+  assert_raises "habitat_debug 'hello' 'hello2' 2>&1" "0"
 
-assert_end "$func"
+  test_name "two args stderr"
+  assert "habitat_debug 'hello' 'hello2' 2>&1" "Debug: hello\nDebug: hello2"
+clean
+
+assert_end "habitat_debug"
