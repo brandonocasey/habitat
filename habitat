@@ -146,11 +146,11 @@ function habitat_error() {
 }
 
 ##
-# habitat_debug(message*)
+# habitat_debug($@)
 # print file descriptor 2 when debug is set. We print to stderr
 # so that functions that echo to stdout can be captured correctly
 #
-# message - any number of messages to print
+# $@ - any number of messages to print
 ##
 function habitat_debug() {
   if [ -n "${habitat_debug_output:-}" ]; then
