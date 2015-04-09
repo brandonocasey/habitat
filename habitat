@@ -303,7 +303,8 @@ function habitat_run_plugins() {
     return 1
   fi
 
-  local plugin_dir="${1:-}"; shift
+  local habitat_plugin_dir="${1:-}"; shift
+  local habitat_dotfiles_dir="${1:-}"; shift
   local plugin_list="${1:-}"; shift
   local plugin_name
   local old_ifs="$IFS"
@@ -317,7 +318,7 @@ function habitat_run_plugins() {
     local plugin_name_underscore="$(habitat_plugin_to_underscore "$plugin_name")"
     local function_name="habitat_${plugin_name_underscore}_run"
     habitat_debug "Running $function_name"
-    if ! habitat_call_function "$function_name" "$plugin_dir/$plugin_name"; then
+    if ! habitat_call_function "$function_name" "$habitat_plugin_dir/$plugin_name" "$habitat_dotfiles_dir"; then
       habitat_error "$plugin_name does not have a run function"
     fi
   done
@@ -365,12 +366,14 @@ function habitat_stub_plugin() {
   local stub_contents="#!/usr/bin/env bash
 
 function habitat_${plugin_underscore_name}_run() {
-  local \$current_plugin_dir=\"\$1\"; shift
+  local current_plugin_dir=\"\$1\"; shift
+  local dotfiles_dir=\"\$1\"; shift
   echo '$plugin_name does not support run'
 }
 
 function habitat_${plugin_underscore_name}_options() {
-  local \$current_plugin_dir=\"\$1\"; shift
+  local current_plugin_dir=\"\$1\"; shift
+  local dotfiles_dir=\"\$1\"; shift
   echo '$plugin_name does not support options'
 }
 "
@@ -640,7 +643,7 @@ function habitat_update_self() {
 ##
 function habitat_update_plugins() {
   local manual="${1:-}"; shift
-  local plugin_dir="${1:-}"; shift
+  local habitat_plugin_dir="${1:-}"; shift
   local plugin_list="${1:-}"; shift
   local plugin_name
   for plugin_name in $plugin_list; do
@@ -648,7 +651,7 @@ function habitat_update_plugins() {
       habitat_error "it appears there is an invalid plugin named $plugin_name"
       continue
     fi
-    local plugin_dir="$plugin_dir/$plugin_name"
+    local plugin_dir="$habitat_plugin_dir/$plugin_name"
     if [ -d "$plugin_dir/.git" ]; then
       if [ "$manual" = "0" ]; then
         echo "Updating $plugin_name"
@@ -658,7 +661,7 @@ function habitat_update_plugins() {
       local output="$(cd "$plugin_dir" && git pull "$plugin_dir" 2>&1)"
       habitat_source_file "$plugin_dir/habit"
     else
-      habitat_debug "Cannot update $plugin as it is not in git"
+      habitat_debug "Cannot update $plugin_name as it is not in git"
     fi
   done
 }
@@ -680,7 +683,7 @@ function habitat_trap_error() {
   if [ -z "$message" ]; then
     message=""
   fi
-  habitat_error "Error on or near line ${parent_lineno}"
+  habitat_error "on or near line ${parent_lineno}"
   if [ -n "${message:-}" ]; then
     habitat_error "With Message: '${message}'"
   fi
@@ -751,9 +754,11 @@ function habitat_main() {
         habitat_rm_plugin "$save_to_config" "$habitat_plugin_dir"  "$1"; shift
       done
     elif [ "$option" = "stub" ]; then
-      habitat_stub_plugin "$habitat_plugin_dir" "$@"
+      while [ $# -gt 0 ]; do
+        habitat_stub_plugin "$habitat_plugin_dir" "$1"; shift
+      done
     elif [ "$option" = "update-plugins" ]; then
-    habitat_update_plugins "0" "$habitat_plugin_dir" "$plugin_list"
+      habitat_update_plugins "0" "$habitat_plugin_dir" "$plugin_list"
     elif [ "$option" = "update-self" ]; then
       habitat_update_self "$habitat_cli" "$current_branch"
     elif [ "$option" = "ls" ]; then
@@ -763,14 +768,14 @@ function habitat_main() {
     elif [ "$option" = "install" ]; then
       habitat_install_plugins "$habitat_config_file" "$habitat_plugin_dir"
     elif type -t "habitat_${possible_plugin_name}_options"; then
-      habitat_call_function "habitat_${possible_plugin_name}_options" "$habitat_plugin_dir" "$@"
+      habitat_call_function "habitat_${possible_plugin_name}_options" "$habitat_plugin_dir" "$habitat_dotfiles_dir" "$@"
     else
       habitat_error "Unknown option ${option}. Use help for usage"
       return_code="1"
     fi
   else
     habitat_update_plugins "1" "$habitat_plugin_dir" "$plugin_list"
-    habitat_run_plugins "$habitat_plugin_dir" "$plugin_list"
+    habitat_run_plugins "$habitat_plugin_dir" "$habitat_dotfiles_dir" "$plugin_list"
   fi
   habitat_cleanup
   return "$return_code"
