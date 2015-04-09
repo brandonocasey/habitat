@@ -104,12 +104,13 @@ function habitat_call_function() {
   if [ -z "${1:-}" ]; then
     return 1
   fi
-  if ! type -t "$1" 2>&1 > /dev/null; then
+  local function_name="$1"; shift
+  if ! type -t "$function_name" 2>&1 > /dev/null; then
     return 1
   fi
-  $1 "$@"
+  $function_name "$@"
   if [ "$?" -ne "0" ]; then
-    habitat_debug "Function $1 appears to have failed!"
+    habitat_debug "Function $function_name appears to have failed!"
   fi
 }
 
