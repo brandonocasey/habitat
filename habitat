@@ -363,17 +363,17 @@ function habitat_stub_plugin() {
   fi
 
   local stub_contents="#!/usr/bin/env bash
-  function habitat_${plugin_underscore_name}_run() {
-    local \$current_plugin_dir=\"\$1\"; shift
-    echo '$plugin_name does not support run'
-  }
 
-  function habitat_${plugin_underscore_name}_options() {
-    local \$current_plugin_dir=\"\$1\"; shift
-    echo '$plugin_name does not support options'
-  }
+function habitat_${plugin_underscore_name}_run() {
+  local \$current_plugin_dir=\"\$1\"; shift
+  echo '$plugin_name does not support run'
+}
 
-  "
+function habitat_${plugin_underscore_name}_options() {
+  local \$current_plugin_dir=\"\$1\"; shift
+  echo '$plugin_name does not support options'
+}
+"
 
   habitat_debug "Creating stub for $plugin_name in $plugin_file"
   habitat_debug "With Contents" "$stub_contents"
