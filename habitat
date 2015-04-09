@@ -91,6 +91,8 @@ function habitat_source_file() {
     return 1
   fi
 
+  habitat_debug "Going to source file $1"
+
   . "$1"
 }
 
