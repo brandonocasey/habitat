@@ -7,6 +7,12 @@
 #
 # plugin      - name of the plugin (based on repository) to grab from git
 # base_dir    - where to clone the plugin into
+#
+# return_codes
+# 1 - invalid plugin name or invalid args passed
+# 2 - directory already exists
+# 3 - Git Error
+# 4 - No habit file
 ##
 function habitat_clone_plugin_repo() {
     if [ -z "${1:-}" ] || [ -z "${2:-}" ]; then
@@ -23,21 +29,19 @@ function habitat_clone_plugin_repo() {
   local dir="$base_dir/$(basename "$(dirname "$plugin")")"
   dir="${dir}/$(basename "$plugin")"
   if [ -d "$dir" ]; then
-    #habitat_error "Plugin is already installed"
     return 1
   fi
   output="$(git clone "https://github.com/$plugin" "$dir" 2>&1)"
   if [ "$?" -ne "0" ]; then
-    habitat_error "Git Failed" "$output"
-    return 1
+    return 3
   fi
   if [ ! -f "$dir/habit" ]; then
-    habitat_error "Plugin $plugin does not contain a habit file removing"
     if [ -d "$dir" ]; then
       rm -rf "$dir"
     fi
-    return 1
+    return 4
   fi
+  return -
 }
 
 
@@ -431,11 +435,18 @@ function habitat_add_plugin() {
   local plugin="$1"; shift
   local code="0"
 
-
-  if ! habitat_clone_plugin_repo "$plugin_repo_dir" "$plugin"; then
-    code="1"
-  else
+  habitat_clone_plugin_repo "$plugin_repo_dir" "$plugin"
+  code="$?"
+  if [ "$code" = "0" ]; then
     echo "Successfully installed $plugin!"
+  elif [ "$code" = "2" ]; then
+    habitat_error "Plugin $plugin is already installed"
+  elif [ "$code" = "3" ]; then
+    habitat_error "There was a git error when cloning $plugin"
+    return $code
+  elif [ "$code" = "4" ]; then
+    habitat_error "$plugin did not contain a habit file"
+    return $code
   fi
 
   if [ "$config_file" = "1" ]; then
