@@ -92,7 +92,7 @@ habitat author/repo "arg1" "arg2"
 | stub            | stub a plugin in the plugins dir ex: stub author/plugin_name
 | help            | show this help menu or plugin help. ex: help author/plugin_name
 | debug           | show debug statements to stdout
-| update-plugins  | go through a plugin update progress
+| update          | go through a plugin update progress
 | update-self     | check/update the habitat cli
 | ls              | show a list of installed plugins
 | install         | install plugins based upon config file
