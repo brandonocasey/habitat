@@ -733,7 +733,6 @@ function habitat_main() {
   export habitat_config_file="$habitat_base_dir/habitatrc"
 
   local save_to_config="1"
-  local current_branch="master"
   local return_code="0"
   alias habitat=". '$habitat_cli' \"\$@\""
 
@@ -784,7 +783,7 @@ function habitat_main() {
     elif [ "$option" = "update" ]; then
       habitat_update_plugins "0" "$habitat_plugin_dir" "$plugin_list"
     elif [ "$option" = "update-self" ]; then
-      habitat_update_self "$habitat_cli" "$current_branch"
+      habitat_update_self "$habitat_cli" "$@"
     elif [ "$option" = "ls" ]; then
       echo "The Following plugins are installed:"
       if [ -n "${plugin_list:-}" ]; then
