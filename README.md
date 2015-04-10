@@ -23,9 +23,12 @@ Everything should currently be working correctly as most of the design has been 
 * Add more debug output
 * habitat_add_plugin -> habitat_add_plugins
 * habitat_rm_plugin -> habitat_rm_plugins
-* specific plugin versions
 * Better return codes for some functions
 * Documentation on the potential methods plugin authors have avialable
+* store plugins in their own files and update them like update-self
+	* how would we get the branch to check against?
+	* Would this work for versioning plugins?
+
 
 
 # Maybe Someday
@@ -33,8 +36,7 @@ Everything should currently be working correctly as most of the design has been 
 * better/consistant function comments
 * get the return value in habitat_call_function
 * check the return code of unset in unset functions and remove errors?
-* store plugins in their own files and update them like update-self
-	* how would we get the branch to check against?
+* Anything better than a config file?
 
 # What is Habitat?
 habitat provides a framework for keeping your settings in order, through the use of plugins, without doing a lot of the grunt work yourself. (unless you want to!)
