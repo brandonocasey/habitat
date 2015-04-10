@@ -9,6 +9,7 @@ Everything should currently be working correctly as most of the design has been 
 	* better tests for one_time_question
 * Implement something to auto run unit tests on git
 * habitat_add_plugin should report errors not clone repo
+* Find out what variables plugin authors need
 
 
 # Future Features
@@ -18,8 +19,7 @@ Everything should currently be working correctly as most of the design has been 
 	* warn no diff
 	* manual
 * Ask the user about backup preferences
-* Add a function so that plugin authors can easily backup
-* Find out what variables plugin authors would want to use
+* Add a function so that plugin authors can easily backup files
 * Add more debug output
 * habitat_add_plugin -> habitat_add_plugins
 * habitat_rm_plugin -> habitat_rm_plugins
