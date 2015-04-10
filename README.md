@@ -8,7 +8,6 @@ Everything should currently be working correctly as most of the design has been 
 	* redirect to variables for unit tests. using > or | if possible
 	* better tests for one_time_question
 * Implement something to auto run unit tests on git
-* habitat_add_plugin should report errors not clone repo
 * Find out what variables plugin authors need
 
 
@@ -24,9 +23,7 @@ Everything should currently be working correctly as most of the design has been 
 * habitat_add_plugin -> habitat_add_plugins
 * habitat_rm_plugin -> habitat_rm_plugins
 * specific plugin versions
-* ignore everything but functions in plugin?
-* namespace and eval plugins automatically?
-* better return codes
+* Better return codes for some functions
 * Documentation on the potential methods plugin authors have avialable
 
 
