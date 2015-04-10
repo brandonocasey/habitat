@@ -775,6 +775,7 @@ function habitat_main() {
     elif [ "$option" = "update-self" ]; then
       habitat_update_self "$habitat_cli" "$current_branch"
     elif [ "$option" = "ls" ]; then
+      echo "The Following plugins are installed:"
       if [ -n "${plugin_list:-}" ]; then
         echo "$plugin_list"
       fi
