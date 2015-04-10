@@ -619,12 +619,14 @@ function habitat_install_plugins() {
     habitat_error "No plugins to install from config file!"
     return 1
   fi
+  habitat_debug "Found the following in config file $plugins"
   local plugin_name
-  while read -r plugin_name; do
+  for plugin_name in $plugins; do
     if [ -n "$plugin_name" ]; then
+      habitat_debug "Trying to add $plugin_name"
       habitat_add_plugin "1" "$plugin_dir" "$plugin_name"
     fi
-  done <<< "$(echo "$plugins")"
+  done
 }
 
 function habitat_update_self() {
