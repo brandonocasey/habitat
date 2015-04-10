@@ -408,7 +408,7 @@ function habitat_usage() {
   echo "  stub            stub a plugin in the plugins dir ex: stub author/plugin_name"
   echo "  help            show this help menu or plugin help. ex: help author/plugin_name"
   echo "  debug           show debug statements to stdout"
-  echo "  update-plugins  go through a plugin update progress"
+  echo "  update          go through a plugin update progress"
   echo "  update-self     update the habitat cli pass it a branch or it will use master"
   echo "  ls              show a list of installed plugins"
   echo "  install         install plugins based upon config file"
@@ -770,7 +770,7 @@ function habitat_main() {
       while [ $# -gt 0 ]; do
         habitat_stub_plugin "$habitat_plugin_dir" "$1"; shift
       done
-    elif [ "$option" = "update-plugins" ]; then
+    elif [ "$option" = "update" ]; then
       habitat_update_plugins "0" "$habitat_plugin_dir" "$plugin_list"
     elif [ "$option" = "update-self" ]; then
       habitat_update_self "$habitat_cli" "$current_branch"
