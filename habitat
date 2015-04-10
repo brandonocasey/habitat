@@ -29,7 +29,7 @@ function habitat_clone_plugin_repo() {
   local dir="$base_dir/$(basename "$(dirname "$plugin")")"
   dir="${dir}/$(basename "$plugin")"
   if [ -d "$dir" ]; then
-    return 1
+    return 2
   fi
   output="$(git clone "https://github.com/$plugin" "$dir" 2>&1)"
   if [ "$?" -ne "0" ]; then
@@ -41,7 +41,7 @@ function habitat_clone_plugin_repo() {
     fi
     return 4
   fi
-  return -
+  return 0
 }
 
 
@@ -456,13 +456,13 @@ function habitat_add_plugin() {
   local plugins="$(habitat_read_config "$config_file" "plugins")"
   if [ -n "$plugins" ]; then
     if [ -n "$(echo "$plugins" | grep "$plugin")" ]; then
-      habitat_error "Plugin is already in config file"
+      habitat_error "Plugin $plugin is already in config file"
       return "$code"
     fi
     plugins="$plugins "
   fi
   habitat_write_config "$config_file" "plugins" "${plugins}${plugin}"
-  echo "Successfully added plugin to config"
+  echo "Successfully added plugin $plugin to config"
   return "$code"
 }
 
@@ -490,6 +490,7 @@ function habitat_rm_plugin() {
     rm -rf "$plugin_repo_dir/$plugin"
     echo "$plugin Succesfully Removed!"
   else
+    habitat_error "Plugin $plugin is not installed"
     code=1
   fi
 
@@ -504,11 +505,13 @@ function habitat_rm_plugin() {
     return $code
   fi
 
-  local plugins="$(habitat_read_config "$config_file" "plugins" | sed "s~$plugin~~")"
-  if [ -n "$plugins" ]; then
-    plugins="$plugins "
+  local plugins="$(habitat_read_config "$config_file" "plugins")"
+  if [ -z "$plugins" ] || [ -z "$(echo "$plugins" | grep "$plugin")" ]; then
+      habitat_error "Plugin $plugin is not in config file"
+      return "$code"
   fi
-  habitat_write_config "$config_file" "plugins" "${plugins}${plugin}"
+  habitat_write_config "$config_file" "plugins" "$(echo "$plugins" | sed -E "s~$plugin( |$)~~")"
+  echo "Successfully removed plugin $plugin from config"
 
   return $code
 }
@@ -726,11 +729,11 @@ function habitat_main() {
   fi
 
   # defines
-  export habitat_base_dir="$1"; shift
-  export habitat_plugin_dir="$habitat_base_dir/plugins"
-  export habitat_cli="$habitat_base_dir/habitat"
-  export habitat_dotfiles_dir="$habitat_base_dir/dotfiles"
-  export habitat_config_file="$habitat_base_dir/habitatrc"
+  local habitat_base_dir="$1"; shift
+  local habitat_plugin_dir="$habitat_base_dir/plugins"
+  local habitat_cli="$habitat_base_dir/habitat"
+  local habitat_dotfiles_dir="$habitat_base_dir/dotfiles"
+  local habitat_config_file="$habitat_base_dir/habitatrc"
 
   local save_to_config="1"
   local return_code="0"
