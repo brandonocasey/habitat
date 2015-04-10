@@ -10,6 +10,7 @@ Everything should currently be working correctly as most of the design has been 
 * Implement something to auto run unit tests on git
 * habitat_add_plugin should report errors not clone repo
 
+
 # Future Features
 * use one_time_question to ask about updates
 	* auto
@@ -29,12 +30,13 @@ Everything should currently be working correctly as most of the design has been 
 * Documentation on the potential methods plugin authors have avialable
 
 
-
 # Maybe Someday
 * support quotes variables in config?
 * better/consistant function comments
 * get the return value in habitat_call_function
 * check the return code of unset in unset functions and remove errors?
+* store plugins in their own files and update them like update-self
+	* how would we get the branch to check against?
 
 # What is Habitat?
 habitat provides a framework for keeping your settings in order, through the use of plugins, without doing a lot of the grunt work yourself. (unless you want to!)
