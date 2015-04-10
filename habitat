@@ -23,7 +23,7 @@ function habitat_clone_plugin_repo() {
   local dir="$base_dir/$(basename "$(dirname "$plugin")")"
   dir="${dir}/$(basename "$plugin")"
   if [ -d "$dir" ]; then
-    habitat_error "Plugin is already installed"
+    #habitat_error "Plugin is already installed"
     return 1
   fi
   output="$(git clone "https://github.com/$plugin" "$dir" 2>&1)"
@@ -444,9 +444,14 @@ function habitat_add_plugin() {
 
   local plugins="$(habitat_read_config "$config_file" "plugins")"
   if [ -n "$plugins" ]; then
+    if [ -n "$(echo "$plugins" | grep "$plugin")" ]; then
+      habitat_error "Plugin is already in config file"
+      return "$code"
+    fi
     plugins="$plugins "
   fi
   habitat_write_config "$config_file" "plugins" "${plugins}${plugin}"
+  echo "Successfully added plugin to config"
   return "$code"
 }
 
@@ -732,11 +737,11 @@ function habitat_main() {
 
   # throw errors if --save is passed in a bad way
   if [ "${save_to_config}" != "1" ] && [ -z "${1:-}" ]; then
-    habitat_error "--save will do nothing without being used with add or rm"
+    habitat_error "save will do nothing without being used with add or rm"
     return 1
   elif [ "${save_to_config}" != "1" ] && [ -n "${1:-}" ]; then
     if [ "$1" != 'add' ] && [ "$1" != "rm" ]; then
-      habitat_error "--save will do nothing with action $1"
+      habitat_error "save will do nothing with action $1"
     fi
   fi
   local plugin_list="$(habitat_get_plugins "$habitat_plugin_dir")"
