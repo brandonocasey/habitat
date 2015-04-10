@@ -1,5 +1,5 @@
-# Alpha Release Warning
-Everything should currently be working correctly as most of the design has been finished and a lot of the tests have been written. Once the tests are finished and I write some plugins and determine if anything else is necessary I think we will be good for a real release. Feel free to use this and tell me if anything is broken.
+# Alpha Release
+Everything has passed smoke testing, and their are some existing plugins that work. There is still a lot to do and a lot that can change, so I would not recommend using this until we have a proper beta release
 
 # TODO
 * Finish/Update unit tests
@@ -10,6 +10,10 @@ Everything should currently be working correctly as most of the design has been 
 * Implement something to auto run unit tests on git
 * abstract the varaibles passed to plugin authors
 * dont force write/read to be passed the config file
+* store plugins in their own files and update them like update-self
+	* how would we get the branch to check against?
+	* Would this work for versioning plugins?
+
 
 
 # Future Features
@@ -25,9 +29,6 @@ Everything should currently be working correctly as most of the design has been 
 * habitat_rm_plugin -> habitat_rm_plugins
 * Better return codes for some functions
 * Documentation on the potential methods plugin authors have avialable
-* store plugins in their own files and update them like update-self
-	* how would we get the branch to check against?
-	* Would this work for versioning plugins?
 
 
 
