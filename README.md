@@ -8,7 +8,8 @@ Everything should currently be working correctly as most of the design has been 
 	* redirect to variables for unit tests. using > or | if possible
 	* better tests for one_time_question
 * Implement something to auto run unit tests on git
-* Find out what variables plugin authors need
+* abstract the varaibles passed to plugin authors
+* dont force write/read to be passed the config file
 
 
 # Future Features
