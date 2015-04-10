@@ -7,6 +7,7 @@ Everything should currently be working correctly as most of the design has been 
 	* verify that the environment has not changed when running the script
 	* redirect to variables for unit tests. using > or | if possible
 	* better tests for one_time_question
+* Implement something to auto run unit tests on git
 
 # Future Features
 * use one_time_question to ask about updates
@@ -16,6 +17,7 @@ Everything should currently be working correctly as most of the design has been 
 	* manual
 * Ask the user about backup preferences
 * Add a function so that plugin authors can easily backup
+* Find out what variables plugin authors would want to use
 * Add more debug output
 * habitat_add_plugin -> habitat_add_plugins
 * habitat_rm_plugin -> habitat_rm_plugins
@@ -23,8 +25,8 @@ Everything should currently be working correctly as most of the design has been 
 * ignore everything but functions in plugin?
 * namespace and eval plugins automatically?
 * better return codes
-* have add/rm use save rather than parsing it out
-* better way to turn on debug?
+* Documentation on the potential methods plugin authors have avialable
+
 
 
 # Maybe Someday
