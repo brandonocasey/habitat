@@ -409,7 +409,7 @@ function habitat_usage() {
   echo "  help            show this help menu or plugin help. ex: help author/plugin_name"
   echo "  debug           show debug statements to stdout"
   echo "  update-plugins  go through a plugin update progress"
-  echo "  update-self     check/update the habitat cli"
+  echo "  update-self     update the habitat cli pass it a branch or it will use master"
   echo "  ls              show a list of installed plugins"
   echo "  install         install plugins based upon config file"
   echo
@@ -630,11 +630,14 @@ function habitat_install_plugins() {
 }
 
 function habitat_update_self() {
-  if [ -z "${1:-}" ] || [ -z "${2:-}" ]; then
+  if [ -z "${1:-}" ]; then
     return 1
   fi
   local habitat_cli="$1"; shift
-  local branch="$1"; shift
+  local branch="master"
+  if [ -n "${1:-}" ]; then
+    branch="$1"; shift
+  fi
   local most_recent="$(curl -s https://raw.githubusercontent.com/BrandonOCasey/.habitat/$branch/habitat)"
   if [ -z "$most_recent" ]; then
     habitat_error "Could not update as curl failed"
