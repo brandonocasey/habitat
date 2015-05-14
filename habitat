@@ -685,7 +685,8 @@ function habitat_update_plugins() {
       else
         habitat_debug "Updating $plugin_name"
       fi
-      (cd "$plugin_dir" && git pull 2>/dev/null 1>/dev/null &)
+      local output="$(cd "$plugin_dir" && git pull)"
+      habitat_debug "Output from updat $output"
       habitat_source_file "$plugin_dir/habit"
     else
       habitat_debug "Cannot update $plugin_name as it is not in git"
@@ -801,7 +802,7 @@ function habitat_main() {
       return_code="1"
     fi
   else
-    habitat_update_plugins "1" "$habitat_plugin_dir" "$plugin_list"
+    #habitat_update_plugins "1" "$habitat_plugin_dir" "$plugin_list"
     habitat_run_plugins "$habitat_plugin_dir" "$habitat_dotfiles_dir" "$plugin_list"
   fi
   habitat_cleanup
