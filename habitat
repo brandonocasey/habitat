@@ -685,7 +685,8 @@ function habitat_update_plugins() {
       else
         habitat_debug "Updating $plugin_name"
       fi
-      local output="$(cd "$plugin_dir" && git pull "$plugin_dir" 2>&1)"
+      local output="$(cd "$plugin_dir" && git pull)"
+      habitat_debug "Output from updat $output"
       habitat_source_file "$plugin_dir/habit"
     else
       habitat_debug "Cannot update $plugin_name as it is not in git"
@@ -769,7 +770,7 @@ function habitat_main() {
     local option="$1"; shift
     habitat_debug "User passed in option $option and args $@"
     local possible_plugin_name="$(habitat_plugin_to_underscore "$option")"
-    if [ "$option" = "help" ] || [ "$option" = "--help" ] || [ "$option" = "-h" ]; then
+    if [ "$option" = "help" ]; then
       habitat_usage "$@"
     elif [ "$option" = "add" ]; then
       while [ $# -gt 0 ]; do
