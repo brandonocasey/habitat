@@ -769,7 +769,7 @@ function habitat_main() {
     local option="$1"; shift
     habitat_debug "User passed in option $option and args $@"
     local possible_plugin_name="$(habitat_plugin_to_underscore "$option")"
-    if [ "$option" = "help" ]; then
+    if [ "$option" = "help" ] || [ "$option" = "--help" ] || [ "$option" = "-h" ]; then
       habitat_usage "$@"
     elif [ "$option" = "add" ]; then
       while [ $# -gt 0 ]; do
