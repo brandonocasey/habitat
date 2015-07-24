@@ -1,5 +1,10 @@
-# Alpha Release
-Everything has passed smoke testing, and their are some existing plugins that work. There is still a lot to do and a lot that can change, so I would not recommend using this until we have a proper beta release
+# Beta Release
+Everything has passed smoke testing, their are a few existing plugins that work.
+
+Things to Note before using this:
+* There is still a lot to do and a lot that can change in the plugin api
+* The code is somewhat stable at this point and I am fixing issues as they come up
+* Some of the unit tests fail due to recent changes, they will be fixed
 
 # TODO
 * Finish/Update unit tests
@@ -13,6 +18,11 @@ Everything has passed smoke testing, and their are some existing plugins that wo
 * store plugins in their own files and update them like update-self
 	* how would we get the branch to check against?
 	* Would this work for versioning plugins?
+* verify portability to other shells
+* change plugin config to use TickTock aka JSON in bash
+	* https://github.com/kristopolous/TickTick
+* more hooks for plugins
+* change plugins to modules, allow modules to have other modules , more habitat calls
 
 
 
@@ -33,7 +43,6 @@ Everything has passed smoke testing, and their are some existing plugins that wo
 
 
 # Maybe Someday
-* support quotes variables in config?
 * better/consistant function comments
 * get the return value in habitat_call_function
 * check the return code of unset in unset functions and remove errors?
