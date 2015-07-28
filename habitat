@@ -406,16 +406,17 @@ function habitat_usage() {
   echo
   echo "  . habitat <options>"
   echo
-  echo "  add             add (a) plugin(s). use save write a config change"
-  echo "  rm              remove (a) plugin(s). use save to write a config change"
-  echo "  save            doesn't do anything by itself, just saves add/rm to config"
-  echo "  stub            stub a plugin in the plugins dir ex: stub author/plugin_name"
-  echo "  help            show this help menu or plugin help. ex: help author/plugin_name"
-  echo "  debug           show debug statements to stdout"
-  echo "  update          go through a plugin update progress"
-  echo "  update-self     update the habitat cli pass it a branch or it will use master"
-  echo "  ls              show a list of installed plugins"
-  echo "  install         install plugins based upon config file"
+  echo "  add              add (a) plugin(s). use save write a config change"
+  echo "  rm               remove (a) plugin(s). use save to write a config change"
+  echo "  save             doesn't do anything by itself, just saves add/rm to config"
+  echo "  stub             stub a plugin in the plugins dir ex: stub author/plugin_name"
+  echo "  help             show this help menu or plugin help. ex: help author/plugin_name"
+  echo "  debug            show debug statements to stdout"
+  echo "  update-plugins   go through a plugin update progress"
+  echo "  update-self      update the habitat cli pass it a branch or it will use master"
+  echo "  update-settings  update the git repo that the habitat cli is located in"
+  echo "  ls               show a list of installed plugins"
+  echo "  install          install plugins based upon config file"
   echo
 }
 
@@ -694,6 +695,37 @@ function habitat_update_plugins() {
   done
 }
 
+##
+# habitat_update_settings()
+# update the git repo that the current cli is a part of
+##
+function habitat_update_settings() {
+  local manual="${1:-}"; shift
+  local habitat_dir="${1:-}"; shift
+  if [ -d "$habitat_dir/.git" ]; then
+    if [ "$manual" = "0" ]; then
+      echo "Updating Settings"
+    else
+        habitat_debug "Updating Settings"
+    fi
+    local output="$(cd "$habitat_dir" && git pull)"
+    if [ "$manual" = "0" ]; then
+      echo "$output"
+    else
+      habitat_debug "Output from update $output"
+    fi
+  else
+    if [ "$manual" = "0" ]; then
+      habitat_error "Cannot update settings as they are not in git"
+    else
+      habitat_debug "Cannot update settings as they are not in git"
+    fi
+  fi
+}
+
+
+
+
 
 
 
@@ -784,10 +816,12 @@ function habitat_main() {
       while [ $# -gt 0 ]; do
         habitat_stub_plugin "$habitat_plugin_dir" "$1"; shift
       done
-    elif [ "$option" = "update" ]; then
+    elif [ "$option" = "update-plugins" ]; then
       habitat_update_plugins "0" "$habitat_plugin_dir" "$plugin_list"
     elif [ "$option" = "update-self" ]; then
       habitat_update_self "$habitat_cli" "$@"
+    elif [ "$option" = "update-settings" ]; then
+      habitat_update_settings "0" "$habitat_base_dir"
     elif [ "$option" = "ls" ]; then
       echo "The Following plugins are installed:"
       if [ -n "${plugin_list:-}" ]; then
