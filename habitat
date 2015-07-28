@@ -837,6 +837,7 @@ function habitat_main() {
     fi
   else
     #habitat_update_plugins "1" "$habitat_plugin_dir" "$plugin_list"
+    habitat_update_settings "1" "$habitat_base_dir"
     habitat_run_plugins "$habitat_plugin_dir" "$habitat_dotfiles_dir" "$plugin_list"
   fi
   habitat_cleanup
