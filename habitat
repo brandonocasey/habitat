@@ -644,11 +644,18 @@ function habitat_install_plugins() {
   done
 }
 
+
+##
+# habitat_update_self
+# update the habitat cli, 1 for no update, 0 for success
+##
 function habitat_update_self() {
-  if [ -z "${1:-}" ]; then
+  if [ -z "${1:-}" ] || [ -z "${2:-}" ]; then
     return 1
   fi
-  local habitat_cli="$1"; shift
+
+  local manual="${1:-}"; shift
+  local habitat_cli="${1:-}"; shift
   local branch="master"
   if [ -n "${1:-}" ]; then
     branch="$1"; shift
@@ -660,11 +667,16 @@ function habitat_update_self() {
   fi
   if [ "$most_recent" = "$(cat "$habitat_cli")" ]; then
     echo "Habitat is already up to date"
+	return 1
   else
-    echo "$most_recent" > "$habitat_cli"
+    #echo "$most_recent" > "$habitat_cli"
     echo "Habitat has been updated!"
+	return 0
   fi
+
+
 }
+
 ##
 # habitat_update_plugins()
 # update all installed plugins with .git directories
@@ -819,7 +831,7 @@ function habitat_main() {
     elif [ "$option" = "update-plugins" ]; then
       habitat_update_plugins "0" "$habitat_plugin_dir" "$plugin_list"
     elif [ "$option" = "update-self" ]; then
-      habitat_update_self "$habitat_cli" "$@"
+      habitat_update_self "0" "$habitat_cli" "$@"
     elif [ "$option" = "update-settings" ]; then
       habitat_update_settings "0" "$habitat_base_dir"
     elif [ "$option" = "ls" ]; then
@@ -836,8 +848,13 @@ function habitat_main() {
       return_code="1"
     fi
   else
-    habitat_update_plugins "1" "$habitat_plugin_dir" "$plugin_list"
     habitat_update_settings "1" "$habitat_base_dir"
+	# if we updated re-run habitat
+	if habitat_update_self "1" "$habitat_cli" "$@"; then
+	  . "$habitat_cli"
+	  return "$return_code"
+	fi
+    habitat_update_plugins "1" "$habitat_plugin_dir" "$plugin_list"
     habitat_run_plugins "$habitat_plugin_dir" "$habitat_dotfiles_dir" "$plugin_list"
   fi
   habitat_cleanup
