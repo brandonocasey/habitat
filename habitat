@@ -665,12 +665,12 @@ function habitat_update_self() {
     return 1
   fi
   if [ "$most_recent" = "$(cat "$habitat_cli")" ]; then
-	echo "Habitat is already up to date"
-	return 1
+    echo "Habitat is already up to date"
+    return 1
   else
-	echo "Habitat has been updated!"
+    echo "Habitat has been updated!"
     echo "$most_recent" > "$habitat_cli"
-	return 0
+    return 0
   fi
 }
 
@@ -690,13 +690,23 @@ function habitat_update_plugins() {
     fi
     local plugin_dir="$habitat_plugin_dir/$plugin_name"
     if [ -d "$plugin_dir/.git" ]; then
+      local check_update="$(cd "$plugin_dir" && git fetch origin && git log HEAD..origin/master --oneline)"
+      if [ -z "$check_update" ]; then
+      if [ "$manual" = "0" ]; then
+        echo "No update for $plugin_name"
+      else
+        habitat_debug "No update for $plugin_name"
+      fi
+      continue
+    fi
+
       if [ "$manual" = "0" ]; then
         echo "Updating $plugin_name"
       else
         habitat_debug "Updating $plugin_name"
       fi
-      local output="$(cd "$plugin_dir" && git pull)"
-      habitat_debug "Output from updat $output"
+      local output="$(cd "$habitat_dir" && git pull)"
+      habitat_debug "Output from update $output"
       habitat_source_file "$plugin_dir/habit"
     else
       habitat_debug "Cannot update $plugin_name as it is not in git"
@@ -712,11 +722,23 @@ function habitat_update_settings() {
   local manual="${1:-}"; shift
   local habitat_dir="${1:-}"; shift
   if [ -d "$habitat_dir/.git" ]; then
+    local check_update="$(cd "$plugin_dir" && git fetch origin && git log HEAD..origin/master --oneline)"
+    if [ -z "$check_update" ]; then
+      if [ "$manual" = "0" ]; then
+        echo "No update for settings"
+      else
+        habitat_debug "No update for settings"
+      fi
+      return 1
+    fi
+
     if [ "$manual" = "0" ]; then
       echo "Updating Settings"
     else
         habitat_debug "Updating Settings"
     fi
+
+
     local output="$(cd "$habitat_dir" && git pull)"
     if [ "$manual" = "0" ]; then
       echo "$output"
@@ -845,14 +867,13 @@ function habitat_main() {
       return_code="1"
     fi
   else
-	habitat_content="$(cat "$habitat_cli")"
+    habitat_content="$(cat "$habitat_cli")"
     habitat_update_settings "1" "$habitat_base_dir"
-	# if we updated habitat in our settings re-run
-	if [ "$habitat_content" != "$(cat "$habitat_cli")" ]; then
-	  . "$habitat_cli"
-	  return "$return_code"
-	fi
-    habitat_update_plugins "1" "$habitat_plugin_dir" "$plugin_list"
+    # if we updated habitat in our settings re-run
+    if [ "$habitat_content" != "$(cat "$habitat_cli")" ]; then
+      . "$habitat_cli"
+      return "$return_code"
+    fi
     habitat_run_plugins "$habitat_plugin_dir" "$habitat_dotfiles_dir" "$plugin_list"
   fi
   habitat_cleanup
@@ -897,7 +918,7 @@ fi
 # Set trap so we dont exit our script
 trap '(habitat_trap_error ${LINENO})' ERR SIGTERM SIGINT SIGHUP SIGQUIT
 if [ -n "$habitat_base" ]; then
-	habitat_main "$habitat_base" "$@"
+    habitat_main "$habitat_base" "$@"
 fi
 main_code="$?"
 
