@@ -19,10 +19,10 @@ Things to Note before using this:
 	* how would we get the branch to check against?
 	* Would this work for versioning plugins?
 * verify portability to other shells
-* change plugin config to use TickTock aka JSON in bash
-	* https://github.com/kristopolous/TickTick
+* better config file
 * more hooks for plugins
 * change plugins to modules, allow modules to have other modules , more habitat calls
+* faster git pulling to check for update
 
 
 

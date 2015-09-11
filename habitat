@@ -896,7 +896,9 @@ fi
 
 # Set trap so we dont exit our script
 trap '(habitat_trap_error ${LINENO})' ERR SIGTERM SIGINT SIGHUP SIGQUIT
-habitat_main "$habitat_base" "$@"
+if [ -n "$habitat_base" ]; then
+	habitat_main "$habitat_base" "$@"
+fi
 main_code="$?"
 
 # Reset trap to the original values
