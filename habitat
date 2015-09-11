@@ -2,48 +2,37 @@
 
 
 ##
-# habitat_git_clone_plugin_repo(base_dir, plugin)
-# use git clone to grab a plugin if possible
-#
-# plugin      - name of the plugin (based on repository) to grab from git
-# base_dir    - where to clone the plugin into
-#
-# return_codes
-# 1 - invalid plugin name or invalid args passed
-# 2 - directory already exists
-# 3 - Git Error
-# 4 - No habit file
+# habitat_curl_update(url, file)
+# update a file given a remote location
+# 0 - updated
+# 1 - not updated
 ##
-function habitat_clone_plugin_repo() {
-    if [ -z "${1:-}" ] || [ -z "${2:-}" ]; then
-      return 1
-  fi
-  local base_dir="$1"; shift
-  local plugin="$1"; shift
-  if ! habitat_is_valid_plugin_name "$plugin"; then
+function habitat_curl_update() {
+  local url="$1"; shift;
+  local file="$1"; shift;
+
+  local remote_content=""
+  local code="1"
+  remote_content="$(curl -s "$url")"
+  code="$?"
+
+  habitat_debug "Ran curl on $url and got back a $code"
+
+  if [ "$code" != "0" ] || [ -z "$remote_content" ]; then
+    habitat_error "Could not update $file as curl failed"
     return 1
   fi
-  # need to decalre local variables before capture
-  # or else we won't correctly grab the result code
-  local output=""
-  local dir="$base_dir/$(basename "$(dirname "$plugin")")"
-  dir="${dir}/$(basename "$plugin")"
-  if [ -d "$dir" ]; then
-    return 2
-  fi
-  output="$(git clone "https://github.com/$plugin" "$dir" 2>&1)"
-  if [ "$?" -ne "0" ]; then
-    return 3
-  fi
-  if [ ! -f "$dir/habit" ]; then
-    if [ -d "$dir" ]; then
-      rm -rf "$dir"
+  if [ ! -f "$file" ] || [ "$remote_content" != "$(cat "$file")" ]; then
+    local dir="$(dirname "$file")"
+    if [ ! -d "$dir" ]; then
+      mkdir -p "$dir"
     fi
-    return 4
+    echo "$remote_content" > "$file"
+    return 0
+  else
+    return 1
   fi
-  return 0
 }
-
 
 ##
 # habitat_unset_function(function_name)
@@ -160,14 +149,26 @@ function habitat_error() {
 # $@ - any number of messages to print
 ##
 function habitat_debug() {
-  if [ -n "${habitat_debug_output:-}" ]; then
-    while [ $# -gt 0 ]; do
-      local message="$1"; shift
-      if [ -n "${message:-}" ]; then
-        echo "Debug: $message" 1>&2
-      fi
-    done
+  if [ -z "${habitat_debug_output:-}" ]; then
+    return;
   fi
+  while [ $# -gt 0 ]; do
+    local message="$1"; shift
+    if [ -n "${message:-}" ]; then
+      echo "Debug: $message" 1>&2
+    fi
+  done
+}
+
+##
+# habitat_debug_pipe
+# pipe to this function and we will pass it
+# to normal debug printing
+##
+function habitat_debug_pipe() {
+  while read -r message; do
+    habitat_debug "$message"
+  done
 }
 
 function habitat_plugin_to_underscore() {
@@ -267,8 +268,8 @@ function habitat_get_plugins() {
   local author_dir
   local plugin_dir
   if [ ! -d "$plugin_base_dir" ]; then
-    habitat_debug "Plugin dir $plugin_base_dir does not exist!"
-    return 1
+    mkdir -p "$plugin_base_dir"
+    habitat_debug "Plugin dir $plugin_base_dir does not exist creating!"
   fi
   for author_dir in "$plugin_base_dir/"*; do
     # as this would normally be a long dir rather than just the author name
@@ -429,28 +430,23 @@ function habitat_usage() {
 ##
 function habitat_add_plugin() {
   if [ -z "${1:-}" ] || [ -z "${2:-}" ] || [ -z "${3:-}" ]; then
-      return 1
+    return 1
   fi
-  local config_file="$1"; shift
+  local save_to_config="$1"; shift
   local plugin_repo_dir="$1"; shift
   local plugin="$1"; shift
-  local code="0"
 
-  habitat_clone_plugin_repo "$plugin_repo_dir" "$plugin"
-  code="$?"
-  if [ "$code" = "0" ]; then
-    echo "Successfully installed $plugin!"
-  elif [ "$code" = "2" ]; then
-    habitat_error "Plugin $plugin is already installed"
-  elif [ "$code" = "3" ]; then
-    habitat_error "There was a git error when cloning $plugin"
-    return $code
-  elif [ "$code" = "4" ]; then
-    habitat_error "$plugin did not contain a habit file"
-    return $code
+  local url="https://raw.githubusercontent.com/$plugin/master/habit"
+  habitat_curl_update "$url" "$plugin_repo_dir/$plugin/habit"
+  if [ "$?" = "1" ]; then
+    echo "$plugin already installed or error"
+    return 1
+  else
+    echo "$plugin has been installed"
+    return 0
   fi
 
-  if [ "$config_file" = "1" ]; then
+  if [ "$save_to_config" = "1" ]; then
     return $code
   fi
 
@@ -634,7 +630,6 @@ function habitat_install_plugins() {
     habitat_error "No plugins to install from config file!"
     return 1
   fi
-  habitat_debug "Found the following in config file $plugins"
   local plugin_name
   for plugin_name in $plugins; do
     if [ -n "$plugin_name" ]; then
@@ -659,17 +654,15 @@ function habitat_update_self() {
   if [ -n "${1:-}" ]; then
     branch="$1"; shift
   fi
-  local most_recent="$(curl -s https://raw.githubusercontent.com/BrandonOCasey/.habitat/$branch/habitat)"
-  if [ -z "$most_recent" ]; then
-    habitat_error "Could not update as curl failed"
-    return 1
-  fi
-  if [ "$most_recent" = "$(cat "$habitat_cli")" ]; then
+  local url="https://raw.githubusercontent.com/BrandonOCasey/.habitat/$branch/habitat"
+  local result="2"
+  habitat_curl_update "$url" "$habitat_cli"
+
+  if [ "$?" = "1" ]; then
     echo "Habitat is already up to date"
     return 1
   else
     echo "Habitat has been updated!"
-    echo "$most_recent" > "$habitat_cli"
     return 0
   fi
 }
@@ -679,7 +672,6 @@ function habitat_update_self() {
 # update all installed plugins with .git directories
 ##
 function habitat_update_plugins() {
-  local manual="${1:-}"; shift
   local habitat_plugin_dir="${1:-}"; shift
   local plugin_list="${1:-}"; shift
   local plugin_name
@@ -688,28 +680,20 @@ function habitat_update_plugins() {
       habitat_error "it appears there is an invalid plugin named $plugin_name"
       continue
     fi
-    local plugin_dir="$habitat_plugin_dir/$plugin_name"
-    if [ -d "$plugin_dir/.git" ]; then
-      local check_update="$(cd "$plugin_dir" && git fetch origin && git log HEAD..origin/master --oneline)"
-      if [ -z "$check_update" ]; then
-      if [ "$manual" = "0" ]; then
-        echo "No update for $plugin_name"
-      else
-        habitat_debug "No update for $plugin_name"
-      fi
-      continue
+
+    local plugin_file="$habitat_plugin_dir/$plugin_name/habit"
+    if [ ! -f "$plugin_file" ]; then
+      habitat_error "it appears there a plugin named $plugin_name with no habit file"
     fi
 
-      if [ "$manual" = "0" ]; then
-        echo "Updating $plugin_name"
-      else
-        habitat_debug "Updating $plugin_name"
-      fi
-      local output="$(cd "$habitat_dir" && git pull)"
-      habitat_debug "Output from update $output"
-      habitat_source_file "$plugin_dir/habit"
+    local url="https://raw.githubusercontent.com/$plugin_name/master/habit"
+    habitat_curl_update "$url" "$habitat_cli"
+    if [ "$?" = "1" ]; then
+      echo "$plugin_name is already up to date"
+      return 1
     else
-      habitat_debug "Cannot update $plugin_name as it is not in git"
+      echo "$plugin_name has been updated!"
+      return 0
     fi
   done
 }
@@ -719,39 +703,15 @@ function habitat_update_plugins() {
 # update the git repo that the current cli is a part of
 ##
 function habitat_update_settings() {
-  local manual="${1:-}"; shift
   local habitat_dir="${1:-}"; shift
-  if [ -d "$habitat_dir/.git" ]; then
-    local check_update="$(cd "$plugin_dir" && git fetch origin && git log HEAD..origin/master --oneline)"
-    if [ -z "$check_update" ]; then
-      if [ "$manual" = "0" ]; then
-        echo "No update for settings"
-      else
-        habitat_debug "No update for settings"
-      fi
-      return 1
-    fi
-
-    if [ "$manual" = "0" ]; then
-      echo "Updating Settings"
-    else
-        habitat_debug "Updating Settings"
-    fi
-
-
-    local output="$(cd "$habitat_dir" && git pull)"
-    if [ "$manual" = "0" ]; then
-      echo "$output"
-    else
-      habitat_debug "Output from update $output"
-    fi
-  else
-    if [ "$manual" = "0" ]; then
-      habitat_error "Cannot update settings as they are not in git"
-    else
-      habitat_debug "Cannot update settings as they are not in git"
-    fi
+  if [ ! -d "$habitat_dir/.git" ]; then
+    habitat_error "Cannot update settings as they are not in git"
+    return
   fi
+  echo "updating Settings"
+
+  local output="$(cd "$habitat_dir" && git pull)"
+  echo "$output"
 }
 
 
@@ -848,11 +808,11 @@ function habitat_main() {
         habitat_stub_plugin "$habitat_plugin_dir" "$1"; shift
       done
     elif [ "$option" = "update-plugins" ]; then
-      habitat_update_plugins "0" "$habitat_plugin_dir" "$plugin_list"
+      habitat_update_plugins "$habitat_plugin_dir" "$plugin_list"
     elif [ "$option" = "update-self" ]; then
       habitat_update_self "$habitat_cli" "$@"
     elif [ "$option" = "update-settings" ]; then
-      habitat_update_settings "0" "$habitat_base_dir"
+      habitat_update_settings "$habitat_base_dir"
     elif [ "$option" = "ls" ]; then
       echo "The Following plugins are installed:"
       if [ -n "${plugin_list:-}" ]; then
@@ -868,7 +828,7 @@ function habitat_main() {
     fi
   else
     habitat_content="$(cat "$habitat_cli")"
-    habitat_update_settings "1" "$habitat_base_dir"
+    habitat_update_settings "$habitat_base_dir" | habitat_debug_pipe
     # if we updated habitat in our settings re-run
     if [ "$habitat_content" != "$(cat "$habitat_cli")" ]; then
       . "$habitat_cli"

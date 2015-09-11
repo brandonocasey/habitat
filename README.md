@@ -15,9 +15,7 @@ Things to Note before using this:
 * Implement something to auto run unit tests on git
 * abstract the varaibles passed to plugin authors
 * dont force write/read to be passed the config file
-* store plugins in their own files and update them like update-self
-	* how would we get the branch to check against?
-	* Would this work for versioning plugins?
+* versioning plugins
 * verify portability to other shells
 * better config file
 * more hooks for plugins
