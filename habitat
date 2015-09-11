@@ -669,7 +669,7 @@ function habitat_update_self() {
     echo "Habitat is already up to date"
 	return 1
   else
-    #echo "$most_recent" > "$habitat_cli"
+    echo "$most_recent" > "$habitat_cli"
     echo "Habitat has been updated!"
 	return 0
   fi
