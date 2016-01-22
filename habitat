@@ -675,6 +675,9 @@ function habitat_update_plugins() {
   local habitat_plugin_dir="${1:-}"; shift
   local plugin_list="${1:-}"; shift
   local plugin_name
+  local old_ifs="$IFS"
+  IFS="
+"
   for plugin_name in $plugin_list; do
     if ! habitat_is_valid_plugin_name "$plugin_name"; then
       habitat_error "it appears there is an invalid plugin named $plugin_name"
@@ -687,15 +690,14 @@ function habitat_update_plugins() {
     fi
 
     local url="https://raw.githubusercontent.com/$plugin_name/master/habit"
-    habitat_curl_update "$url" "$habitat_cli"
+    habitat_curl_update "$url" "$plugin_file"
     if [ "$?" = "1" ]; then
       echo "$plugin_name is already up to date"
-      return 1
     else
       echo "$plugin_name has been updated!"
-      return 0
     fi
   done
+  IFS="$old_ifs"
 }
 
 ##
