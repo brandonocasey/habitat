@@ -1,0 +1,8 @@
+{
+  "name": "habitat",
+  "version": "1.0.0",
+  "description": "A framework for keeping your settings in order, through the use of plugins, without doing a lot of the grunt work yourself.",
+  "install": "",
+  "scripts": [ "habitat" ]
+}
+
